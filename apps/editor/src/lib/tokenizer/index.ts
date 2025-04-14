@@ -1,7 +1,7 @@
 import { Brand } from "@/lib/utils";
 import { expression } from "./expression";
 import type { seperatorType } from "./seperator";
-import { binaryOperatorParser } from "./operators/arithmatic";
+import { binaryExpr } from "./operators/arithmatic";
 
 const TokenName = Brand.For<
   | "newline"
@@ -63,63 +63,11 @@ export function* tokenizer(words: seperatorType): Generator<Token> {
 
 //const funcProgram = "myFunc(1,main())";
 //const floatingNumber = `8.09`;
-const binaryOperation = `8 +   9.0 + 1`;
-const res = binaryOperatorParser.run(binaryOperation);
+const binaryOperation = `8 + 9.0 + 899`;
+const res = binaryExpr.run(binaryOperation);
 
 if (res.isError) {
   console.error(res.error);
 } else {
   console.log(JSON.stringify(res.result, null, 2));
-}
-
-/*
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
-function* tokenize() {
-  const RegexPattern: [RegExp, string][] = [
-    [/\s+/, "Whitespace"],
-    [/^\d+/, "NumberLiteral"],
-    [/(["'])(?:\\.|(?!\1).)*\1/, "StringLiteral"],
-    [/^[a-zA-Z_][a-zA-Z0-9_]*/, "Keyword"],
-    [/\(|\)/, "Paranthesis"],
-  ];
-
-  let i = 0;
-  outer: while (i < floatingNumber.length) {
-    const str = floatingNumber.slice(i);
-
-    for (const [regex, name] of RegexPattern) {
-      const match = regex.exec(str);
-      if (match != null) {
-        yield [match[0], name];
-
-        i += match[0].length;
-        continue outer;
-      }
-    }
-
-    throw SyntaxError(
-      "JJUnexpected token `" + floatingNumber[i] + "` at pos: " + i,
-    );
-  }
 }

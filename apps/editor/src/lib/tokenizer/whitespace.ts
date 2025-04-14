@@ -6,4 +6,7 @@ export const spaceSeperator = A.many(A.char(" "))
   .map(tag("SpaceChar"));
 export const whitespaceSeperator = A.choice([spaceSeperator]);
 
-export const whiteSpaceSurrounded = A.between(spaceSeperator)(spaceSeperator);
+export const token = <T>(parser: A.Parser<T>) =>
+  A.sequenceOf([A.optionalWhitespace, parser, A.optionalWhitespace]).map(
+    (x) => x[1],
+  );
