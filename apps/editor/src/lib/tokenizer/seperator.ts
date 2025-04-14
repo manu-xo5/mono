@@ -1,3 +1,4 @@
+// plan to depricate
 export function* seperator(codeStr: string) {
   let i = 0;
   let buffer = "";

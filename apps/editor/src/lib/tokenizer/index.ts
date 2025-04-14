@@ -1,6 +1,7 @@
 import { Brand } from "@/lib/utils";
-import { functionCall } from "./function";
+import { expression } from "./expression";
 import type { seperatorType } from "./seperator";
+import { binaryOperatorParser } from "./operators/arithmatic";
 
 const TokenName = Brand.For<
   | "newline"
@@ -60,21 +61,15 @@ export function* tokenizer(words: seperatorType): Generator<Token> {
   }
 }
 
-const program = "myFunc()";
-const tokens = tokenize();
-console.log(tokens);
-for (const [exp, type] of tokens) {
-  if (type === "Whitespace") {
-    console.log("exp", `"${exp}" ignoring whitespaces`);
-    continue;
-  }
-  console.log("exp", `"${exp}"`);
-  const res = functionCall.run(exp);
-  if (res.isError) {
-    console.error("jj" + res.error);
-    break;
-  }
-  console.log(res.result);
+//const funcProgram = "myFunc(1,main())";
+//const floatingNumber = `8.09`;
+const binaryOperation = `8 +   9.0 + 1`;
+const res = binaryOperatorParser.run(binaryOperation);
+
+if (res.isError) {
+  console.error(res.error);
+} else {
+  console.log(JSON.stringify(res.result, null, 2));
 }
 
 /*
@@ -106,15 +101,14 @@ function* tokenize() {
     [/^\d+/, "NumberLiteral"],
     [/(["'])(?:\\.|(?!\1).)*\1/, "StringLiteral"],
     [/^[a-zA-Z_][a-zA-Z0-9_]*/, "Keyword"],
+    [/\(|\)/, "Paranthesis"],
   ];
-  let buffer = "";
+
   let i = 0;
-  outer: while (i < program.length) {
-    const str = program.slice(i);
+  outer: while (i < floatingNumber.length) {
+    const str = floatingNumber.slice(i);
 
     for (const [regex, name] of RegexPattern) {
-      console.log("trying", name);
-      if (name === "Keyword") console.log(regex.exec(str));
       const match = regex.exec(str);
       if (match != null) {
         yield [match[0], name];
@@ -124,11 +118,8 @@ function* tokenize() {
       }
     }
 
-    throw SyntaxError("JJUnexpected token `" + program[i] + "` at pos: " + i);
-  }
-
-  if (buffer.length) {
-    yield buffer;
-    buffer = "";
+    throw SyntaxError(
+      "JJUnexpected token `" + floatingNumber[i] + "` at pos: " + i,
+    );
   }
 }
