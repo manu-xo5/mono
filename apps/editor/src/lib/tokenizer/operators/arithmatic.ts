@@ -1,5 +1,5 @@
 import * as A from "arcsecond";
-import { numberLiteral } from "../literal";
+import { numberLiteral } from "literals";
 import { token } from "../whitespace";
 
 const operator = A.char("+");
@@ -78,7 +78,3 @@ const arithmaticParser = A.coroutine((run) => {
 });
 
 export { arithmaticParser  };
-
-//function ln(nesting: number, ...x: unknown[]) {
-//  console.log("level:", nesting, " ".repeat(nesting * 4).concat("|"), ...x);
-//}

@@ -1,72 +1,15 @@
-import { Brand } from "@/lib/utils";
-import type { seperatorType } from "./seperator";
-
-const TokenName = Brand.For<
-  | "newline"
-  | "whitespace"
-  | "punctuation"
-  | "paranthesis"
-  | "keyword"
-  | "identifier"
-  | "literal"
-  | "unknown"
->();
-
-export type DispatchTokenArg = {
-  name: Brand.infer<typeof TokenName>;
-  text: string;
-  idx: number;
-  x: number;
-  y: number;
-};
-
-export type Token = {
-  name: typeof TokenName;
-  text: string;
-  idx: number;
-  x: number;
-  y: number;
-};
-
-export function* tokenizer(words: seperatorType): Generator<Token> {
-  const ctx = {
-    x: 0,
-    y: 0,
-  };
-  void ctx;
-
-  for (const word of words) {
-    if ("\n" === word.word) {
-      yield {
-        ...word,
-        y: ctx.y,
-        x: ctx.x,
-        name: TokenName.from("newline"),
-        text: word.word,
-      };
-      ctx.x = 0;
-      ctx.y++;
-    } else {
-      yield {
-        ...word,
-        y: ctx.y,
-        x: ctx.x,
-        name: TokenName.from("unknown"),
-        text: word.word,
-      };
-      ctx.x++;
-    }
-  }
-}
+import { EofError, TokenizerSyntaxError } from "./helpers";
 
 export type TokenType =
   | "Whitespace"
+  | "Paran"
   | "NumberLiteral"
   | "StringLiteral"
   | "BooleanLiteral"
   | "OptionNoneLiteral"
   | "Semicolon"
-  | "Keyword";
+  | "Dot"
+  | "Symbol";
 
 export type TokenNode = {
   name: TokenType;
@@ -81,9 +24,11 @@ export class Tokenizer {
   private regexMatcher: [RegExp, TokenType][] = [
     [/^\s+/, "Whitespace"],
     [/^;/, "Semicolon"],
+    [/^\./, "Dot"],
+    [/^[()]/, "Paran"],
     [/^\d+/, "NumberLiteral"],
     [/^\bfalse\b|\btrue\b/, "BooleanLiteral"],
-    [/^[_$a-zA-Z][_$a-zA-Z0-9]*/, "Keyword"],
+    [/^[_$a-zA-Z][_$a-zA-Z0-9]*/, "Symbol"],
     [/^"[^"]*"/, "StringLiteral"],
     [/^'[^']*'/, "StringLiteral"],
   ];
@@ -91,6 +36,13 @@ export class Tokenizer {
   init(source: string) {
     this.cursor = 0;
     this.source = source;
+  }
+
+  _eatDebug(): TokenNode | null {
+    const temp = this.lookahead();
+    this.cursor += temp?.value.length ?? 0;
+
+    return temp;
   }
 
   eat(name: TokenType | (string & {})): TokenNode {
@@ -106,7 +58,7 @@ export class Tokenizer {
       console.info(
         [Tokenizer.name, this.eat.name].join(".").concat(`(${name})`),
       );
-      throw Error(`Tokenizer: unexpected end of input, expected '${name}'`);
+      throw new EofError(name);
     }
 
     // ignore whitespaces
@@ -127,9 +79,11 @@ export class Tokenizer {
         [Tokenizer.name, this.eat.name].join(".").concat(`(${name})`),
       );
 
-      throw Error(
-        `Tokenizer: unexpected token ${temp.name} '${temp.value}', expected '${name}'`,
-      );
+      throw new TokenizerSyntaxError({
+        expectedName: name,
+        gotName: temp.name,
+        gotValue: temp.value,
+      });
     }
 
     this.cursor += temp.value.length;
@@ -155,6 +109,3 @@ export class Tokenizer {
     return null;
   }
 }
-
-//const funcProgram = "myFunc(1,main())";
-//const floatingNumber = `8.09`;

@@ -1,6 +1,5 @@
-import { assignmentStmt } from "@/lib/tokenizer/statment";
+import { expressionStmt } from "@/lib/tokenizer/statment";
 import { use, useDeferredValue, useEffect, useRef } from "react";
-import { Token, tokenizer } from "../lib/tokenizer";
 import { seperator } from "../lib/tokenizer/seperator";
 import { Cursor } from "./Cursor";
 import { FONT_FAMILY, FONT_SIZE, LINE_HEIGHT, THEME } from "./editor.config";
@@ -10,21 +9,24 @@ import { parser } from "./tree-sitter";
 import { Modifiers } from "./types";
 import { mouseToColRow, VALID_CHARS } from "./utils";
 
-function renderText(tokens: Token[], ctx: CanvasRenderingContext2D) {
+function renderText(
+  tokens: { word: string; idx: number }[],
+  ctx: CanvasRenderingContext2D,
+) {
   let x = 0;
   let y = 0;
 
   for (const token of tokens) {
-    if ((token.name as unknown as string) === "newline") {
+    if ((token.word as unknown as string) === "newline") {
       y++;
       x = 0;
       continue;
     }
 
-    const word = token.text;
+    const word = token.word;
 
     ctx.fillStyle =
-      THEME[token.name as unknown as keyof typeof THEME] ?? THEME.__fallback;
+      THEME[token.word as unknown as keyof typeof THEME] ?? THEME.__fallback;
     ctx.fillText(word, x * FONT_SIZE, y * LINE_HEIGHT + LINE_HEIGHT / 2);
     x += word.length;
 
@@ -54,7 +56,7 @@ export function Editor() {
         .join("\n");
 
       console.clear();
-      const result = assignmentStmt.run(Array.from(lines).join(""));
+      const result = expressionStmt.run(Array.from(lines).join(""));
       if (result.isError) {
         console.error(JSON.stringify(result.error, null, 4));
       } else {
@@ -62,8 +64,7 @@ export function Editor() {
       }
 
       const seperatorIter = seperator(lines);
-      const tokenizerIter = tokenizer(seperatorIter);
-      const words = Array.from(tokenizerIter);
+      const words = Array.from(seperatorIter);
       renderText(words, ctx);
 
       //renderMenu(canvasRef.current);
