@@ -16,3 +16,5 @@ export const withData =
   <D>() =>
   <T, E>(parser: A.Parser<T, E, D>) =>
     A.withData<T, E, D>(parser);
+
+export const endOfStmt = A.choice([A.char(";")]);

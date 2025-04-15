@@ -1,3 +1,4 @@
+import { assignmentStmt } from "@/lib/tokenizer/statment";
 import { use, useDeferredValue, useEffect, useRef } from "react";
 import { Token, tokenizer } from "../lib/tokenizer";
 import { seperator } from "../lib/tokenizer/seperator";
@@ -8,59 +9,6 @@ import { handleBackspace, handleDelete, handleEnter } from "./keymap";
 import { parser } from "./tree-sitter";
 import { Modifiers } from "./types";
 import { mouseToColRow, VALID_CHARS } from "./utils";
-
-function renderMenu(canvas: HTMLCanvasElement | null) {
-  const ctx = canvas?.getContext("2d");
-  const cursor = useEditorStore.getState().cursor;
-  const lines = useEditorStore.getState().lines;
-  const yOff = LINE_HEIGHT / 2;
-
-  if (!canvas || !ctx) return;
-
-  let y = cursor.row;
-  const chars = lines[cursor.row].text.split("");
-
-  let i;
-  for (i = cursor.col - 1; i > 0; i--) {
-    const char = chars[i];
-
-    if (" .-=<>([{}])".includes(char)) {
-      i++;
-      break;
-    }
-  }
-  const wordMatch = chars.slice(i, cursor.col).join("");
-  console.log(wordMatch);
-
-  if (!wordMatch || wordMatch.length < 3) return;
-
-  let drawnMenu = false;
-  const matches = ["const", "function", "let", "console"].filter((other) =>
-    other.startsWith(wordMatch),
-  );
-
-  console.log(matches);
-
-  matches.forEach((word) => {
-    if (drawnMenu === false) {
-      ctx.fillStyle = "blue";
-      ctx.fillRect(
-        cursor.col * FONT_SIZE,
-        cursor.row * LINE_HEIGHT + LINE_HEIGHT,
-        300,
-        matches.length * LINE_HEIGHT,
-      );
-      ctx.fillStyle = "white";
-
-      drawnMenu = true;
-      y++;
-    }
-
-    ctx.fillStyle = "black";
-    ctx.fillText(word, cursor.col * FONT_SIZE, y * LINE_HEIGHT + yOff);
-    y++;
-  });
-}
 
 function renderText(tokens: Token[], ctx: CanvasRenderingContext2D) {
   let x = 0;
@@ -105,6 +53,14 @@ export function Editor() {
         .lines.map(({ text }) => text)
         .join("\n");
 
+      console.clear();
+      const result = assignmentStmt.run(Array.from(lines).join(""));
+      if (result.isError) {
+        console.error(JSON.stringify(result.error, null, 4));
+      } else {
+        console.log(JSON.stringify(result.result, null, 4));
+      }
+
       const seperatorIter = seperator(lines);
       const tokenizerIter = tokenizer(seperatorIter);
       const words = Array.from(tokenizerIter);
@@ -119,14 +75,6 @@ export function Editor() {
 
     return () => unsub();
   }, []);
-
-  useEffect(() => {
-    let _;
-    _ = lines.map((line) => line.text).join("\n");
-    _ = seperator(_);
-    _ = tokenizer(_);
-    (Array.from(_));
-  }, [lines]);
 
   return (
     <>

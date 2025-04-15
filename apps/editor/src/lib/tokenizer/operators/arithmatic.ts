@@ -1,39 +1,84 @@
 import * as A from "arcsecond";
-import { token } from "../whitespace";
 import { numberLiteral } from "../literal";
+import { token } from "../whitespace";
 
 const operator = A.char("+");
 
-const operand = A.sequenceOf([token(operator), token(numberLiteral)]).map(
-  ([, x]) => x.value,
-);
+type BiOp = {
+  name: "BinaryExpression";
+  left: number | string | BiOp;
+  right: number | string | BiOp;
+  op: string;
+};
 
-const recurse: A.Parser<
-  { left: string; right: string },
+const mapToBinaryOperation = ([left, op, right]: [
+  BiOp["left"],
   string,
-  { left: string }
-> = A.sequenceOf([operand, A.possibly(A.lookAhead(operator))]).chainFromData(
-  ({ result, data }) => {
-    if (!result) return A.fail("failed");
-    const value = {
-      left: data.left,
-      right: result[0],
-    };
+  BiOp["right"],
+]): BiOp => ({
+  name: "BinaryExpression",
+  left: left,
+  right: right,
+  op: op,
+});
 
-    if (result[1] == null) return A.succeedWith(value);
+// bi-op
+// :  expr  |  bi-op  + expr
+// ; (bi-op)
 
-    return A.withData(recurse)({ left: value });
-  },
+const numberToken = token(numberLiteral).map((x) => +x.value);
+const identifierToken = token(A.letters).map((x) => "Identifier(" + x + ")");
+const callExpr = A.sequenceOf([token(A.letters), A.str("()")]).map(
+  ([x]) => "FunctionCall(" + x + ")",
 );
 
-export const binaryExpr = A.sequenceOf([
-  token(numberLiteral),
-  A.lookAhead(A.sequenceOf([operator, token(numberLiteral)])),
-]).chain((result) => {
-  if (!result) return A.fail("lool");
+const exprToken = A.choice([callExpr, identifierToken, numberToken]);
 
-  return A.withData(recurse)({
-    left: result[0],
-    right: result[1][1],
-  });
+const arithmaticParser = A.coroutine((run) => {
+  //
+
+  function parseRightLeaf(left: BiOp["left"], l: number) {
+    const mayBeEndOfNest = run(A.possibly(A.lookAhead(A.char(")"))));
+    if (mayBeEndOfNest != null) {
+      run(A.char(")")); // eat `)`
+      return left;
+    }
+
+    const mayBeOp = run(A.possibly(A.lookAhead(operator)));
+    if (mayBeOp == null) return left;
+
+    const op = run(operator);
+    const right = parseExpression(l);
+    return mapToBinaryOperation([left, op, right]);
+  }
+
+  // 1 + 2 + 3
+  function parseExpression(l: number): BiOp["left"] {
+    let left: BiOp["left"];
+
+    const mayBeNested = run(A.possibly(A.lookAhead(A.char("("))));
+    if (mayBeNested == null) {
+      left = run(exprToken);
+    } else {
+      run(A.char("(")); // eat `(`
+      left = parseExpression(l + 1);
+    }
+
+    while (true) {
+      const node = parseRightLeaf(left, l);
+      if (node == left) break;
+
+      left = node;
+    }
+
+    return left;
+  }
+
+  return parseExpression(0);
 });
+
+export { arithmaticParser  };
+
+//function ln(nesting: number, ...x: unknown[]) {
+//  console.log("level:", nesting, " ".repeat(nesting * 4).concat("|"), ...x);
+//}

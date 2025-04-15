@@ -6,16 +6,25 @@ import {
   stringLiteral,
 } from "./literal";
 import { betweenParan, commaSep } from "./helpers";
+import { arithmaticParser } from "./operators/arithmatic";
+import { token } from "./whitespace";
 
 export const primaryExpression = A.choice([
-  numberLiteral,
-  nullLiteral,
-  booleanLiteral,
   stringLiteral,
+  booleanLiteral,
+  nullLiteral,
+  numberLiteral,
 ]);
 
+export const identifierToken = token(A.letters);
+
 export const expression = A.recursiveParser(() =>
-  A.choice([primaryExpression, callExpression]),
+  A.choice([
+    A.lookAhead(A.sequenceOf([A.digits, A.char("+")])).map(),
+    //primaryExpression,
+    //callExpression,
+    //identifierToken,
+  ]),
 );
 
 const argumentsParser = betweenParan(commaSep(expression));
