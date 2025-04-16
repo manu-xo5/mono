@@ -17,8 +17,6 @@ export type TokenType =
   | "Paran"
   | "NumberLiteral"
   | "StringLiteral"
-  | "BooleanLiteral"
-  | "OptionNoneLiteral"
   | "Identifier";
 
 export type TokenNode = {
@@ -34,7 +32,6 @@ const SPEC: [RegExp, TokenType][] = [
   [/^\*/, "Times"],
   [/^[()]/, "Paran"],
   [/^\d+/, "NumberLiteral"],
-  [/^\bfalse\b|\btrue\b/, "BooleanLiteral"],
   [/^[_$a-zA-Z][_$a-zA-Z0-9]*/, "Identifier"],
   [/^"[^"]*"/, "StringLiteral"],
   [/^'[^']*'/, "StringLiteral"],
@@ -51,7 +48,7 @@ export class Tokenizer {
   }
 
   _eatDebug(): TokenNode | null {
-    const temp = this.lookahead();
+    const temp = this.peek();
     this.cursor += temp?.value.length ?? 0;
 
     return temp;
@@ -63,7 +60,7 @@ export class Tokenizer {
       throw Error("Tokenizer: max calls stack exceeded");
     }
 
-    const temp = this.lookahead();
+    const temp = this.peek();
 
     // ignore whitespaces
     if (temp.name == "Whitespace") {
@@ -78,14 +75,14 @@ export class Tokenizer {
     }
 
     // assert required type with obtained
-    assert(temp.name === name, this.ERR_SYNTAX().message);
+    assert(temp.name === name, this.ERR_SYNTAX(name).message);
 
     this.cursor += temp.value.length;
     this.callDepth = 0;
     return temp;
   }
 
-  lookahead() {
+  peek() {
     if (this.cursor >= this.source.length)
       throw new Error(ERROR_UNEXPECTED_END());
 
@@ -117,12 +114,12 @@ export class Tokenizer {
 
     const expectedTypeMsg = Array.isArray(expected)
       ? humanizeListJoin(expected)
-      : expected
+      : expected != null
         ? expected
         : undefined;
 
     const title =
-      `Unexpected token '${this.lookahead().value}'` +
+      `Unexpected token '${this.peek().value}'` +
       (expected ? `, Expected '${expectedTypeMsg}'` : "");
 
     const msg = [title, "", left_slice + right_slice, marker].join("\n");
