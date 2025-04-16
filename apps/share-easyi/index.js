@@ -1,5 +1,3 @@
-const path = require("path");
-const { Socket } = require("socket.io");
 const Express = require("express");
 const cors = require("cors");
 const { handlers } = require("./index.main");
@@ -23,7 +21,7 @@ app.all("/", async (req, res) => {
     body: req.method !== "GET" ? req.body : undefined,
   });
 
-  const response = await handlers();
+  const response = await handlers(request);
   res.status(response.status).send(await response.json());
 });
 

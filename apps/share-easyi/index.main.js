@@ -1,4 +1,5 @@
-const ids = new Map();
+const users = {};
+const ids = [];
 
 function createPin() {
   return Array.from(crypto.getRandomValues(new Uint8Array(2)))
@@ -17,7 +18,7 @@ function response(body, init) {
       "Access-Control-Allow-Headers": "*",
       "Access-Control-Allow-Origin": "*",
     },
-    ...init
+    ...init,
   });
 }
 
@@ -34,7 +35,7 @@ async function handlers(req) {
     const newPin = createPin();
     const body = JSON.parse(await req.text());
 
-    ids.set(newPin, body);
+    ids.push(newPin);
 
     return response({
       pin: newPin,
