@@ -24,13 +24,14 @@ export function parse_expr(tokenizer: Tokenizer, bp: number): t_ast_expr {
     return left;
   }
 
-  while (bp_table[tokenizer.lookahead().name] > bp) {
+  let next_bp: number;
+  while ((next_bp = bp_table[tokenizer.lookahead().name]) > bp) {
     const led_token = tokenizer.lookahead();
 
     const led_fn = led_handler[led_token.name];
     assert(!!led_fn, "expected a 'operator-token'");
 
-    left = led_fn(tokenizer, left, bp);
+    left = led_fn(tokenizer, left, next_bp);
   }
 
   return left;
