@@ -1,3 +1,5 @@
+import { TokenizerSyntaxError } from "./tokenizer/helpers";
+
 export const clamp = (min: number, max: number, value: number) => {
   return Math.max(min, Math.min(max, value));
 };
@@ -24,3 +26,15 @@ export const isValidIdentifier = (value: string) => {
     .split("")
     .every((char) => isAlphaNumeric(char) || " " === char || "$" === char);
 };
+
+export function assert(cond: boolean, errorMessage: string): asserts cond {
+  if (!cond) {
+    throw new Error(errorMessage);
+  }
+}
+
+export function createLn(nesting: number) {
+  return (...x: unknown[]) => {
+    console.log("level:", nesting, " ".repeat(nesting * 4).concat("|"), ...x);
+  };
+}

@@ -43,6 +43,7 @@ const formatter = new Intl.ListFormat("en", {
   style: "long",
   type: "disjunction",
 });
+export const humanizeListJoin = (values: string[]) => formatter.format(values);
 
 export function assertNodeToBe<T, ToBe extends TokenType | (string & {})>(
   node: T | null,
@@ -89,10 +90,15 @@ export function assertNodeValue<
   }
 }
 
-//#
+export const ERROR_UNEXPECTED_END = (expected: string = "") =>
+  [`Tokenizer: unexpected end of input`, expected].filter(Boolean).join(", ");
 
-export function createLn(nesting: number) {
-  return (...x: unknown[]) => {
-    console.log("level:", nesting, " ".repeat(nesting * 4).concat("|"), ...x);
-  };
+export function ERROR_SYNTAX(char: string = "?", expected: string = "") {
+  return Error(
+    [`Tokenizer: unexpected character '${char}'`, expected]
+      .filter(Boolean)
+      .join(", "),
+  );
 }
+
+//

@@ -1,4 +1,9 @@
-import { EofError, TokenizerSyntaxError } from "./helpers";
+import {
+  EofError,
+  ERROR_SYNTAX,
+  ERROR_UNEXPECTED_END,
+  TokenizerSyntaxError,
+} from "./helpers";
 
 export type TokenType =
   | "Whitespace"
@@ -9,7 +14,9 @@ export type TokenType =
   | "OptionNoneLiteral"
   | "Semicolon"
   | "Dot"
-  | "Symbol";
+  | "Times"
+  | "Plus"
+  | "Identifier";
 
 export type TokenNode = {
   name: TokenType;
@@ -25,10 +32,12 @@ export class Tokenizer {
     [/^\s+/, "Whitespace"],
     [/^;/, "Semicolon"],
     [/^\./, "Dot"],
+    [/^\+/, "Plus"],
+    [/^\*/, "Times"],
     [/^[()]/, "Paran"],
     [/^\d+/, "NumberLiteral"],
     [/^\bfalse\b|\btrue\b/, "BooleanLiteral"],
-    [/^[_$a-zA-Z][_$a-zA-Z0-9]*/, "Symbol"],
+    [/^[_$a-zA-Z][_$a-zA-Z0-9]*/, "Identifier"],
     [/^"[^"]*"/, "StringLiteral"],
     [/^'[^']*'/, "StringLiteral"],
   ];
@@ -92,7 +101,8 @@ export class Tokenizer {
   }
 
   lookahead() {
-    if (this.cursor > this.source.length) return null;
+    if (this.cursor >= this.source.length)
+      throw new Error(ERROR_UNEXPECTED_END());
 
     const slice = this.source.slice(this.cursor);
 
@@ -106,6 +116,6 @@ export class Tokenizer {
       }
     }
 
-    return null;
+    throw ERROR_SYNTAX(slice);
   }
 }

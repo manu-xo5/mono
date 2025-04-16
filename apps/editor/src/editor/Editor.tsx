@@ -1,6 +1,5 @@
-import { expressionStmt } from "@/lib/tokenizer/statment";
 import { use, useDeferredValue, useEffect, useRef } from "react";
-import { seperator } from "../lib/tokenizer/seperator";
+import { seperator } from "@/lib/seperator";
 import { Cursor } from "./Cursor";
 import { FONT_FAMILY, FONT_SIZE, LINE_HEIGHT, THEME } from "./editor.config";
 import { insertAtCol, moveCursor, useEditorStore } from "./editor.store";
@@ -8,6 +7,8 @@ import { handleBackspace, handleDelete, handleEnter } from "./keymap";
 import { parser } from "./tree-sitter";
 import { Modifiers } from "./types";
 import { mouseToColRow, VALID_CHARS } from "./utils";
+import { Tokenizer } from "@/lib/tokenizer";
+import { parse_expr, primary_expr } from "@/lib/ast/expr";
 
 function renderText(
   tokens: { word: string; idx: number }[],
@@ -55,13 +56,30 @@ export function Editor() {
         .lines.map(({ text }) => text)
         .join("\n");
 
-      console.clear();
-      const result = expressionStmt.run(Array.from(lines).join(""));
-      if (result.isError) {
-        console.error(JSON.stringify(result.error, null, 4));
-      } else {
-        console.log(JSON.stringify(result.result, null, 4));
-      }
+      void (function () {
+        try {
+          const tokenizer = new Tokenizer();
+          tokenizer.init(lines);
+          const ast = parse_expr(tokenizer, 0);
+
+          console.clear();
+          console.log("---------");
+          console.log(JSON.stringify(ast, null, 4));
+          try {
+            console.log("debug");
+            console.log(tokenizer._eatDebug());
+            console.log(tokenizer._eatDebug());
+            console.log(tokenizer._eatDebug());
+            console.log(tokenizer._eatDebug());
+            console.log(tokenizer._eatDebug());
+          } catch {
+            console.log("errrr");
+          }
+          console.log("---------");
+        } catch (err) {
+          console.error(err);
+        }
+      })();
 
       const seperatorIter = seperator(lines);
       const words = Array.from(seperatorIter);

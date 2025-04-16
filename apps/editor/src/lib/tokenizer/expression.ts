@@ -1,3 +1,4 @@
+/** @deprecated file */
 import { Tokenizer, TokenNode } from ".";
 import {
   assertNodeToBe,
