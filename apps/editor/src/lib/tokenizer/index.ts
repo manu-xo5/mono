@@ -1,21 +1,24 @@
+import { assert } from "@/lib/utils";
 import {
-  EofError,
   ERROR_SYNTAX,
   ERROR_UNEXPECTED_END,
-  TokenizerSyntaxError,
+  humanizeListJoin,
 } from "./helpers";
 
 export type TokenType =
   | "Whitespace"
+  | "Semicolon"
+  | "Dot"
+  | "Plus"
+  | "Dash"
+  | "Times"
+  | "Slash"
+  | "Equal"
   | "Paran"
   | "NumberLiteral"
   | "StringLiteral"
   | "BooleanLiteral"
   | "OptionNoneLiteral"
-  | "Semicolon"
-  | "Dot"
-  | "Times"
-  | "Plus"
   | "Identifier";
 
 export type TokenNode = {
@@ -23,24 +26,24 @@ export type TokenNode = {
   value: string;
 };
 
+const SPEC: [RegExp, TokenType][] = [
+  [/^\s+/, "Whitespace"],
+  [/^;/, "Semicolon"],
+  [/^\./, "Dot"],
+  [/^\+/, "Plus"],
+  [/^\*/, "Times"],
+  [/^[()]/, "Paran"],
+  [/^\d+/, "NumberLiteral"],
+  [/^\bfalse\b|\btrue\b/, "BooleanLiteral"],
+  [/^[_$a-zA-Z][_$a-zA-Z0-9]*/, "Identifier"],
+  [/^"[^"]*"/, "StringLiteral"],
+  [/^'[^']*'/, "StringLiteral"],
+];
+
 export class Tokenizer {
   private cursor = 0;
   public source = "";
   private callDepth = 0;
-
-  private regexMatcher: [RegExp, TokenType][] = [
-    [/^\s+/, "Whitespace"],
-    [/^;/, "Semicolon"],
-    [/^\./, "Dot"],
-    [/^\+/, "Plus"],
-    [/^\*/, "Times"],
-    [/^[()]/, "Paran"],
-    [/^\d+/, "NumberLiteral"],
-    [/^\bfalse\b|\btrue\b/, "BooleanLiteral"],
-    [/^[_$a-zA-Z][_$a-zA-Z0-9]*/, "Identifier"],
-    [/^"[^"]*"/, "StringLiteral"],
-    [/^'[^']*'/, "StringLiteral"],
-  ];
 
   init(source: string) {
     this.cursor = 0;
@@ -62,14 +65,6 @@ export class Tokenizer {
 
     const temp = this.lookahead();
 
-    // assert EOF
-    if (temp == null) {
-      console.info(
-        [Tokenizer.name, this.eat.name].join(".").concat(`(${name})`),
-      );
-      throw new EofError(name);
-    }
-
     // ignore whitespaces
     if (temp.name == "Whitespace") {
       console.info(
@@ -83,17 +78,7 @@ export class Tokenizer {
     }
 
     // assert required type with obtained
-    if (temp.name !== name) {
-      console.info(
-        [Tokenizer.name, this.eat.name].join(".").concat(`(${name})`),
-      );
-
-      throw new TokenizerSyntaxError({
-        expectedName: name,
-        gotName: temp.name,
-        gotValue: temp.value,
-      });
-    }
+    assert(temp.name === name, this.ERR_SYNTAX().message);
 
     this.cursor += temp.value.length;
     this.callDepth = 0;
@@ -106,7 +91,7 @@ export class Tokenizer {
 
     const slice = this.source.slice(this.cursor);
 
-    for (const [regex, name] of this.regexMatcher) {
+    for (const [regex, name] of SPEC) {
       const match = slice.match(regex);
       if (match != null) {
         return {
@@ -117,5 +102,31 @@ export class Tokenizer {
     }
 
     throw ERROR_SYNTAX(slice);
+  }
+
+  ERR_SYNTAX(expected?: string[] | string) {
+    const left_slice = this.source.substring(
+      Math.max(0, this.cursor - 30),
+      this.cursor - 1,
+    );
+    const right_slice = this.source.substring(
+      this.cursor - 1,
+      Math.min(this.source.length, this.cursor + 30),
+    );
+    const marker = " ".repeat(left_slice.length + 1).concat("^");
+
+    const expectedTypeMsg = Array.isArray(expected)
+      ? humanizeListJoin(expected)
+      : expected
+        ? expected
+        : undefined;
+
+    const title =
+      `Unexpected token '${this.lookahead().value}'` +
+      (expected ? `, Expected '${expectedTypeMsg}'` : "");
+
+    const msg = [title, "", left_slice + right_slice, marker].join("\n");
+
+    return new Error(msg);
   }
 }

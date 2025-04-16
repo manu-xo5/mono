@@ -18,7 +18,7 @@ export const useEditorStore = create<EditorStore>()(() => ({
     col: 0,
   },
   lines: [
-    { id: "1", text: "0*2;" },
+    { id: "1", text: "0*2+4;" },
     // { id: "1", text: "null;" },
     //{ id: "1", text: "const num = 0;" },
     //{ id: "1", text: 'const str = "hello";' },

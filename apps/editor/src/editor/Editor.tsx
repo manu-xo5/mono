@@ -4,11 +4,10 @@ import { Cursor } from "./Cursor";
 import { FONT_FAMILY, FONT_SIZE, LINE_HEIGHT, THEME } from "./editor.config";
 import { insertAtCol, moveCursor, useEditorStore } from "./editor.store";
 import { handleBackspace, handleDelete, handleEnter } from "./keymap";
-import { parser } from "./tree-sitter";
 import { Modifiers } from "./types";
 import { mouseToColRow, VALID_CHARS } from "./utils";
 import { Tokenizer } from "@/lib/tokenizer";
-import { parse_expr, primary_expr } from "@/lib/ast/expr";
+import { parser } from "@/lib/parser";
 
 function renderText(
   tokens: { word: string; idx: number }[],
@@ -36,11 +35,7 @@ function renderText(
 }
 
 export function Editor() {
-  const { parser: ts, JavaScript } = use(parser);
-  const lines = useDeferredValue(useEditorStore((store) => store.lines));
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {}, [lines, ts, JavaScript]);
 
   useEffect(() => {
     async function run() {
@@ -58,24 +53,11 @@ export function Editor() {
 
       void (function () {
         try {
-          const tokenizer = new Tokenizer();
-          tokenizer.init(lines);
-          const ast = parse_expr(tokenizer, 0);
-
           console.clear();
-          console.log("---------");
+          console.log("ast ---------");
+          const ast = parser.parse(lines);
           console.log(JSON.stringify(ast, null, 4));
-          try {
-            console.log("debug");
-            console.log(tokenizer._eatDebug());
-            console.log(tokenizer._eatDebug());
-            console.log(tokenizer._eatDebug());
-            console.log(tokenizer._eatDebug());
-            console.log(tokenizer._eatDebug());
-          } catch {
-            console.log("errrr");
-          }
-          console.log("---------");
+          console.log("-------------");
         } catch (err) {
           console.error(err);
         }
