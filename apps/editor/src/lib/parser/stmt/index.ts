@@ -1,9 +1,9 @@
 import { Tokenizer } from "@/lib/tokenizer";
-import { parse_expr } from "@/lib/parser/expr";
+import { parse_additive_expr, parse_expr } from "@/lib/parser/expr";
 
 const expr_stmt = (tokenizer: Tokenizer) => {
-  const expr = parse_expr(tokenizer, 0);
-  tokenizer.eat("Semicolon");
+  const expr = parse_additive_expr(tokenizer);
+  //tokenizer.eat("Semicolon");
 
   return expr;
 };

@@ -1,11 +1,8 @@
 import { assert } from "@/lib/utils";
-import {
-  ERROR_SYNTAX,
-  ERROR_UNEXPECTED_END,
-  humanizeListJoin,
-} from "./helpers";
+import { ERROR_UNEXPECTED_END, humanizeListJoin } from "./helpers";
 
 export type TokenType =
+  | "EOF"
   | "Whitespace"
   | "Semicolon"
   | "Dot"
@@ -17,7 +14,8 @@ export type TokenType =
   | "Paran"
   | "NumberLiteral"
   | "StringLiteral"
-  | "Identifier";
+  | "Identifier"
+  | "UnknownToken";
 
 export type TokenNode = {
   name: TokenType;
@@ -29,6 +27,7 @@ const SPEC: [RegExp, TokenType][] = [
   [/^;/, "Semicolon"],
   [/^\./, "Dot"],
   [/^\+/, "Plus"],
+  [/^-/, "Dash"],
   [/^\*/, "Times"],
   [/^[()]/, "Paran"],
   [/^\d+/, "NumberLiteral"],
@@ -40,51 +39,52 @@ const SPEC: [RegExp, TokenType][] = [
 export class Tokenizer {
   private cursor = 0;
   public source = "";
-  private callDepth = 0;
+  private _current_token!: TokenNode;
 
   init(source: string) {
     this.cursor = 0;
     this.source = source;
-  }
-
-  _eatDebug(): TokenNode | null {
-    const temp = this.peek();
-    this.cursor += temp?.value.length ?? 0;
-
-    return temp;
+    this._current_token = this.parse_token();
   }
 
   eat(name: TokenType | (string & {})): TokenNode {
-    this.callDepth++;
-    if (this.callDepth > 1000) {
-      throw Error("Tokenizer: max calls stack exceeded");
-    }
+    const temp = this.current_token();
 
-    const temp = this.peek();
-
-    // ignore whitespaces
-    if (temp.name == "Whitespace") {
-      console.info(
-        [Tokenizer.name, this.eat.name]
-          .join(".")
-          .concat(`(${name}): skipping whitespace, calling self`),
-      );
-
-      this.cursor += temp.value.length;
-      return this.eat(name);
-    }
-
-    // assert required type with obtained
     assert(temp.name === name, this.ERR_SYNTAX(name).message);
 
-    this.cursor += temp.value.length;
-    this.callDepth = 0;
+    if (temp.name === "EOF") return temp;
+
+    do {
+      this.cursor += temp.value.length;
+      this._current_token = this.parse_token();
+    } while (this.current_token().name === "Whitespace");
+
     return temp;
   }
 
-  peek() {
-    if (this.cursor >= this.source.length)
-      throw new Error(ERROR_UNEXPECTED_END());
+  has_token() {
+    return this.cursor < this.source.length;
+  }
+
+  current_token() {
+    return this._current_token;
+  }
+
+  lookahead() {
+    const temp_cursor = this.cursor;
+    this.cursor += this.current_token().value.length;
+
+    const next_token = this.parse_token();
+    this.cursor = temp_cursor;
+    return next_token;
+  }
+
+  private parse_token(): TokenNode {
+    if (!this.has_token())
+      return {
+        name: "EOF",
+        value: "--EOF--",
+      };
 
     const slice = this.source.slice(this.cursor);
 
@@ -98,17 +98,21 @@ export class Tokenizer {
       }
     }
 
-    throw ERROR_SYNTAX(slice);
+    return {
+      name: "UnknownToken",
+      value: slice[0],
+    } as TokenNode;
   }
 
-  ERR_SYNTAX(expected?: string[] | string) {
+  ERR_SYNTAX(expected?: string[] | string, relativeIdx: number = 0) {
+    const index = this.cursor - relativeIdx;
     const left_slice = this.source.substring(
-      Math.max(0, this.cursor - 30),
-      this.cursor - 1,
+      Math.max(0, index - 30),
+      index - 1,
     );
     const right_slice = this.source.substring(
-      this.cursor - 1,
-      Math.min(this.source.length, this.cursor + 30),
+      index - 1,
+      Math.min(this.source.length, index + 30),
     );
     const marker = " ".repeat(left_slice.length + 1).concat("^");
 
@@ -119,7 +123,7 @@ export class Tokenizer {
         : undefined;
 
     const title =
-      `Unexpected token '${this.peek().value}'` +
+      `Unexpected token '${this.current_token().value}'` +
       (expected ? `, Expected '${expectedTypeMsg}'` : "");
 
     const msg = [title, "", left_slice + right_slice, marker].join("\n");

@@ -1,36 +1,7 @@
-import { Tokenizer, TokenType } from "@/lib/tokenizer";
-import { assert } from "@/lib/utils";
+import { Tokenizer } from "@/lib/tokenizer";
 
 export type t_expr<name extends string = string> = {
   name: name;
-};
-
-const primary_bp = 0;
-const additive_bp = 1;
-const multipli_bp = 2;
-
-export const BP_TABLE: Partial<Record<TokenType, number>> = {
-  NumberLiteral: primary_bp,
-  StringLiteral: primary_bp,
-  Identifier: primary_bp,
-
-  Plus: additive_bp,
-  Times: multipli_bp,
-};
-
-export const NUD_HANDLER: Partial<
-  Record<TokenType, (tokenizer: Tokenizer) => t_expr>
-> = {
-  NumberLiteral: parse_primary_expr,
-  StringLiteral: parse_primary_expr,
-  Identifier: parse_primary_expr,
-};
-
-export const LED_HANDLER: Partial<
-  Record<TokenType, (tokenizer: Tokenizer, left: t_expr, bp: number) => t_expr>
-> = {
-  Plus: binary_expr,
-  Times: binary_expr,
 };
 
 type t_primary_expr = t_expr<
@@ -39,7 +10,7 @@ type t_primary_expr = t_expr<
   value: string;
 };
 function parse_primary_expr(tokenizer: Tokenizer): t_primary_expr {
-  const token = tokenizer.peek();
+  const token = tokenizer.current_token();
 
   switch (token.name) {
     case "NumberLiteral":
@@ -58,28 +29,17 @@ function parse_primary_expr(tokenizer: Tokenizer): t_primary_expr {
   }
 }
 
+// helper type for defining and return type of binary parser
 type t_binary_expr = t_expr<"BinaryExpr"> & {
   left: t_expr;
   operator: string;
   right: t_expr;
 };
-
-function binary_expr(
-  tokenizer: Tokenizer,
-  left: t_expr,
-  bp: number,
-): t_binary_expr {
-  const lookahead = tokenizer.peek();
-
-  const operatorToken = tokenizer.eat(lookahead.name);
-  const right = parse_expr(tokenizer, bp);
-
-  return {
-    name: "BinaryExpr",
-    left: left,
-    operator: operatorToken.name,
-    right: right,
-  };
+/** @ts-expect-error not being used rn */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function is_binary_expr(value: t_expr): value is t_binary_expr {
+  const binary_expr_name: t_binary_expr["name"] = "BinaryExpr";
+  return value.name === binary_expr_name;
 }
 
 /* Orders Of Prescedence
@@ -93,27 +53,42 @@ function binary_expr(
  * PrimaryExpr
  */
 
-export function parse_expr(tokenizer: Tokenizer, bp: number): t_expr {
-  const nud_token = tokenizer.peek();
+export function parse_additive_expr(tokenizer: Tokenizer): t_binary_expr {
+  let left = parse_multiplicative_expr(tokenizer) as unknown as t_binary_expr;
 
-  const nud_fn = NUD_HANDLER[nud_token.name];
-  assert(!!nud_fn, tokenizer.ERR_SYNTAX("expr;").message);
+  while (["Plus", "Dash"].includes(tokenizer.current_token().name)) {
+    const operator = tokenizer.eat(tokenizer.current_token().name).name;
+    const right = parse_multiplicative_expr(tokenizer);
 
-  let left = nud_fn(tokenizer);
-
-  if (tokenizer.peek().name === "Semicolon") {
-    return left;
-  }
-
-  let next_bp: number;
-  while ((next_bp = BP_TABLE[tokenizer.peek().name] ?? 0) > bp) {
-    const led_token = tokenizer.peek();
-
-    const led_fn = LED_HANDLER[led_token.name];
-    assert(!!led_fn, tokenizer.ERR_SYNTAX("operator-token").message);
-
-    left = led_fn(tokenizer, left, next_bp);
+    left = {
+      name: "BinaryExpr",
+      left,
+      operator,
+      right,
+    };
   }
 
   return left;
+}
+
+export function parse_multiplicative_expr(tokenizer: Tokenizer): t_binary_expr {
+  let left = parse_primary_expr(tokenizer) as unknown as t_binary_expr;
+
+  while (["Times", "Slash"].includes(tokenizer.current_token().name)) {
+    const operator = tokenizer.eat(tokenizer.current_token().name).name;
+    const right = parse_primary_expr(tokenizer);
+
+    left = {
+      name: "BinaryExpr",
+      left,
+      operator,
+      right,
+    };
+  }
+
+  return left;
+}
+
+export function parse_expr(tokenizer: Tokenizer): t_expr {
+  return parse_additive_expr(tokenizer);
 }

@@ -12,14 +12,12 @@ function parse(code: string) {
     return body;
   } finally {
     try {
-      console.log("debug");
-      console.log(tokenizer._eatDebug());
-      console.log(tokenizer._eatDebug());
-      console.log(tokenizer._eatDebug());
-      console.log(tokenizer._eatDebug());
-      console.log(tokenizer._eatDebug());
+      console.debug("debug");
+      while (tokenizer.has_token()) {
+        console.debug(tokenizer.eat(tokenizer.current_token().name));
+      }
     } catch {
-      console.log("errrr");
+      console.debug("errrr");
     }
   }
 }

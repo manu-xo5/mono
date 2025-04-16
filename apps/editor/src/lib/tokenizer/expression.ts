@@ -31,7 +31,7 @@ export const createExpr = (tokenizer: Tokenizer) => {
   */
 
   const PrimaryExpression = (): ExpressionNode => {
-    const token = tokenizer.peek();
+    const token = tokenizer.current_token();
 
     if (token == null) throw new EofError("Expression");
 
@@ -50,7 +50,7 @@ export const createExpr = (tokenizer: Tokenizer) => {
     if ("Symbol" === token.name) {
       const symbol = tokenizer.eat("Symbol");
 
-      const lookahead = tokenizer.peek();
+      const lookahead = tokenizer.current_token();
 
       if (!lookahead) {
         // eof as symbol | variable
@@ -86,7 +86,7 @@ export const createExpr = (tokenizer: Tokenizer) => {
   function CallExpr(symbol: TokenNode): FunctionCallNode {
     assertNodeToBe(symbol, "Symbol");
 
-    const openParan = tokenizer.peek();
+    const openParan = tokenizer.current_token();
 
     assertNodeToBe(openParan, "Paran");
     assertNodeValue(openParan, "(");
@@ -94,7 +94,7 @@ export const createExpr = (tokenizer: Tokenizer) => {
 
     const args: TokenNode[] = [];
 
-    const closeParan = tokenizer.peek();
+    const closeParan = tokenizer.current_token();
 
     assertNodeToBe(closeParan, "Paran");
     assertNodeValue(closeParan, ")");
@@ -119,7 +119,7 @@ export const createExpr = (tokenizer: Tokenizer) => {
 
     tokenizer.eat("Dot");
     const access = tokenizer.eat("Symbol");
-    const maybePropertyOrMethod = tokenizer.peek();
+    const maybePropertyOrMethod = tokenizer.current_token();
 
     const expr: DotOpNode = {
       name: "DotOperationExpr",
@@ -141,7 +141,7 @@ export const createExpr = (tokenizer: Tokenizer) => {
       expr.accessType = "method";
     }
 
-    const lookahead = tokenizer.peek();
+    const lookahead = tokenizer.current_token();
     if (lookahead && lookahead.name === "Dot") {
       return DotOpExpr(expr);
     }
@@ -156,7 +156,7 @@ export const createExpr = (tokenizer: Tokenizer) => {
   function Expression(): ExpressionNode {
     const left = PrimaryExpression();
 
-    const maybeOperator = tokenizer.peek();
+    const maybeOperator = tokenizer.current_token();
     if (maybeOperator == null) {
       return left;
     }
