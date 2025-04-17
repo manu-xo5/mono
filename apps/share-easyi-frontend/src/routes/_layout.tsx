@@ -1,5 +1,5 @@
 import { PageNavbar } from "@/components/page-header.js";
-import { initUser, useUserStore } from "@/lib/user-store/index.js";
+import { ensureUser, useUserStore } from "@/lib/user-store/index.js";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { getNameFromStorage } from "./welcome/-index-module.js";
 
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_layout")({
       });
     }
 
-    await initUser(displayName);
+    await ensureUser(displayName);
   },
   component: IndexLayout,
 });

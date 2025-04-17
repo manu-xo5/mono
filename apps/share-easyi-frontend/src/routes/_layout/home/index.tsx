@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input.js";
 import { Label } from "@/components/ui/label.js";
 import { useUserStore } from "@/lib/user-store/index.js";
 import { createFileRoute } from "@tanstack/react-router";
+import { Peer } from "peerjs";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_layout/home/")({
@@ -13,31 +14,19 @@ function HomePage() {
   const [otherPeerId, setOtherPeerId] = useState("");
 
   useEffect(() => {
-    if (!peer) return;
-
-    peer.on("connection", (conn) => {
-      conn.on("data", (data) => {
-        // Will print 'hi!'
-        console.log("other's msg:", data);
-      });
-    });
-
-    return () => {
-      peer.disconnect();
-    };
-  }, [peer]);
-
-  useEffect(() => {
     if (otherPeerId == "") return;
     if (peer == null) return;
 
+    console.log("isopen", peer.open);
     const conn = peer.connect(otherPeerId);
+    console.log("conn", conn);
 
     conn.on("open", () => {
       const data = "hi!";
       console.log("my msg:", data);
       conn.send(data);
     });
+
   }, [peer, otherPeerId]);
 
   return (
@@ -48,8 +37,6 @@ function HomePage() {
         onKeyUp={(ev) => {
           if (ev.key !== "Enter") return;
           ev.preventDefault();
-
-          console.log("other peer id", ev.currentTarget.value);
           setOtherPeerId(ev.currentTarget.value);
         }}
         placeholder="xxxx-xxxx-xxxx-xxxx"

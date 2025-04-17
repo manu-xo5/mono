@@ -11,6 +11,7 @@ export const Route = createFileRoute("/_layout/discover/")({
     fetch("http://localhost:5000")
       .then((res) => res.json())
       .then((res) => res.ids),
+
   component: WelcomePage,
 });
 
