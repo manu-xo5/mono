@@ -1,19 +1,67 @@
 import { Separator } from "@/components/ui/separator.js";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
 import { ShareIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu.js";
+import { Link } from "@tanstack/react-router";
+import { Button } from "./ui/button.js";
 
 type Props = {
   title: string;
+  user: {
+    peerId: string;
+    displayName: string;
+  };
 };
-export function PageHeader({ title }: Props) {
+export function PageNavbar({ title, user }: Props) {
   return (
-    <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <ShareIcon className="size-4" />
+        <Link to="/home/">
+          <h1 className="ml-2 text-base font-medium">{title}</h1>
+        </Link>
+
         <Separator
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <h1 className="text-base font-medium">{title}</h1>
+
+        <Button asChild variant="ghost">
+          <Link className="text-base font-medium" to="/discover/">
+            Discover
+          </Link>
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Avatar className="ml-auto">
+              <AvatarImage src="https://github.com/shadcn.png" />
+              <AvatarFallback>{user.displayName}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" sideOffset={10}>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-xs"
+              onClick={() => {
+                navigator.clipboard.writeText(user.peerId);
+              }}
+            >
+              Peer ID: {user.peerId.substring(0, 10).concat("...")}
+            </DropdownMenuItem>
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Log out</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

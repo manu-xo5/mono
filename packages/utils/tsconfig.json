@@ -1,24 +1,19 @@
 {
   "extends": "@workspace/typescript-config/base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "lib": [
-      "es2024",
-      "DOM",
-      "DOM.Iterable"
-    ],
     "baseUrl": ".",
+    "lib": ["es2024"],
     "paths": {
-      "@/*": [
+      "@workspace/ui/*": [
         "./src/*"
       ]
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx"
+    "./src/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }

@@ -27,23 +27,24 @@ function response(body, init) {
  */
 async function handlers(req) {
   if (req.method === "GET") {
-    const query = new URL(req.url).searchParams;
-    const offer = ids.get(query.get("pin"));
-
-    return response({ offer });
+    return response({ ids });
   } else if (req.method === "POST") {
-    const newPin = createPin();
     const body = JSON.parse(await req.text());
 
-    ids.push(newPin);
+    if (!("peerId" in body) || !body.peerId) {
+      return response({ error: "invalid peerId" }, { status: 400 });
+    }
 
-    return response({
-      pin: newPin,
-    });
+    if (!("displayName" in body) || !body.displayName) {
+      return response({ error: "invalid displayName" }, { status: 400 });
+    }
+
+    const { peerId, displayName } = body;
+    ids.push({ peerId, displayName });
+
+    return response({ data: body });
   } else {
-    return response({
-      message: "method not allowed",
-    });
+    return response({ message: "method not allowed" });
   }
 }
 

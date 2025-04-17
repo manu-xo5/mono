@@ -11,11 +11,20 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as LayoutImport } from './routes/_layout'
 import { Route as IndexImport } from './routes/index'
 import { Route as WelcomeIndexImport } from './routes/welcome/index'
-import { Route as HomeIndexImport } from './routes/home/index'
+import { Route as LayoutDirectImport } from './routes/_layout/direct'
+import { Route as LayoutHomeIndexImport } from './routes/_layout/home/index'
+import { Route as LayoutDiscoverIndexImport } from './routes/_layout/discover/index'
+import { Route as LayoutDirectUserIdImport } from './routes/_layout/direct/$userId'
 
 // Create/Update Routes
+
+const LayoutRoute = LayoutImport.update({
+  id: '/_layout',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
@@ -29,10 +38,28 @@ const WelcomeIndexRoute = WelcomeIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const HomeIndexRoute = HomeIndexImport.update({
+const LayoutDirectRoute = LayoutDirectImport.update({
+  id: '/direct',
+  path: '/direct',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutHomeIndexRoute = LayoutHomeIndexImport.update({
   id: '/home/',
   path: '/home/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutDiscoverIndexRoute = LayoutDiscoverIndexImport.update({
+  id: '/discover/',
+  path: '/discover/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutDirectUserIdRoute = LayoutDirectUserIdImport.update({
+  id: '/$userId',
+  path: '/$userId',
+  getParentRoute: () => LayoutDirectRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -46,12 +73,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/home/': {
-      id: '/home/'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof HomeIndexImport
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof LayoutImport
       parentRoute: typeof rootRoute
+    }
+    '/_layout/direct': {
+      id: '/_layout/direct'
+      path: '/direct'
+      fullPath: '/direct'
+      preLoaderRoute: typeof LayoutDirectImport
+      parentRoute: typeof LayoutImport
     }
     '/welcome/': {
       id: '/welcome/'
@@ -60,48 +94,130 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WelcomeIndexImport
       parentRoute: typeof rootRoute
     }
+    '/_layout/direct/$userId': {
+      id: '/_layout/direct/$userId'
+      path: '/$userId'
+      fullPath: '/direct/$userId'
+      preLoaderRoute: typeof LayoutDirectUserIdImport
+      parentRoute: typeof LayoutDirectImport
+    }
+    '/_layout/discover/': {
+      id: '/_layout/discover/'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof LayoutDiscoverIndexImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/home/': {
+      id: '/_layout/home/'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof LayoutHomeIndexImport
+      parentRoute: typeof LayoutImport
+    }
   }
 }
 
 // Create and export the route tree
 
+interface LayoutDirectRouteChildren {
+  LayoutDirectUserIdRoute: typeof LayoutDirectUserIdRoute
+}
+
+const LayoutDirectRouteChildren: LayoutDirectRouteChildren = {
+  LayoutDirectUserIdRoute: LayoutDirectUserIdRoute,
+}
+
+const LayoutDirectRouteWithChildren = LayoutDirectRoute._addFileChildren(
+  LayoutDirectRouteChildren,
+)
+
+interface LayoutRouteChildren {
+  LayoutDirectRoute: typeof LayoutDirectRouteWithChildren
+  LayoutDiscoverIndexRoute: typeof LayoutDiscoverIndexRoute
+  LayoutHomeIndexRoute: typeof LayoutHomeIndexRoute
+}
+
+const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutDirectRoute: LayoutDirectRouteWithChildren,
+  LayoutDiscoverIndexRoute: LayoutDiscoverIndexRoute,
+  LayoutHomeIndexRoute: LayoutHomeIndexRoute,
+}
+
+const LayoutRouteWithChildren =
+  LayoutRoute._addFileChildren(LayoutRouteChildren)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/home': typeof HomeIndexRoute
+  '': typeof LayoutRouteWithChildren
+  '/direct': typeof LayoutDirectRouteWithChildren
   '/welcome': typeof WelcomeIndexRoute
+  '/direct/$userId': typeof LayoutDirectUserIdRoute
+  '/discover': typeof LayoutDiscoverIndexRoute
+  '/home': typeof LayoutHomeIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/home': typeof HomeIndexRoute
+  '': typeof LayoutRouteWithChildren
+  '/direct': typeof LayoutDirectRouteWithChildren
   '/welcome': typeof WelcomeIndexRoute
+  '/direct/$userId': typeof LayoutDirectUserIdRoute
+  '/discover': typeof LayoutDiscoverIndexRoute
+  '/home': typeof LayoutHomeIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/home/': typeof HomeIndexRoute
+  '/_layout': typeof LayoutRouteWithChildren
+  '/_layout/direct': typeof LayoutDirectRouteWithChildren
   '/welcome/': typeof WelcomeIndexRoute
+  '/_layout/direct/$userId': typeof LayoutDirectUserIdRoute
+  '/_layout/discover/': typeof LayoutDiscoverIndexRoute
+  '/_layout/home/': typeof LayoutHomeIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/home' | '/welcome'
+  fullPaths:
+    | '/'
+    | ''
+    | '/direct'
+    | '/welcome'
+    | '/direct/$userId'
+    | '/discover'
+    | '/home'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/home' | '/welcome'
-  id: '__root__' | '/' | '/home/' | '/welcome/'
+  to:
+    | '/'
+    | ''
+    | '/direct'
+    | '/welcome'
+    | '/direct/$userId'
+    | '/discover'
+    | '/home'
+  id:
+    | '__root__'
+    | '/'
+    | '/_layout'
+    | '/_layout/direct'
+    | '/welcome/'
+    | '/_layout/direct/$userId'
+    | '/_layout/discover/'
+    | '/_layout/home/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  HomeIndexRoute: typeof HomeIndexRoute
+  LayoutRoute: typeof LayoutRouteWithChildren
   WelcomeIndexRoute: typeof WelcomeIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  HomeIndexRoute: HomeIndexRoute,
+  LayoutRoute: LayoutRouteWithChildren,
   WelcomeIndexRoute: WelcomeIndexRoute,
 }
 
@@ -116,18 +232,42 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/home/",
+        "/_layout",
         "/welcome/"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/home/": {
-      "filePath": "home/index.tsx"
+    "/_layout": {
+      "filePath": "_layout.tsx",
+      "children": [
+        "/_layout/direct",
+        "/_layout/discover/",
+        "/_layout/home/"
+      ]
+    },
+    "/_layout/direct": {
+      "filePath": "_layout/direct.tsx",
+      "parent": "/_layout",
+      "children": [
+        "/_layout/direct/$userId"
+      ]
     },
     "/welcome/": {
       "filePath": "welcome/index.tsx"
+    },
+    "/_layout/direct/$userId": {
+      "filePath": "_layout/direct/$userId.tsx",
+      "parent": "/_layout/direct"
+    },
+    "/_layout/discover/": {
+      "filePath": "_layout/discover/index.tsx",
+      "parent": "/_layout"
+    },
+    "/_layout/home/": {
+      "filePath": "_layout/home/index.tsx",
+      "parent": "/_layout"
     }
   }
 }
