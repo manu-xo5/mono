@@ -21,7 +21,7 @@ type Props = {
 };
 export function PageNavbar({ title, user }: Props) {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b">
+    <header className="flex h-nav fixed z-10 top-0 w-full shrink-0 items-center gap-2 border-b bg-muted">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <ShareIcon className="size-4" />
         <Link to="/home/">
@@ -35,7 +35,13 @@ export function PageNavbar({ title, user }: Props) {
 
         <Button asChild variant="ghost">
           <Link className="text-base font-medium" to="/discover/">
-            Discover
+            Discover People
+          </Link>
+        </Button>
+
+        <Button asChild variant="ghost">
+          <Link className="text-base font-medium" to="/test-call/">
+            Test Call
           </Link>
         </Button>
 

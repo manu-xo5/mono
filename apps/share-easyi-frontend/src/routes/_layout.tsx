@@ -1,5 +1,12 @@
+import { IncomingCallDialog } from "@/components/incoming-call-dialog.js";
 import { PageNavbar } from "@/components/page-header.js";
-import { ensureUser, useUserStore } from "@/lib/user-store/index.js";
+import { Dialog } from "@/components/ui/dialog.js";
+import {
+  answerCall,
+  endCall,
+  ensureUser,
+  useUserStore
+} from "@/lib/user-store/index.js";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { getNameFromStorage } from "./welcome/-index-module.js";
 
@@ -19,7 +26,8 @@ export const Route = createFileRoute("/_layout")({
 });
 
 function IndexLayout() {
-  const { peer, displayName } = useUserStore();
+  const { peer, displayName, ...user } = useUserStore();
+  const navigate = Route.useNavigate();
 
   return (
     <>
@@ -31,6 +39,21 @@ function IndexLayout() {
         }}
       />
       <Outlet />
+
+      <Dialog open={user.status === "incoming-call"}>
+        <IncomingCallDialog
+          onAnswer={() => {
+            answerCall();
+            navigate({
+              to: "/direct/anonymous/",
+              state: {
+                isAudience: true,
+              },
+            });
+          }}
+          onReject={() => endCall()}
+        />
+      </Dialog>
     </>
   );
 }

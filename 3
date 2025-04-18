@@ -1,0 +1,33 @@
+import { Button } from "@/components/ui/button.js";
+import { Icons } from "@/components/ui/icons.js";
+import { createFileRoute } from "@tanstack/react-router";
+import { renderToString } from "react-dom/server";
+import * as dataUrl from "@workspace/utils/data-url";
+import { ShareIcon } from "lucide-react";
+
+export const Route = createFileRoute("/direct/anonymous")({
+  component: RouteComponent,
+});
+
+const svgUrl = dataUrl.fromSvgString(renderToString(<ShareIcon />));
+
+function RouteComponent() {
+  console.log({ svgUrl });
+  return (
+    <div
+      style={{
+        display: "none",
+        background: `url(${svgUrl})!important`,
+      }}
+      className="h-svh bg-muted grid place-items-center"
+    >
+      <div className="rounded-md outline-[10px] outline-red-600 aspect-video w-[80vw] bg-primary-foreground">
+        <div className="">
+          <Button size="icon">
+            <Icons.Chat />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

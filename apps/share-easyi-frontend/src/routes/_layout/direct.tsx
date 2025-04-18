@@ -6,8 +6,8 @@ export const Route = createFileRoute("/_layout/direct")({
 
 function RouteComponent() {
   return (
-    <div>
-      <aside className="">Hello "/_layout/direct"!</aside>
+    <div className="grid grid-cols-[auto_1fr] bg-primary-foreground">
+      <aside className=""></aside>
 
       <Outlet />
     </div>
