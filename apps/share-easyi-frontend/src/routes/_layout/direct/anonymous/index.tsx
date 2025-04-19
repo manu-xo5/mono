@@ -5,7 +5,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import * as dataUrl from "@workspace/utils/data-url";
 import { useEffect, useState } from "react";
 import { renderToString } from "react-dom/server";
-import { getScreenCaptureStream } from "./-module.js";
+import { getScreenCaptureStream } from "@/lib/utils.js";
 
 const svgUrl = dataUrl.fromSvgString(
   renderToString(

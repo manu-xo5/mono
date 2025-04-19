@@ -1,8 +1,15 @@
-import { create } from "zustand";
-import { Peer, DataConnection, MediaConnection } from "peerjs";
-import { assign, createMachine, fromPromise, setup, spawnChild } from "xstate";
-import { useUserStore } from "./index.js";
 import { assert } from "@workspace/assert";
+import { DataConnection, MediaConnection } from "peerjs";
+import {
+  assign,
+  enqueueActions,
+  EventObject,
+  fromCallback,
+  fromPromise,
+  setup,
+} from "xstate";
+import { create } from "zustand";
+import { createDataConn, createMediaConn, waitForCallReply } from "./core.js";
 
 type UserCall = {
   status: string;
@@ -11,8 +18,6 @@ type UserCall = {
   stream: MediaStream | null;
 };
 
-type Events = { type: "makeCall"; otherPeerId: string };
-
 export const useUserCall = create<UserCall>()(() => ({
   status: "Standby",
   dataConn: null,
@@ -20,31 +25,138 @@ export const useUserCall = create<UserCall>()(() => ({
   stream: null,
 }));
 
-const createDataConn = fromPromise(
-  async ({ input }: { input: { otherPeerId: string } }) => {
-    console.log("createDataConn", input.otherPeerId);
-    return new Promise((res) => setTimeout(res, 500));
-    //const { peer } = useUserStore.getState();
-    //assert(peer != null, "TODO: Peer is null");
-    //
-    //const conn = peer.connect(input.otherPeerId);
-    //const { promise, reject, resolve } = Promise.withResolvers<void>();
-    //
-    //conn.on("open", () => resolve());
-    //conn.on("error", () => reject());
-    //conn.on("close", () => reject());
-    //
-    //await promise;
-    //return conn;
-  },
+type Events = { type: "makeCall"; otherPeerId: string } | { type: "endCall" };
+
+const createDataConn__ = fromPromise(
+  async ({ input }: { input: { otherPeerId: string } }) =>
+    createDataConn(input.otherPeerId),
 );
+
+const waitForCallReplyActor = fromCallback<
+  EventObject,
+  { dataConn: DataConnection | null }
+>(({ input, sendBack, receive }) => {
+  const abort = new AbortController();
+
+  const unsub = waitForCallReply({
+    callback: sendBack,
+    signal: abort.signal,
+    dataConn: input.dataConn,
+  });
+
+  receive((event) => {
+    if (event.type === "cancel") {
+      abort.abort();
+    }
+  });
+
+  return unsub;
+});
+
+const connectMediaConn = fromPromise(
+  async ({ input }: { input: { otherPeerId: string } }) =>
+    createMediaConn(input.otherPeerId),
+);
+
+const requestCallActor = setup({
+  types: {
+    context: {} as {
+      otherPeerId: string;
+      dataConn: DataConnection | null;
+      mediaConn: MediaConnection | null;
+    },
+    input: {} as { otherPeerId: string },
+    output: {} as
+      | { dataConn: DataConnection; mediaConn: MediaConnection }
+      | { dataConn: null; mediaConn: null },
+  },
+  actors: {
+    createDataConn__,
+    waitForCallReply: waitForCallReplyActor,
+    connectMediaConn,
+  },
+}).createMachine({
+  context: ({ input }) => ({
+    otherPeerId: input.otherPeerId,
+    dataConn: null,
+    mediaConn: null,
+  }),
+  output: ({ context }) => {
+    if (!context.dataConn || !context.mediaConn) {
+      return {
+        dataConn: null,
+        mediaConn: null,
+      };
+    }
+    return {
+      dataConn: context.dataConn,
+      mediaConn: context.mediaConn,
+    };
+  },
+  initial: "connecting_data_conn",
+  states: {
+    connecting_data_conn: {
+      invoke: {
+        src: "createDataConn__",
+        input: ({ context }) => ({ otherPeerId: context.otherPeerId }),
+        onDone: {
+          target: "waitingForReply",
+          actions: assign({
+            dataConn: ({ event }) => event.output,
+          }),
+        },
+        onError: {
+          target: "failed",
+          actions: [
+            enqueueActions(({ enqueue, context }) => {
+              const dataConn = context.dataConn;
+
+              enqueue(() => {
+                if (dataConn?.open) {
+                  dataConn.close();
+                }
+              });
+            }),
+          ],
+        },
+      },
+    },
+    waitingForReply: {
+      invoke: {
+        src: "waitForCallReply",
+        input: ({ context }) => ({ dataConn: context.dataConn }),
+        on: {
+          accepted: "connecting_media_conn",
+          rejected: "failed",
+          error: "failed",
+        },
+      },
+    },
+    connecting_media_conn: {
+      invoke: {
+        src: "connectMediaConn",
+        input: ({ context }) => ({ otherPeerId: context.otherPeerId }),
+        onDone: "success",
+        onError: "failed",
+      },
+    },
+    success: {
+      type: "final",
+    },
+    failed: {
+      type: "final",
+    },
+  },
+});
 
 export const callMachine = setup({
   types: {
     context: {} as UserCall,
     events: {} as Events,
   },
-  actors: { createDataConn },
+  actors: {
+    requestCallActor,
+  },
 }).createMachine({
   context: {
     dataConn: null,
@@ -56,94 +168,36 @@ export const callMachine = setup({
     STANDBY: {
       on: {
         makeCall: {
+          target: "REQUEST_CALL",
+        },
+      },
+    },
+    REQUEST_CALL: {
+      invoke: {
+        src: "requestCallActor",
+        input: ({ event }) => {
+          assert(event.type === "makeCall", "erorrr12221");
+          return {
+            otherPeerId: event.otherPeerId,
+          };
+        },
+        onDone: {
+          target: "ON_CALL",
           actions: ({ event }) =>
-            spawnChild(createDataConn, {
-              input: { otherPeerId: event.otherPeerId },
+            assign({
+              dataConn: event.output.dataConn,
+              mediaConn: event.output.mediaConn,
             }),
         },
+        onError: "STANDBY",
+      },
+    },
+
+    ON_CALL: {
+      entry: () => console.log("on call, busy"),
+      on: {
+        endCall: { target: "STANDBY" },
       },
     },
   },
 });
-
-/*
- *  id: "(call_machine)",
-  context: {
-    dataConn: null,
-    mediaConn: null,
-    stream: null,
-  } as UserCall,
-  initial: "Standby",
-  states: {
-    Standby: {
-      on: {
-        makeCall: {
-          target: "WaitForCallReply",
-        },
-        gettingCall: {
-          target: "IncomingCall",
-        },
-      },
-    },
-    WaitForCallReply: {
-      invoke: {
-        src: "createDataConn",
-        input: (x) => (),
-      },
-      on: {
-        // the receiver failed or timedout
-        failed: {
-          target: "Standby",
-        },
-        cancel: {
-          target: "Standby",
-        },
-        rejected: {
-          target: "Standby",
-        },
-        accepted: {
-          target: "OnCall",
-        },
-      },
-    },
-    IncomingCall: {
-      on: {
-        timedout: {
-          target: "Standby",
-        },
-        reject: {
-          target: "Standby",
-        },
-        canceled: {
-          target: "Standby",
-        },
-        accept: {
-          target: "WaitForCallStream",
-        },
-      },
-    },
-    WaitForCallStream: {
-      on: {
-        // the caller failed or timedout
-        failed: {
-          target: "Standby",
-        },
-        stream: {
-          target: "OnCall",
-        },
-      },
-    },
-    OnCall: {
-      on: {
-        end: {
-          target: "Standby",
-        },
-        failed: {
-          target: "Standby",
-        },
-      },
-    },
-  },
-
- *
- */

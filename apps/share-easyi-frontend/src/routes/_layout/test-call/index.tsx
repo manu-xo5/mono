@@ -26,6 +26,13 @@ function RouteComponent() {
         />
       </div>
       <p>{String(state.value)}</p>
+      <Button
+        disabled={state.value !== "ON_CALL"}
+        variant="destructive"
+        onClick={() => send({ type: "endCall" })}
+      >
+        End
+      </Button>
     </PageContainer>
   );
 }
