@@ -3,78 +3,83 @@ import { useUserStore } from "./index.js";
 import { DataConnection } from "peerjs";
 import { getScreenCaptureStream } from "../utils.js";
 
-export const createDataConn = async (otherPeerId: string) => {
+type CreateDataConnArg = {
+  otherPeerId: string;
+  signal: AbortSignal;
+};
+export const createDataConn = async ({
+  otherPeerId,
+  signal,
+}: CreateDataConnArg) => {
   const { peer } = useUserStore.getState();
   assert(peer != null, "TODO: Peer is null");
 
   const conn = peer.connect(otherPeerId);
   const { promise, reject, resolve } = Promise.withResolvers<void>();
 
-  conn.on("open", () => resolve());
-  conn.on("error", () => reject());
-  conn.on("close", () => reject());
+  const handleResolve = () => resolve();
+  const handleReject = () => reject();
 
-  await promise;
+  conn.on("open", handleResolve);
+  conn.on("error", handleReject);
+  conn.on("close", handleReject);
+  signal.addEventListener("abort", handleReject);
+
+  const id = setTimeout(() => reject(), 2000);
+
+  await promise.finally(() => {
+    signal.removeEventListener("abort", handleReject);
+    conn.off("error", handleReject);
+    conn.off("close", handleReject);
+
+    clearTimeout(id);
+  });
+
   return conn;
 };
 
 type WaitForCallReplyArg = {
-  dataConn: DataConnection | null;
-  callback(event: { type: string }): void;
+  conn: DataConnection | null;
   signal: AbortSignal;
 };
 
-export const waitForCallReply = ({
-  dataConn,
-  callback,
+export const waitForCallReply = async ({
+  conn,
   signal,
 }: WaitForCallReplyArg) => {
-  if (!dataConn || !dataConn.open) {
-    callback({ type: "error" });
-    return;
-  }
+  assert(conn != null && conn.open, "Peer not connected");
 
-  function handleError() {
-    callback({ type: "error" });
-  }
+  const { promise, resolve, reject } = Promise.withResolvers<string>();
 
-  function cleanup() {
-    dataConn?.off("error", handleError);
-    dataConn?.off("data", handleData);
-  }
+  const handleError = () => reject();
+  const handleData = (data: unknown) => {
+    if (!isCallAction(data)) return;
 
-  function handleData(data: unknown) {
-    if (!data || typeof data !== "object") return;
-    if (!("type" in data)) return;
-    if (!("action" in data)) return;
-
-    if (data.type === "call") {
-      if (data.action === "accepted") {
-        callback({ type: "accepted" });
-      } else if (data.action === "rejected") {
-        callback({ type: "rejected" });
-      }
+    if (data.action === "accepted") {
+      resolve("accepted");
     }
-  }
 
-  dataConn.on("error", handleError);
-  dataConn.on("data", handleData);
+    if (data.action === "rejected") {
+      resolve("rejected");
+    }
+  };
+  const handleCancel = () => 
 
-  dataConn.send({
+  conn.on("data", handleData);
+  conn.on("error", handleError);
+
+  conn.send({
     type: "call",
     action: "request",
   });
 
-  signal.addEventListener("abort", () => {
-    dataConn.send({
-      type: "call",
-      action: "cancel-request",
-    });
+  signal.addEventListener("abort", handleError);
 
-    cleanup();
+  return await promise.finally(() => {
+    conn?.off("error", handleError);
+    conn?.off("data", handleData);
+    signal.removeEventListener("abort", handleError);
   });
-
-  return cleanup;
 };
 
 export const createMediaConn = async (otherPeerId: string) => {
@@ -88,3 +93,12 @@ export const createMediaConn = async (otherPeerId: string) => {
 
   return call;
 };
+
+function isCallAction(data: unknown): data is { type: "call"; action: string } {
+  if (!data || typeof data !== "object") return false;
+  if (!("action" in data)) return false;
+  if (!("type" in data)) return false;
+  if (data.type !== "call") return false;
+
+  return true;
+}
