@@ -1,17 +1,18 @@
 import { assert } from "@workspace/assert";
 import { DataConnection } from "peerjs";
+import { from, fromEvent, of, throwError } from "rxjs";
 import {
   filter,
-  fromEvent,
   map,
-  race,
   switchMap,
+  raceWith,
   take,
   tap,
-  throwError,
-  timeout
-} from "rxjs";
+  timeout,
+} from "rxjs/operators";
 import { useUserStore } from "./index.js";
+import { getScreenCaptureStream } from "../utils.js";
+import { isCallAction } from "./core.js";
 
 const createError = (msg: string) => throwError(() => Error(msg));
 
@@ -31,14 +32,16 @@ export const createDataConn$ = (otherPeerId: string, signal: AbortSignal) => {
   );
 
   const open$ = fromEvent(conn, "open").pipe(
+    raceWith(abort$, error$),
     timeout({
       each: 2000,
       with: () => createError("Call Failed"),
     }),
     map(() => conn),
+    take(1),
   );
 
-  return race(abort$, error$, open$).pipe(take(1));
+  return open$;
 };
 
 export const waitForCallReply$ = (
@@ -49,22 +52,25 @@ export const waitForCallReply$ = (
     switchMap(() => createError("Call Cancelled")),
   );
   const data$ = fromEvent(conn, "data").pipe(
+    raceWith(abort$),
     timeout({
       each: 10_000,
       with: () => createError("Not answered"),
     }),
     filter(isCallAction),
     map((x) => x.action),
+    take(1),
   );
 
-  return race(abort$, data$).pipe(take(1));
+  return data$;
 };
 
-function isCallAction(data: unknown): data is { type: "call"; action: string } {
-  if (!data || typeof data !== "object") return false;
-  if (!("action" in data)) return false;
-  if (!("type" in data)) return false;
-  if (data.type !== "call") return false;
+export function createMediaConn(otherPeerId: string) {
+  const { peer } = useUserStore.getState();
+  assert(peer != null, "Peer is null");
 
-  return true;
+  return from(getScreenCaptureStream()).pipe(
+    filter((x) => x != null),
+    switchMap((stream) => of(peer.call(otherPeerId, stream))),
+  );
 }

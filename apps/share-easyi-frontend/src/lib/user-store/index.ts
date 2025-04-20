@@ -1,6 +1,8 @@
 import { DataConnection, MediaConnection, Peer } from "peerjs";
 import { create } from "zustand";
 import { assert } from "@workspace/assert";
+import { filter, fromEvent, tap } from "rxjs";
+import { isCallAction } from "./core.js";
 
 export type UserStore = {
   peer: Peer | null;
@@ -160,19 +162,23 @@ export const endCall = async () => {
 const handleMessage = (conn: DataConnection) => {
   console.log("opened");
   conn.addListener("close", () => console.log("closed"));
-  conn.addListener("data", (data) => {
-    console.log("data", data);
 
-    if (
-      data &&
-      typeof data === "object" &&
-      "type" in data &&
-      data.type === "call" &&
-      "action" in data
-    ) {
-      if (data.action === "request") {
-        useUserStore.setState({ status: "incoming-call", callDataConn: conn });
-      }
-    }
-  });
+  fromEvent(conn, "data")
+    .pipe(
+      tap((data) => console.log("data in:", data, "\n")),
+      filter(isCallAction),
+      tap((action) => {
+        if (action.action === "request") {
+          useUserStore.setState({
+            status: "incoming-call",
+            callDataConn: conn,
+          });
+        } else if (action.action === "cancel-request") {
+          useUserStore.setState({
+            status: "standby",
+          });
+        }
+      }),
+    )
+    .subscribe();
 };

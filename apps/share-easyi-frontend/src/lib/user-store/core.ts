@@ -95,7 +95,7 @@ export const createMediaConn = async (otherPeerId: string) => {
   return call;
 };
 
-function isCallAction(data: unknown): data is { type: "call"; action: string } {
+export function isCallAction(data: unknown): data is { type: "call"; action: string } {
   if (!data || typeof data !== "object") return false;
   if (!("action" in data)) return false;
   if (!("type" in data)) return false;

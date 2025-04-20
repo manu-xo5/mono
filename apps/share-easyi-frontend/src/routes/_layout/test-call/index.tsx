@@ -6,16 +6,26 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog.js";
 import { Icons } from "@/components/ui/icons.js";
 import { Input } from "@/components/ui/input.js";
 import {
   createDataConn$,
+  createMediaConn,
   waitForCallReply$,
 } from "@/lib/user-store/reactive.js";
 import { createFileRoute } from "@tanstack/react-router";
-import { catchError, delay, of, switchMap, tap } from "rxjs";
+import {
+  catchError,
+  defer,
+  delay,
+  firstValueFrom,
+  of,
+  switchMap,
+  tap,
+  throwError,
+} from "rxjs";
 import { create } from "zustand";
 
 export const Route = createFileRoute("/_layout/test-call/")({
@@ -26,10 +36,6 @@ type State =
   | {
       value: "idle";
       abort?: undefined;
-    }
-  | {
-      value: "creating-connection";
-      abort(): void;
     }
   | {
       value: "waiting-for-answer";
@@ -51,73 +57,86 @@ type State =
 const useCall = create<State>()(() => ({
   value: "idle",
 }));
-const setStateCallIdle = () =>
-  useCall.setState({
-    value: "idle",
-    abort: undefined,
-  });
-const setStateCallError = () =>
-  useCall.setState({
-    value: "call-failed",
-    abort: undefined,
-  });
-const setStateCallWaiting = (abort: AbortController) =>
+
+const callFail$ = of(null).pipe(
+  tap(() => useCall.setState({ value: "call-failed", abort: undefined })),
+  delay(2000),
+  tap(() => useCall.setState({ value: "idle", abort: undefined })),
+);
+
+// TODO: can add more verbose states like: user-busy, user-offline, user-not-answered
+const callEnded$ = of(null).pipe(
+  tap(() => useCall.setState({ abort: undefined, value: "call-ended" })),
+  delay(500),
+  tap(() => useCall.setState({ value: "idle", abort: undefined })),
+);
+
+async function makeCall(otherPeerId: string) {
+  const { value } = useCall.getState();
+  if (value !== "idle") return;
+  const abort = new AbortController();
+
   useCall.setState({
     value: "waiting-for-answer",
     abort: () => abort.abort(),
   });
 
-const makeCall = (otherPeerId: string) => {
-  const { value } = useCall.getState();
-  if (value !== "idle") return;
-
-  const abort = new AbortController();
-  useCall.setState({
-    value: "creating-connection",
-    abort: () => abort.abort(),
-  });
-
-  const callFail$ = of(null).pipe(
-    tap(() => setStateCallError()),
-    delay(2000),
-    tap(() => setStateCallIdle()),
-  );
-  const callEnded$ = of(null).pipe(
-    tap(() => useCall.setState({ abort: undefined, value: "call-ended" })),
-    delay(500),
-    tap(() => setStateCallIdle()),
+  const conn = await firstValueFrom(
+    createDataConn$(otherPeerId, abort.signal).pipe(
+      catchError(() => callFail$),
+    ),
   );
 
-  of(null)
+  of(conn)
     .pipe(
-      switchMap(() => createDataConn$(otherPeerId, abort.signal)),
-      tap((conn) => conn.send({ type: "call", action: "request" })),
-      tap(() => setStateCallWaiting(abort)),
-
-      switchMap((conn) => waitForCallReply$(conn, abort.signal)),
-      tap((conn) => {
-        if (conn === "accepted") {
+      switchMap((conn) =>
+        defer(() => {
+          if (conn == null) {
+            return throwError(() => Error("Call Failed"));
+          } else {
+            const $ = waitForCallReply$(conn, abort.signal);
+            conn.send({ type: "call", action: "request" });
+            return $;
+          }
+        }),
+      ),
+      switchMap((response) => {
+        if (response === "accepted") {
           useCall.setState({
             value: "on_call",
             abort: undefined,
           });
+
+          return createMediaConn(otherPeerId);
         } else {
           useCall.setState({
             value: "idle",
             abort: undefined,
           });
+
+          return throwError(() => Error("Call Cancelled"));
         }
       }),
       catchError((err) => {
+        console.log("Err_Msg:-", err && err.message ? err.message : "No Msg");
+
         if ("message" in err && err.message === "Call Cancelled") {
+          if (conn?.open) {
+            conn.send({
+              type: "call",
+              action: "cancel-request",
+            });
+          }
           return callEnded$;
         } else {
           return callFail$;
         }
       }),
     )
-    .subscribe();
-};
+    .subscribe({
+      complete: () => console.log("completed"),
+    });
+}
 
 const endCall = () => {
   const { abort, value } = useCall.getState();
@@ -152,7 +171,6 @@ function RouteComponent() {
 
       <Dialog
         open={[
-          "creating-connection",
           "call-failed",
           "waiting-for-answer",
           "on_call",
@@ -177,7 +195,6 @@ type Props2 = {
 function OutgoingCallDialog({ onEndCall, status }: Props2) {
   const title = (() => {
     const stateToTitle = {
-      "creating-connection": "Connecting...",
       "waiting-for-answer": "Ringing...",
       on_call: "00:27",
       "call-failed": "Call Failed",
