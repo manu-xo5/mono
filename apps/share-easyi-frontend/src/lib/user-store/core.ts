@@ -7,6 +7,7 @@ type CreateDataConnArg = {
   otherPeerId: string;
   signal: AbortSignal;
 };
+
 export const createDataConn = async ({
   otherPeerId,
   signal,
@@ -54,26 +55,26 @@ export const waitForCallReply = async ({
   const handleError = () => reject();
   const handleData = (data: unknown) => {
     if (!isCallAction(data)) return;
+    if (!["accepted", "rejected"].includes(data.action)) return;
 
-    if (data.action === "accepted") {
-      resolve("accepted");
-    }
+    resolve(data.action);
+  };
 
-    if (data.action === "rejected") {
-      resolve("rejected");
+  const handleCancel = () => {
+    if (conn.open) {
+      conn.send({ type: "call", action: "cancel-request" });
+      resolve("cancelled");
     }
   };
-  const handleCancel = () => 
 
+  conn.once("error", handleError);
   conn.on("data", handleData);
-  conn.on("error", handleError);
+  signal.addEventListener("abort", handleCancel);
 
   conn.send({
     type: "call",
     action: "request",
   });
-
-  signal.addEventListener("abort", handleError);
 
   return await promise.finally(() => {
     conn?.off("error", handleError);

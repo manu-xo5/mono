@@ -159,6 +159,7 @@ export const endCall = async () => {
 
 const handleMessage = (conn: DataConnection) => {
   console.log("opened");
+  conn.addListener("close", () => console.log("closed"));
   conn.addListener("data", (data) => {
     console.log("data", data);
 
