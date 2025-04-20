@@ -1,19 +1,17 @@
 import { assert } from "@workspace/assert";
+import { DataConnection } from "peerjs";
 import {
   filter,
   fromEvent,
   map,
-  mergeMap,
-  of,
   race,
   switchMap,
   take,
   tap,
   throwError,
-  timeout,
+  timeout
 } from "rxjs";
 import { useUserStore } from "./index.js";
-import { DataConnection } from "peerjs";
 
 const createError = (msg: string) => throwError(() => Error(msg));
 
@@ -25,7 +23,7 @@ export const createDataConn$ = (otherPeerId: string, signal: AbortSignal) => {
 
   const abort$ = fromEvent(signal, "abort").pipe(
     tap(() => conn.close()),
-    switchMap(() => createError("Call Canceled")),
+    switchMap(() => createError("Call Cancelled")),
   );
 
   const error$ = fromEvent(conn, "error").pipe(
@@ -33,14 +31,11 @@ export const createDataConn$ = (otherPeerId: string, signal: AbortSignal) => {
   );
 
   const open$ = fromEvent(conn, "open").pipe(
-    timeout(2000),
-    mergeMap(() => {
-      if (!conn.open) {
-        return createError("Call Failed");
-      } else {
-        return of(conn);
-      }
+    timeout({
+      each: 2000,
+      with: () => createError("Call Failed"),
     }),
+    map(() => conn),
   );
 
   return race(abort$, error$, open$).pipe(take(1));
@@ -50,10 +45,8 @@ export const waitForCallReply$ = (
   conn: DataConnection,
   signal: AbortSignal,
 ) => {
-  assert(conn.open, "Connection Failed");
-
   const abort$ = fromEvent(signal, "abort").pipe(
-    switchMap(() => createError("Call Canceled")),
+    switchMap(() => createError("Call Cancelled")),
   );
   const data$ = fromEvent(conn, "data").pipe(
     timeout({
