@@ -1,14 +1,7 @@
 import { Separator } from "@/components/ui/separator.js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
 import { ShareIcon } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu.js";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from "@/components/ui/dropdown-menu.js";
 import { Link } from "@tanstack/react-router";
 import { Button } from "./ui/button.js";
 
@@ -33,14 +26,26 @@ export function PageNavbar({ title, user }: Props) {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
 
-        <Button asChild variant="ghost">
-          <Link className="text-base font-medium" to="/discover/">
+        <Button
+          asChild
+          variant="ghost"
+        >
+          <Link
+            className="text-base font-medium"
+            to="/discover/"
+          >
             Discover People
           </Link>
         </Button>
 
-        <Button asChild variant="ghost">
-          <Link className="text-base font-medium" to="/test-call/">
+        <Button
+          asChild
+          variant="ghost"
+        >
+          <Link
+            className="text-base font-medium"
+            to="/test-call/"
+          >
             Test Call
           </Link>
         </Button>
@@ -53,8 +58,11 @@ export function PageNavbar({ title, user }: Props) {
             </Avatar>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" sideOffset={10}>
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuContent
+            align="end"
+            sideOffset={10}
+          >
+            <DropdownMenuLabel>{user.displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-xs"

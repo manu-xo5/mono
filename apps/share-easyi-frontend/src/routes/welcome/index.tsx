@@ -1,23 +1,18 @@
 import { Button } from "@/components/ui/button.js";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card.js";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.js";
 import { Input } from "@/components/ui/input.js";
 import { Label } from "@/components/ui/label.js";
-import { cn } from "@/lib/utils.js";
+import { cn, createPeerId } from "@/lib/utils.js";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { getNameFromStorage } from "./-index-module.js";
+import { getPeerIdFromStorage } from "./-index-module.js";
 
 export const Route = createFileRoute("/welcome/")({
-  component: WelcomePage,
+  component: WelcomePage
 });
 
 function WelcomePage({ className, ...props }: React.ComponentProps<"div">) {
-  const [name, setName] = useState(() => getNameFromStorage());
+  const [name, setName] = useState(() => getPeerIdFromStorage());
   const navigate = useNavigate();
 
   return (
@@ -36,9 +31,9 @@ function WelcomePage({ className, ...props }: React.ComponentProps<"div">) {
                 ev.preventDefault();
                 navigate({
                   to: "/home",
-                  replace: true,
+                  replace: true
                 });
-                localStorage.setItem("share-easyi:display-name", name);
+                localStorage.setItem("share-easyi:peer-id", createPeerId(name));
               }}
             >
               <div className="grid gap-6">
@@ -54,7 +49,10 @@ function WelcomePage({ className, ...props }: React.ComponentProps<"div">) {
                   />
                 </div>
 
-                <Button type="submit" className="w-full">
+                <Button
+                  type="submit"
+                  className="w-full"
+                >
                   Login
                 </Button>
               </div>
@@ -63,8 +61,7 @@ function WelcomePage({ className, ...props }: React.ComponentProps<"div">) {
         </Card>
 
         <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-          Placeholder Note: By clicking continue, you agree to our{" "}
-          <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+          Placeholder Note: By clicking continue, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
         </div>
       </div>
     </main>

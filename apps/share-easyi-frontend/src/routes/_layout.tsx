@@ -1,28 +1,23 @@
 import { IncomingCallDialog } from "@/components/incoming-call-dialog.js";
 import { PageNavbar } from "@/components/page-header.js";
 import { Dialog } from "@/components/ui/dialog.js";
-import {
-  answerCall,
-  endCall,
-  ensureUser,
-  useUserStore
-} from "@/lib/user-store/index.js";
+import { answerCall, endCall, ensureUser, useUserStore } from "@/lib/user-store/index.js";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { getNameFromStorage } from "./welcome/-index-module.js";
+import { getPeerIdFromStorage } from "./welcome/-index-module.js";
 
 export const Route = createFileRoute("/_layout")({
   beforeLoad: async () => {
     console.log("hello before load");
-    const displayName = getNameFromStorage();
-    if (!displayName) {
+    const peerId = getPeerIdFromStorage();
+    if (!peerId) {
       throw redirect({
-        to: "/welcome/",
+        to: "/welcome/"
       });
     }
 
-    await ensureUser(displayName);
+    await ensureUser(peerId);
   },
-  component: IndexLayout,
+  component: IndexLayout
 });
 
 function IndexLayout() {
@@ -35,7 +30,7 @@ function IndexLayout() {
         title="Home"
         user={{
           displayName,
-          peerId: peer ? peer.id : "",
+          peerId: peer ? peer.id : ""
         }}
       />
       <Outlet />
@@ -47,8 +42,8 @@ function IndexLayout() {
             navigate({
               to: "/direct/anonymous/",
               state: {
-                isAudience: true,
-              },
+                isAudience: true
+              }
             });
           }}
           onReject={() => endCall()}

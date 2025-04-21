@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button.js";
 import { Icons } from "@/components/ui/icons.js";
 import { endCall, makeCall, useUserStore } from "@/lib/user-store/index.js";
+import { getScreenCaptureStream } from "@/lib/utils.js";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import * as dataUrl from "@workspace/utils/data-url";
 import { useEffect, useState } from "react";
 import { renderToString } from "react-dom/server";
-import { getScreenCaptureStream } from "@/lib/utils.js";
 
 const svgUrl = dataUrl.fromSvgString(
   renderToString(
@@ -23,26 +23,25 @@ const svgUrl = dataUrl.fromSvgString(
     >
       <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
       <polyline points="16 6 12 2 8 6" />
-      <line x1="12" x2="12" y1="2" y2="15" />
-    </svg>,
-  ),
+      <line
+        x1="12"
+        x2="12"
+        y1="2"
+        y2="15"
+      />
+    </svg>
+  )
 );
 
 export const Route = createFileRoute("/_layout/direct/anonymous/")({
   loader: ({ location }) => {
-    const peerId =
-      "peerId" in location.state &&
-      typeof location.state.peerId === "string" &&
-      location.state.peerId;
+    const peerId = "peerId" in location.state && typeof location.state.peerId === "string" && location.state.peerId;
 
     if (peerId) {
       return { otherPeerId: peerId };
     }
 
-    const isAudience =
-      "isAudience" in location.state &&
-      typeof location.state.isAudience === "boolean" &&
-      location.state.isAudience;
+    const isAudience = "isAudience" in location.state && typeof location.state.isAudience === "boolean" && location.state.isAudience;
 
     if (isAudience) {
       return { isAudience };
@@ -50,10 +49,10 @@ export const Route = createFileRoute("/_layout/direct/anonymous/")({
 
     throw redirect({
       to: "/home/",
-      replace: true,
+      replace: true
     });
   },
-  component: RouteComponent,
+  component: RouteComponent
 });
 
 function RouteComponent() {
@@ -98,7 +97,7 @@ function RouteComponent() {
     <div
       style={{
         backgroundImage: `url("${svgUrl}")`,
-        backgroundSize: "200px",
+        backgroundSize: "200px"
       }}
       className="h-svh grid bg-primary-foreground place-items-center "
     >
@@ -117,7 +116,11 @@ function RouteComponent() {
           }}
         />
         <div className="absolute z-10 bottom-3 left-1/2 -translate-x-1/2 p-2 flex gap-3">
-          <Button size="icon" variant="secondary" className="size-12">
+          <Button
+            size="icon"
+            variant="secondary"
+            className="size-12"
+          >
             <Icons.Mic />
           </Button>
 
@@ -128,10 +131,18 @@ function RouteComponent() {
             onClick={async () => {
               // todo: change /home to /direct later
               console.log(callDataConn);
-              if (callDataConn) {
-                await callDataConn.send("end-call:" + peer?.id);
-              }
-              endCall();
+              callDataConn?.send({
+                type: "call",
+                action: "ended",
+                meta: "end-call:" + peer?.id
+              });
+
+              call?.close();
+              callDataConn?.close();
+              useUserStore.setState({
+                status: "standby",
+                callDataConn: null
+              });
             }}
           >
             <Icons.CallReject />
