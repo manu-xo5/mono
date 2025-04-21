@@ -9,7 +9,7 @@ export async function getScreenCaptureStream() {
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
-      audio: false,
+      audio: false
     });
 
     return stream;
@@ -19,15 +19,18 @@ export async function getScreenCaptureStream() {
   }
 }
 
-export function addListener(
-  target: EventTarget,
-  type: string,
-  handler: <T>(event: T) => any,
-  options?: AddEventListenerOptions,
-): () => void {
+export function addListener(target: EventTarget, type: string, handler: <T>(event: T) => any, options?: AddEventListenerOptions): () => void {
   target.addEventListener(type, handler, options);
 
   return () => {
     target.removeEventListener(type, handler);
   };
+}
+
+export function createPeerId(displayName: string) {
+  return "share-easyi" + crypto.randomUUID() + displayName;
+}
+export function getDisplayNameFromPeerId(peerId: string) {
+  const prefixLen = "share-easyi".length + 36;
+  return peerId.substring(prefixLen);
 }
