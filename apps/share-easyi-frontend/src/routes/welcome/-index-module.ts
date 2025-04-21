@@ -1,6 +1,6 @@
-export function getNameFromStorage() {
+export function getPeerIdFromStorage() {
   try {
-    const name = localStorage.getItem("share-easyi:display-name") ?? "";
+    const name = localStorage.getItem("share-easyi:peer-id") ?? "";
     return name;
   } catch {
     return "";

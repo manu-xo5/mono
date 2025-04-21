@@ -22,10 +22,9 @@ export const waitForCallReply$ = (conn: DataConnection) => {
     filter(isCallAction),
     map((x) => x.action),
     timeout({
-      each: 10_000,
+      first: 10_000,
       with: () => of("timeout")
     }),
-    take(1)
   );
 
   return data$;

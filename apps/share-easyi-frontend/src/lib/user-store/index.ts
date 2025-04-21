@@ -2,6 +2,7 @@ import { DataConnection, MediaConnection, Peer } from "peerjs";
 import { filter, fromEvent, tap } from "rxjs";
 import { create } from "zustand";
 import { makeCall as makeCallImpl } from "./call.js";
+import { createPeerId, getDisplayNameFromPeerId } from "../utils.js";
 
 export function isCallAction(data: unknown): data is { type: "call"; action: string } {
   if (!data || typeof data !== "object") return false;
@@ -18,7 +19,7 @@ export type UserStore = {
   call: MediaConnection | null;
   displayName: string;
   callDataConn?: DataConnection | null;
-  status: "standby" | "incoming-call" | "outgoing-call" | "on-call" | "call-failed";
+  status: "standby" | "incoming-call" | "outgoing-call" | "on-call" | "call-failed" | "call-rejected";
 };
 
 export const useUserStore = create<UserStore>()(() => ({
@@ -31,22 +32,19 @@ export const useUserStore = create<UserStore>()(() => ({
 }));
 
 let initPromise: Promise<void> | undefined = undefined;
-export const initUser = async (displayName: string) => {
+export const initUser = async (peerId: string) => {
   if (initPromise) return initPromise;
-  const peer = new Peer();
+  const peer = new Peer(peerId);
   const { promise, resolve, reject } = Promise.withResolvers<void>();
   initPromise = promise;
+
+  // handle maybe loggedin somewhere
+  // peer.addListener("close", () => console.log("lund"));
 
   peer.addListener("open", () => resolve());
   peer.addListener("error", () => reject());
   peer.addListener("disconnected", () => peer.reconnect());
-  peer.addListener("call", (call) => {
-    call.addListener("close", () => {
-      useUserStore.setState({ call: null });
-    });
-    useUserStore.setState({ call });
-    call.answer();
-  });
+  peer.addListener("call", (call) => call.answer());
   peer.addListener("connection", handleMessage);
 
   // todo: remove later
@@ -57,14 +55,14 @@ export const initUser = async (displayName: string) => {
   });
 
   await initPromise;
-  useUserStore.setState({ displayName, peer });
+  useUserStore.setState({ displayName: getDisplayNameFromPeerId(peerId), peer });
   initPromise = undefined;
 };
 
-export const ensureUser = async (displayName: string) => {
+export const ensureUser = async (peerId: string) => {
   if (useUserStore.getState().peer != null) return;
 
-  await initUser(displayName);
+  await initUser(peerId);
 };
 
 // todo: handle error gracefully
@@ -91,7 +89,7 @@ export const endCall = async () => {
   if (callDataConn) {
     callDataConn.send({
       type: "call",
-      action: "ended"
+      action: "rejected"
     });
 
     useUserStore.setState({ status: "standby", callDataConn: null });
@@ -101,13 +99,13 @@ export const endCall = async () => {
 const handleMessage = (conn: DataConnection) => {
   console.log("opened");
   conn.addListener("close", () => console.log("closed"));
-  conn.addListener("data", (data) => console.log("imperative:ondata():", data));
 
   fromEvent(conn, "data")
     .pipe(
       tap((data) => console.log("data in:", data, "\n")),
       filter(isCallAction),
       tap((action) => {
+        useUserStore.setState({ callDataConn: conn });
         if (action.action === "request") {
           useUserStore.setState({
             status: "incoming-call",
@@ -123,7 +121,7 @@ const handleMessage = (conn: DataConnection) => {
     .subscribe();
 };
 
-export function dispatchCallStatus(status: "standby" | "on-call" | "incoming-call" | "outgoing-call" | "call-failed") {
+export function dispatchCallStatus(status: "standby" | "on-call" | "incoming-call" | "outgoing-call" | "call-failed" | "call-rejected") {
   useUserStore.setState({
     status
   });
