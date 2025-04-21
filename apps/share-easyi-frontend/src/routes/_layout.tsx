@@ -1,7 +1,7 @@
 import { IncomingCallDialog } from "@/components/incoming-call-dialog.js";
 import { PageNavbar } from "@/components/page-header.js";
 import { Dialog } from "@/components/ui/dialog.js";
-import { answerCall, endCall, ensureUser, useUserStore } from "@/lib/user-store/index.js";
+import { ensureUser, handleCallRequest$, useUserStore } from "@/lib/user-store/index.js";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { getPeerIdFromStorage } from "./welcome/-index-module.js";
 
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_layout")({
 
 function IndexLayout() {
   const { peer, displayName, ...user } = useUserStore();
-  const navigate = Route.useNavigate();
+  //const navigate = Route.useNavigate();
 
   return (
     <>
@@ -38,15 +38,15 @@ function IndexLayout() {
       <Dialog open={user.status === "incoming-call"}>
         <IncomingCallDialog
           onAnswer={() => {
-            answerCall();
-            navigate({
-              to: "/direct/anonymous/",
-              state: {
-                isAudience: true
-              }
-            });
+            handleCallRequest$.next("accept");
+            //navigate({
+            //  to: "/direct/anonymous/",
+            //  state: {
+            //    isAudience: true
+            //  }
+            //});
           }}
-          onReject={() => endCall()}
+          onReject={() => handleCallRequest$.next("reject")}
         />
       </Dialog>
     </>

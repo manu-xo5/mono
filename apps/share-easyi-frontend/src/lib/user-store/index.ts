@@ -1,8 +1,9 @@
 import { DataConnection, MediaConnection, Peer } from "peerjs";
-import { filter, fromEvent, tap } from "rxjs";
+import { filter, fromEvent, map, merge, mergeWith, Subject, takeUntil, tap, timer } from "rxjs";
+
 import { create } from "zustand";
+import { getDisplayNameFromPeerId, ofType } from "../utils.js";
 import { makeCall as makeCallImpl } from "./call.js";
-import { createPeerId, getDisplayNameFromPeerId } from "../utils.js";
 
 export function isCallAction(data: unknown): data is { type: "call"; action: string } {
   if (!data || typeof data !== "object") return false;
@@ -65,60 +66,86 @@ export const ensureUser = async (peerId: string) => {
   await initUser(peerId);
 };
 
-// todo: handle error gracefully
-export const answerCall = async () => {
-  const { callDataConn } = useUserStore.getState();
+export const handleCallRequest$ = new Subject<string>();
 
-  if (callDataConn && callDataConn.open) {
-    callDataConn.send({
-      type: "call",
-      action: "accepted"
-    });
+handleCallRequest$.subscribe(callRequestReducer);
+function callRequestReducer(action: string) {
+  console.log("handleCallRequest");
+  const { callDataConn: conn } = useUserStore.getState();
 
-    useUserStore.setState({ status: "on-call" });
-  } else {
-    //todo: show notification to user
+  switch (action) {
+    case "accept": {
+      conn?.send({
+        type: "call",
+        action: "accepted"
+      });
+      break;
+    }
+    case "reject": {
+      useUserStore.setState({
+        callDataConn: null,
+        status: "standby"
+      });
+
+      conn?.send({
+        type: "call",
+        action: "rejected"
+      });
+
+      conn?.close();
+      break;
+    }
+    case "miss": {
+      conn?.close();
+      console.log("miss call case;");
+      useUserStore.setState({
+        status: "standby",
+        callDataConn: null
+      });
+      break;
+    }
   }
-};
-
-export const endCall = async () => {
-  const { call, callDataConn } = useUserStore.getState();
-  if (call) {
-    call.close();
-  }
-  if (callDataConn) {
-    callDataConn.send({
-      type: "call",
-      action: "rejected"
-    });
-
-    useUserStore.setState({ status: "standby", callDataConn: null });
-  }
-};
+}
 
 const handleMessage = (conn: DataConnection) => {
-  console.log("opened");
-  conn.addListener("close", () => console.log("closed"));
-
-  fromEvent(conn, "data")
-    .pipe(
-      tap((data) => console.log("data in:", data, "\n")),
-      filter(isCallAction),
-      tap((action) => {
-        useUserStore.setState({ callDataConn: conn });
-        if (action.action === "request") {
-          useUserStore.setState({
-            status: "incoming-call",
-            callDataConn: conn
-          });
-        } else if (action.action === "cancel-request") {
-          useUserStore.setState({
-            status: "standby"
-          });
-        }
-      })
-    )
+  fromEvent(conn, "close")
+    .pipe(tap(() => console.log("closed")))
     .subscribe();
+
+  const callMessage$ = fromEvent(conn, "data").pipe(
+    tap((data) => console.log("data in:", data, "\n")),
+    filter(isCallAction),
+    map((action) => action.action)
+  );
+
+  const cancelRequest$ = callMessage$.pipe(
+    ofType("cancel-request"),
+    takeUntil(handleCallRequest$),
+    tap(() => handleCallRequest$.next("miss"))
+  );
+
+  const timeout$ = timer(5_000).pipe(
+    takeUntil(handleCallRequest$),
+    tap(() => handleCallRequest$.next("miss"))
+  );
+
+  const callRequest$ = callMessage$.pipe(
+    ofType("request"),
+    tap(() => {
+      useUserStore.setState({
+        status: "incoming-call",
+        callDataConn: conn
+      });
+    }),
+
+    takeUntil(handleCallRequest$.pipe(mergeWith(cancelRequest$, timeout$)))
+  );
+
+  callRequest$.subscribe({
+    complete: () => {
+      console.log("incoming-call-request: settled");
+    }
+  });
 };
 
 export function dispatchCallStatus(status: "standby" | "on-call" | "incoming-call" | "outgoing-call" | "call-failed" | "call-rejected") {

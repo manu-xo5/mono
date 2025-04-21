@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button.js";
 import { Icons } from "@/components/ui/icons.js";
-import { endCall, makeCall, useUserStore } from "@/lib/user-store/index.js";
+import { makeCall, useUserStore } from "@/lib/user-store/index.js";
 import { getScreenCaptureStream } from "@/lib/utils.js";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import * as dataUrl from "@workspace/utils/data-url";
