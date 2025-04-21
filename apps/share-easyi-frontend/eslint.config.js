@@ -1,30 +1,19 @@
-import js from "@eslint/js";
-import onlyWarn from "eslint-plugin-only-warn";
-import turboPlugin from "eslint-plugin-turbo";
+import globals from "globals";
 import tseslint from "typescript-eslint";
+import pluginReact from "eslint-plugin-react";
+import { defineConfig } from "eslint/config";
+import stylistic from "@stylistic/eslint-plugin";
 
-/**
- * A shared ESLint configuration for the repository.
- *
- * @type {import("eslint").Linter.Config}
- * */
-export const config = [
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
+export default defineConfig([
+  { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"], languageOptions: { globals: globals.browser } },
+  tseslint.configs.recommended,
+  pluginReact.configs.flat.recommended,
   {
     plugins: {
-      turbo: turboPlugin,
+      "@stylistic": stylistic
     },
     rules: {
-      "turbo/no-undeclared-env-vars": "warn",
-    },
-  },
-  {
-    plugins: {
-      onlyWarn,
-    },
-  },
-  {
-    ignores: ["dist/**"],
+      "newline-per-chained-call": "error"
+    }
   }
-];
+]);

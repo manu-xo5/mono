@@ -3,9 +3,7 @@ import { filter, fromEvent, tap } from "rxjs";
 import { create } from "zustand";
 import { makeCall as makeCallImpl } from "./call.js";
 
-export function isCallAction(
-  data: unknown,
-): data is { type: "call"; action: string } {
+export function isCallAction(data: unknown): data is { type: "call"; action: string } {
   if (!data || typeof data !== "object") return false;
   if (!("action" in data)) return false;
   if (!("type" in data)) return false;
@@ -20,12 +18,7 @@ export type UserStore = {
   call: MediaConnection | null;
   displayName: string;
   callDataConn?: DataConnection | null;
-  status:
-    | "standby"
-    | "incoming-call"
-    | "outgoing-call"
-    | "on-call"
-    | "call-failed";
+  status: "standby" | "incoming-call" | "outgoing-call" | "on-call" | "call-failed";
 };
 
 export const useUserStore = create<UserStore>()(() => ({
@@ -34,7 +27,7 @@ export const useUserStore = create<UserStore>()(() => ({
   callDataConn: null,
   call: null,
   displayName: "",
-  status: "standby",
+  status: "standby"
 }));
 
 let initPromise: Promise<void> | undefined = undefined;
@@ -81,7 +74,7 @@ export const answerCall = async () => {
   if (callDataConn && callDataConn.open) {
     callDataConn.send({
       type: "call",
-      action: "accepted",
+      action: "accepted"
     });
 
     useUserStore.setState({ status: "on-call" });
@@ -98,7 +91,7 @@ export const endCall = async () => {
   if (callDataConn) {
     callDataConn.send({
       type: "call",
-      action: "ended",
+      action: "ended"
     });
 
     useUserStore.setState({ status: "standby", callDataConn: null });
@@ -108,6 +101,7 @@ export const endCall = async () => {
 const handleMessage = (conn: DataConnection) => {
   console.log("opened");
   conn.addListener("close", () => console.log("closed"));
+  conn.addListener("data", (data) => console.log("imperative:ondata():", data));
 
   fromEvent(conn, "data")
     .pipe(
@@ -117,30 +111,22 @@ const handleMessage = (conn: DataConnection) => {
         if (action.action === "request") {
           useUserStore.setState({
             status: "incoming-call",
-            callDataConn: conn,
+            callDataConn: conn
           });
         } else if (action.action === "cancel-request") {
           useUserStore.setState({
-            status: "standby",
+            status: "standby"
           });
         }
-      }),
+      })
     )
     .subscribe();
 };
 
-export function dispatchCallStatus(
-  status:
-    | "standby"
-    | "on-call"
-    | "incoming-call"
-    | "outgoing-call"
-    | "call-failed",
-) {
+export function dispatchCallStatus(status: "standby" | "on-call" | "incoming-call" | "outgoing-call" | "call-failed") {
   useUserStore.setState({
-    status,
+    status
   });
 }
 
-export const makeCall = (_: unknown, otherPeerId: string) =>
-  makeCallImpl(otherPeerId);
+export const makeCall = (_: unknown, otherPeerId: string) => makeCallImpl(otherPeerId);

@@ -1,14 +1,5 @@
-    import { assert } from "@workspace/assert";
-import {
-  of,
-  tap,
-  switchMap,
-  defer,
-  throwError,
-  from,
-  catchError,
-  timer,
-} from "rxjs";
+import { assert } from "@workspace/assert";
+import { of, tap, switchMap, defer, throwError, from, catchError, timer } from "rxjs";
 import { getScreenCaptureStream } from "../utils.js";
 import { createDataConn } from "./reactive.js";
 import { dispatchCallStatus, useUserStore } from "./index.js";
@@ -21,32 +12,26 @@ export const makeCall = (otherPeerId: string) => {
   if (status === "standby") {
     const conn = peer.connect(otherPeerId);
 
-    const observable = of(null).pipe(
-      tap(() => dispatchCallStatus("outgoing-call")),
-
-      switchMap(() => createDataConn(conn)),
+    dispatchCallStatus("outgoing-call");
+    const observable = createDataConn(conn).pipe(
       switchMap(() =>
         defer(() => {
           const $ = waitForCallReply$(conn);
           conn.send({
             type: "call",
-            action: "request",
+            action: "request"
           });
           return $;
-        }),
+        })
       ),
 
       switchMap((reply) => {
-        console.log(reply, typeof reply);
-
-        throwError(() => "Call Failed");
-        return reply === "accepted"
-          ? of("accepted")
-          : reply === "timeout"
-            ? throwError(() => "The Person is not answering")
-            : reply === "timeout"
-              ? throwError(() => "The Person is busy")
-              : throwError(() => "The Person is busy");
+        return (
+          reply === "accepted" ? of("accepted")
+          : reply === "timeout" ? throwError(() => "The Person is not answering")
+          : reply === "timeout" ? throwError(() => "The Person is busy")
+          : throwError(() => "The Person is busy")
+        );
       }),
       switchMap(() => from(getScreenCaptureStream())),
       switchMap((stream) => {
@@ -62,7 +47,7 @@ export const makeCall = (otherPeerId: string) => {
 
         dispatchCallStatus("call-failed");
         return timer(3000).pipe(tap(() => dispatchCallStatus("standby")));
-      }),
+      })
     );
 
     return observable;
