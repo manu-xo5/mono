@@ -18,3 +18,16 @@ export async function getScreenCaptureStream() {
     return null;
   }
 }
+
+export function addListener(
+  target: EventTarget,
+  type: string,
+  handler: <T>(event: T) => any,
+  options?: AddEventListenerOptions,
+): () => void {
+  target.addEventListener(type, handler, options);
+
+  return () => {
+    target.removeEventListener(type, handler);
+  };
+}

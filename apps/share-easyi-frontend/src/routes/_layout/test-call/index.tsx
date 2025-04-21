@@ -1,31 +1,13 @@
 import { PageContainer } from "@/components/page-container.js";
 import { Avatar, AvatarImage } from "@/components/ui/avatar.js";
 import { Button } from "@/components/ui/button.js";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog.js";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog.js";
 import { Icons } from "@/components/ui/icons.js";
 import { Input } from "@/components/ui/input.js";
-import {
-  createDataConn$,
-  createMediaConn,
-  waitForCallReply$,
-} from "@/lib/user-store/reactive.js";
+import { makeCall, UserStore, useUserStore } from "@/lib/user-store/index.js";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  catchError,
-  defer,
-  delay,
-  firstValueFrom,
-  of,
-  switchMap,
-  tap,
-  throwError,
-} from "rxjs";
+import { useState } from "react";
+import { delay, of, take, tap, timer } from "rxjs";
 import { create } from "zustand";
 
 export const Route = createFileRoute("/_layout/test-call/")({
@@ -71,73 +53,6 @@ const callEnded$ = of(null).pipe(
   tap(() => useCall.setState({ value: "idle", abort: undefined })),
 );
 
-async function makeCall(otherPeerId: string) {
-  const { value } = useCall.getState();
-  if (value !== "idle") return;
-  const abort = new AbortController();
-
-  useCall.setState({
-    value: "waiting-for-answer",
-    abort: () => abort.abort(),
-  });
-
-  const conn = await firstValueFrom(
-    createDataConn$(otherPeerId, abort.signal).pipe(
-      catchError(() => callFail$),
-    ),
-  );
-
-  of(conn)
-    .pipe(
-      switchMap((conn) =>
-        defer(() => {
-          if (conn == null) {
-            return throwError(() => Error("Call Failed"));
-          } else {
-            const $ = waitForCallReply$(conn, abort.signal);
-            conn.send({ type: "call", action: "request" });
-            return $;
-          }
-        }),
-      ),
-      switchMap((response) => {
-        if (response === "accepted") {
-          useCall.setState({
-            value: "on_call",
-            abort: undefined,
-          });
-
-          return createMediaConn(otherPeerId);
-        } else {
-          useCall.setState({
-            value: "idle",
-            abort: undefined,
-          });
-
-          return throwError(() => Error("Call Cancelled"));
-        }
-      }),
-      catchError((err) => {
-        console.log("Err_Msg:-", err && err.message ? err.message : "No Msg");
-
-        if ("message" in err && err.message === "Call Cancelled") {
-          if (conn?.open) {
-            conn.send({
-              type: "call",
-              action: "cancel-request",
-            });
-          }
-          return callEnded$;
-        } else {
-          return callFail$;
-        }
-      }),
-    )
-    .subscribe({
-      complete: () => console.log("completed"),
-    });
-}
-
 const endCall = () => {
   const { abort, value } = useCall.getState();
 
@@ -148,7 +63,11 @@ const endCall = () => {
 };
 
 function RouteComponent() {
-  const state = useCall();
+  const { status } = useUserStore();
+  const [state, setState] = useState({
+    value: "idle" as string,
+    abort: undefined,
+  });
 
   return (
     <>
@@ -159,26 +78,37 @@ function RouteComponent() {
             onKeyUp={(ev) => {
               if (ev.key !== "Enter") return;
               const value = ev.currentTarget.value;
-              makeCall(value);
+              const x = makeCall(undefined, value);
+
+              x?.subscribe({
+                next: () => {
+                  console.log("should be idle");
+                },
+                error: (err) => {
+                  console.log(err.message);
+                  useUserStore.setState({ status: "call-faild" });
+
+                  timer(2000)
+                    .pipe(take(1))
+                    .subscribe(() => {
+                      useUserStore.setState({
+                        status: "standby",
+                      });
+                    });
+                },
+              });
             }}
             onChange={(ev) => {
               localStorage.setItem("abc", ev.currentTarget.value);
             }}
           />
         </div>
-        <p>{String(state.value)}</p>
+        <p>{String(status)}</p>
       </PageContainer>
 
-      <Dialog
-        open={[
-          "call-failed",
-          "waiting-for-answer",
-          "on_call",
-          "call-ended",
-        ].includes(state.value)}
-      >
+      <Dialog open={["call-failed", "waiting-for-answer", "on_call", "call-ended"].includes(state.value)}>
         <OutgoingCallDialog
-          status={state.value}
+          status={status}
           onEndCall={() => {
             endCall();
           }}
@@ -190,17 +120,17 @@ function RouteComponent() {
 
 type Props2 = {
   onEndCall?(): void;
-  status: State["value"];
+  status: UserStore["status"];
 };
 function OutgoingCallDialog({ onEndCall, status }: Props2) {
   const title = (() => {
     const stateToTitle = {
-      "waiting-for-answer": "Ringing...",
-      on_call: "00:27",
-      "call-failed": "Call Failed",
-      idle: "",
-      "call-ended": "Call Ended",
-    } satisfies Record<State["value"], string>;
+      "outgoing-call": "Ringing...",
+      "on-call": "00:27",
+      "call-faild": "Call Failed",
+      standby: "",
+      "incoming-call": "",
+    } satisfies Record<typeof status, string>;
 
     return stateToTitle[status];
   })();
@@ -214,20 +144,12 @@ function OutgoingCallDialog({ onEndCall, status }: Props2) {
 
       <div className="pt-3 pb-9">
         <Avatar className="size-18">
-          <AvatarImage
-            src={`https://ui-avatars.com/api/?name=${"Unknown"}&size=72`}
-          />
+          <AvatarImage src={`https://ui-avatars.com/api/?name=${"Unknown"}&size=72`} />
         </Avatar>
       </div>
 
       <div className="flex justify-center">
-        <Button
-          disabled={status === "call-failed"}
-          className="rounded-full size-12"
-          size="icon"
-          variant="destructive"
-          onClick={onEndCall}
-        >
+        <Button disabled={status === "call-faild"} className="rounded-full size-12" size="icon" variant="destructive" onClick={onEndCall}>
           <Icons.CallReject className="scale-x-[-1]" />
         </Button>
       </div>

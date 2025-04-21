@@ -1,24 +1,32 @@
 import { DataConnection, MediaConnection, Peer } from "peerjs";
-import { create } from "zustand";
-import { assert } from "@workspace/assert";
 import { filter, fromEvent, tap } from "rxjs";
-import { isCallAction } from "./core.js";
+import { create } from "zustand";
+import { makeCall as makeCallImpl } from "./call.js";
+
+export function isCallAction(
+  data: unknown,
+): data is { type: "call"; action: string } {
+  if (!data || typeof data !== "object") return false;
+  if (!("action" in data)) return false;
+  if (!("type" in data)) return false;
+  if (data.type !== "call") return false;
+
+  return true;
+}
 
 export type UserStore = {
   peer: Peer | null;
   conn: DataConnection | null;
   call: MediaConnection | null;
   displayName: string;
-} & (
-  | {
-      callDataConn: DataConnection;
-      status: "incoming-call" | "outgoing-call" | "on-call";
-    }
-  | {
-      callDataConn: null;
-      status: "standby";
-    }
-);
+  callDataConn?: DataConnection | null;
+  status:
+    | "standby"
+    | "incoming-call"
+    | "outgoing-call"
+    | "on-call"
+    | "call-failed";
+};
 
 export const useUserStore = create<UserStore>()(() => ({
   peer: null,
@@ -67,68 +75,6 @@ export const ensureUser = async (displayName: string) => {
 };
 
 // todo: handle error gracefully
-export const makeCall = async (
-  avDisplayStream: MediaStream,
-  otherPeerId: string,
-) => {
-  const { peer, status } = useUserStore.getState();
-  if (status !== "standby") return;
-
-  assert(!!peer && peer.open, "peer is null");
-
-  const dataConn = peer.connect(otherPeerId);
-
-  const { promise, resolve } = Promise.withResolvers<
-    "failed" | "accepted" | "rejected"
-  >();
-
-  dataConn.addListener("close", async () => {
-    useUserStore.setState({
-      call: null,
-      callDataConn: null,
-      status: "standby",
-    });
-    resolve("failed");
-  });
-
-  function handleCallAnswer(data: unknown) {
-    if (
-      data &&
-      typeof data === "object" &&
-      "type" in data &&
-      data.type === "call" &&
-      "action" in data
-    ) {
-      if (data.action === "accepted") {
-        assert(!!peer && peer.open, "peer is null");
-        const call = peer.call(otherPeerId, avDisplayStream);
-
-        useUserStore.setState({
-          call,
-          status: "outgoing-call",
-          callDataConn: dataConn,
-        });
-        resolve("accepted");
-      } else {
-        resolve("rejected");
-      }
-    }
-  }
-  dataConn.addListener("data", handleCallAnswer);
-
-  dataConn.addListener("open", async () => {
-    dataConn.send({
-      type: "call",
-      action: "request",
-    });
-    setTimeout(() => {
-      dataConn.removeListener("data", handleCallAnswer);
-    }, 1000);
-  });
-
-  return promise;
-};
-
 export const answerCall = async () => {
   const { callDataConn } = useUserStore.getState();
 
@@ -182,3 +128,19 @@ const handleMessage = (conn: DataConnection) => {
     )
     .subscribe();
 };
+
+export function dispatchCallStatus(
+  status:
+    | "standby"
+    | "on-call"
+    | "incoming-call"
+    | "outgoing-call"
+    | "call-failed",
+) {
+  useUserStore.setState({
+    status,
+  });
+}
+
+export const makeCall = (_: unknown, otherPeerId: string) =>
+  makeCallImpl(otherPeerId);
