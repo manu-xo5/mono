@@ -2,8 +2,14 @@ import { assert } from "@workspace/assert";
 import { DataConnection } from "peerjs";
 import { BehaviorSubject, catchError, defer, delay, EMPTY, exhaustMap, filter, finalize, from, of, raceWith, share, Subject, switchMap, tap, throwError, timeout, timer } from "rxjs";
 import { getScreenCaptureStream, ofType } from "../utils.js";
-import { dispatchCallStatus, useUserStore } from "./index.js";
+import { useUserStore } from "./index.js";
 import { createDataConn as waitForDataConn, waitForCallReply$ } from "./reactive.js";
+
+function dispatchCallStatus(status: "standby" | "on-call" | "incoming-call" | "outgoing-call" | "call-failed" | "call-rejected") {
+  useUserStore.setState({
+    status
+  });
+}
 
 export const callStatus$ = new BehaviorSubject<"standby" | "incoming-call" | "outgoing-call" | "on-call" | "call-rejected" | "call-failed">("standby");
 

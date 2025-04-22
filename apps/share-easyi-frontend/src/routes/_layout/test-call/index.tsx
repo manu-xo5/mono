@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Icons } from "@/components/ui/icons.js";
 import { Input } from "@/components/ui/input.js";
 import { useObservable } from "@/lib/rxjs-react/use-observable.js";
-import { callStatus$, makeCall$ } from "@/lib/user-store/call.js";
-import { dispatchCallStatus, makeCall, UserStore, useUserStore } from "@/lib/user-store/index.js";
+import { callStatus$ } from "@/lib/user-store/call.js";
+import { ensureUser, useUserStore } from "@/lib/user-store/index.js";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef } from "react";
 
@@ -27,7 +27,7 @@ function RouteComponent() {
             onKeyUp={(ev) => {
               if (ev.key !== "Enter") return;
               const value = ev.currentTarget.value;
-              makeCall$.next(value);
+              //makeCall$.next(value);
               //const call$ = makeCall(undefined, value);
               //
               //const sub = call$?.subscribe({
@@ -36,6 +36,32 @@ function RouteComponent() {
               //  }
               //});
               //endCallRef.current = () => sub?.unsubscribe();
+
+              const { peer } = useUserStore.getState();
+              if (!peer) {
+                console.error("Peer is null");
+                return;
+              }
+
+              const conn = peer.connect(value, {
+                metadata: { type: "call" }
+              });
+
+              const timerId = setTimeout(() => {
+                console.log("call-request: not answered");
+                conn.close();
+              }, 5000);
+
+              conn.on("data", (data) => {
+                console.log(data);
+                if (data === "accepted") {
+                  clearTimeout(timerId);
+                  console.log("call-request: accepted");
+                } else if (data === "rejected") {
+                  clearTimeout(timerId);
+                  console.log("call-request: rejected");
+                }
+              });
             }}
             onChange={(ev) => {
               localStorage.setItem("abc", ev.currentTarget.value);

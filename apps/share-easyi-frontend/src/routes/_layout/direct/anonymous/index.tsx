@@ -59,7 +59,7 @@ function RouteComponent() {
   const { otherPeerId, isAudience } = Route.useLoaderData();
   console.log("useLoader()", Route.useLoaderData());
   const peer = useUserStore((s) => s.peer);
-  const call = useUserStore((s) => s.call);
+  const call = useUserStore((s) => s.callMediaConn);
   const callDataConn = useUserStore((s) => s.callDataConn);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const navigate = Route.useNavigate();
