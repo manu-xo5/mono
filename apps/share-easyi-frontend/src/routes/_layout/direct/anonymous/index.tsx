@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button.js";
 import { Icons } from "@/components/ui/icons.js";
-import { makeCall, useUserStore } from "@/lib/user-store/index.js";
-import { getScreenCaptureStream } from "@/lib/utils.js";
+import { useStore } from "@/store/index.js";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import * as dataUrl from "@workspace/utils/data-url";
 import { useEffect, useState } from "react";
@@ -58,31 +57,18 @@ export const Route = createFileRoute("/_layout/direct/anonymous/")({
 function RouteComponent() {
   const { otherPeerId, isAudience } = Route.useLoaderData();
   console.log("useLoader()", Route.useLoaderData());
-  const peer = useUserStore((s) => s.peer);
-  const call = useUserStore((s) => s.callMediaConn);
-  const callDataConn = useUserStore((s) => s.callDataConn);
+  const peer = useStore((s) => s.peer);
+  const call = useStore((s) => s.callMediaConn);
+  const callDataConn = useStore((s) => s.callDataConn);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const navigate = Route.useNavigate();
 
   useEffect(() => {
     if (!peer || !peer.open) return;
     if (!otherPeerId) return;
 
-    let avDisplayStream: MediaStream | null = null;
-
     void (async function () {
-      avDisplayStream = await getScreenCaptureStream();
-
-      if (!avDisplayStream) return;
-
-      setLocalStream(avDisplayStream);
-      const response = await makeCall(avDisplayStream, otherPeerId);
-      console.log("Component response", response);
+      console.error("todo: not implemented");
     })();
-
-    return () => {
-      avDisplayStream?.getTracks().forEach((track) => track.stop());
-    };
   }, [otherPeerId, peer]);
 
   useEffect(() => {
@@ -139,7 +125,7 @@ function RouteComponent() {
 
               call?.close();
               callDataConn?.close();
-              useUserStore.setState({
+              useStore.setState({
                 status: "standby",
                 callDataConn: null
               });

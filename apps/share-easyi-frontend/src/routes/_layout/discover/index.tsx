@@ -1,6 +1,6 @@
 import { ProfilePreviewDialog } from "@/components/profile-preview-dialog.js";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog.js";
-import { useUserStore } from "@/lib/user-store/index.js";
+import { useStore } from "@/store/index.js";
 import { Avatar, AvatarImage } from "@/components/ui/avatar.js";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import * as random from "@workspace/utils/random";
@@ -23,7 +23,7 @@ function WelcomePage() {
     peerId: string;
   }[] = Route.useLoaderData();
 
-  const userPeerId = useUserStore((s) => s.peer?.id ?? "");
+  const userPeerId = useStore((s) => s.peer?.id ?? "");
   const router = useRouter();
 
   const randomCoords = allOnlineUsers

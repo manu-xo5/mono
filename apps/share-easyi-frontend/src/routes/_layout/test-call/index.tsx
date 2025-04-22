@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button.js";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog.js";
 import { Icons } from "@/components/ui/icons.js";
 import { Input } from "@/components/ui/input.js";
-import { useObservable } from "@/lib/rxjs-react/use-observable.js";
-import { callStatus$ } from "@/lib/user-store/call.js";
-import { ensureUser, useUserStore } from "@/lib/user-store/index.js";
+import { useStore } from "@/store/index.js";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef } from "react";
 
@@ -15,7 +13,7 @@ export const Route = createFileRoute("/_layout/test-call/")({
 });
 
 function RouteComponent() {
-  const { status } = useUserStore();
+  const { status } = useStore();
   const endCallRef = useRef(() => {});
 
   return (
@@ -37,7 +35,7 @@ function RouteComponent() {
               //});
               //endCallRef.current = () => sub?.unsubscribe();
 
-              const { peer } = useUserStore.getState();
+              const { peer } = useStore.getState();
               if (!peer) {
                 console.error("Peer is null");
                 return;
@@ -90,7 +88,7 @@ type Props2 = {
   onEndCall?(): void;
 };
 function OutgoingCallDialog({ onEndCall }: Props2) {
-  const callStatus = useObservable(callStatus$, "standby");
+  const callStatus = useStore((s) => s.status);
 
   const title = (() => {
     const stateToTitle = {

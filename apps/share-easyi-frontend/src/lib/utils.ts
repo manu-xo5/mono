@@ -35,5 +35,3 @@ export function getDisplayNameFromPeerId(peerId: string) {
   const prefixLen = "share-easyi".length + 36;
   return peerId.substring(prefixLen);
 }
-
-export const ofType = <T, const Value extends T>(y: Value) => filter<T, Value>((x): x is Value => x === y);

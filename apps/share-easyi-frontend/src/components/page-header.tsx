@@ -4,15 +4,14 @@ import { ShareIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from "@/components/ui/dropdown-menu.js";
 import { Link } from "@tanstack/react-router";
 import { Button } from "./ui/button.js";
+import { useStore } from "@/store/index.js";
 
-type Props = {
-  title: string;
-  user: {
-    peerId: string;
-    displayName: string;
-  };
-};
-export function PageNavbar({ title, user }: Props) {
+type Props = { title: string };
+
+export function PageNavbar({ title }: Props) {
+  const peerId = useStore((s) => s.peer?.id ?? "Default");
+  const displayName = useStore((s) => s.displayName);
+
   return (
     <header className="flex h-nav fixed z-10 top-0 w-full shrink-0 items-center gap-2 border-b bg-muted">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -54,7 +53,7 @@ export function PageNavbar({ title, user }: Props) {
           <DropdownMenuTrigger asChild>
             <Avatar className="ml-auto">
               <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>{user.displayName}</AvatarFallback>
+              <AvatarFallback>{displayName}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
 
@@ -62,15 +61,15 @@ export function PageNavbar({ title, user }: Props) {
             align="end"
             sideOffset={10}
           >
-            <DropdownMenuLabel>{user.displayName}</DropdownMenuLabel>
+            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-xs"
               onClick={() => {
-                navigator.clipboard.writeText(user.peerId);
+                navigator.clipboard.writeText(peerId);
               }}
             >
-              Peer ID: {user.peerId.substring(0, 10).concat("...")}
+              Peer ID: {peerId.substring(0, 10).concat("...")}
             </DropdownMenuItem>
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Log out</DropdownMenuItem>
