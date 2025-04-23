@@ -1,43 +1,44 @@
-import { IncomingCallDialog } from "@/components/incoming-call-dialog.js";
-import { PageNavbar } from "@/components/page-header.js";
-import { Dialog } from "@/components/ui/dialog.js";
-import { ensureUser, useStore } from "@/store/index.js";
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { getPeerIdFromStorage } from "./welcome/-index-module.js";
-import { dispatchCallAction } from "@/store/call-slice/index.js";
+import { IncomingCallDialog } from '@/components/incoming-call-dialog.js'
+import { PageNavbar } from '@/components/page-header.js'
+import { Dialog } from '@/components/ui/dialog.js'
+import { getPeerIdFromStorage } from '@/routes/welcome/-index-module.js'
+import { CallAction } from '@/store/call-slice/actions.js'
+import { ensureUser, useStore } from '@/store/index.js'
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 
-export const Route = createFileRoute("/_layout")({
+export const Route = createFileRoute('/_layout')({
   beforeLoad: async () => {
-    console.log("hello before load");
-    const peerId = getPeerIdFromStorage();
+    console.log('hello before load')
+    const peerId = getPeerIdFromStorage()
     if (!peerId) {
       throw redirect({
-        to: "/welcome/"
-      });
+        to: '/welcome/',
+      })
     }
 
-    await ensureUser(peerId);
+    await ensureUser(peerId)
   },
-  component: IndexLayout
-});
+  component: IndexLayout,
+})
 
 function IndexLayout() {
-  const callStatus = useStore((s) => s.callSlice.status);
-  //const navigate = Route.useNavigate();
+  const callStatus = useStore(s => s.callSlice.status)
+  console.log(callStatus)
+  // const navigate = Route.useNavigate();
 
   return (
     <>
       <PageNavbar title="Home" />
       <Outlet />
 
-      <Dialog open={callStatus === "incoming-call"}>
+      <Dialog open={callStatus === 'incoming-call'}>
         <IncomingCallDialog
           onAnswer={() => {
-            dispatchCallAction({ type: "ACCEPT_CALL" });
+            CallAction.acceptCall()
           }}
-          onReject={() => dispatchCallAction({ type: "REJECT_CALL" })}
+          onReject={() => CallAction.rejectCall()}
         />
       </Dialog>
     </>
-  );
+  )
 }
