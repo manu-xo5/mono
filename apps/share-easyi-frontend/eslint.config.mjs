@@ -3,13 +3,17 @@
 // import pluginReact from "eslint-plugin-react";
 // import { defineConfig } from "eslint/config";
 // import stylistic from "@stylistic/eslint-plugin";
-import antfu from "@antfu/eslint-config";
+import antfu from '@antfu/eslint-config'
 
 export default antfu({
   stylistic: {
     indent: 2,
-    quotes: "single"
+    quotes: 'single',
   },
-  typescript: true,
-  react: true
-});
+  typescript: {
+    overrides: {
+      'ts/consistent-type-definitions': ['error', 'type'],
+    },
+  },
+  react: true,
+})

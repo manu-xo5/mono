@@ -1,6 +1,8 @@
 import type { DataConnection } from 'peerjs'
+import { TimeoutError, timer } from '@/lib/utils.js'
 import { useStore } from '@/store/index.js'
-import { CallAction } from './actions.js'
+import { ResultAsync } from 'neverthrow'
+import { CallAction } from './actions/incoming-call.js'
 
 export function handleCallDataConn(conn: DataConnection) {
   const callSlice = useStore.getState().callSlice
@@ -17,4 +19,33 @@ export function handleCallDataConn(conn: DataConnection) {
       CallAction.receiveCall({ dataConn: conn })
     })
   }
+}
+
+export function getCallResponse(conn: DataConnection): ResultAsync<string, Error> {
+  const promise = new Promise<'accepted' | 'rejected'>((res, rej) => {
+    let isDone = false
+    const handleData = (data: unknown) => {
+      if (typeof data === 'string' && (data === 'accepted' || data === 'rejected')) {
+        if (isDone) {
+          return
+        }
+        isDone = true
+        conn.off('data', handleData)
+        res(data)
+      }
+    }
+
+    timer(5000).then(() => {
+      if (isDone) {
+        return
+      }
+      isDone = true
+      conn.off('data', handleData)
+      rej(new Error('Call Timeout'))
+    })
+
+    conn.on('data', handleData)
+  })
+
+  return ResultAsync.fromPromise(promise, () => new TimeoutError('Call Timeout'))
 }

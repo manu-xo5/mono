@@ -2,7 +2,7 @@ import { IncomingCallDialog } from '@/components/incoming-call-dialog.js'
 import { PageNavbar } from '@/components/page-header.js'
 import { Dialog } from '@/components/ui/dialog.js'
 import { getPeerIdFromStorage } from '@/routes/welcome/-index-module.js'
-import { CallAction } from '@/store/call-slice/actions.js'
+import { CallAction } from '@/store/call-slice/actions/incoming-call.js'
 import { ensureUser, useStore } from '@/store/index.js'
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 

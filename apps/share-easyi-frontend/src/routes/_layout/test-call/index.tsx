@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.js'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog.js'
 import { Icons } from '@/components/ui/icons.js'
 import { Input } from '@/components/ui/input.js'
-import { CallAction } from '@/store/call-slice/actions.js'
+import { OutgoingCallAction } from '@/store/call-slice/actions/outgoing-call.js'
 import { useStore } from '@/store/index.js'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -27,7 +27,7 @@ function RouteComponent() {
 
               const value = ev.currentTarget.value
 
-              CallAction.makeRequest({ otherPeerId: value })
+              OutgoingCallAction.makeRequest({ otherPeerId: value })
             }}
             onChange={(ev) => {
               localStorage.setItem('abc', ev.currentTarget.value)
@@ -52,7 +52,7 @@ function RouteComponent() {
   )
 }
 
-interface Props2 {
+type Props2 = {
   onEndCall?: () => void
 }
 function OutgoingCallDialog({ onEndCall }: Props2) {
@@ -87,7 +87,7 @@ function OutgoingCallDialog({ onEndCall }: Props2) {
 
         <div className="flex justify-center">
           <Button
-            disabled={callStatus === 'call-failed'}
+            disabled={callStatus === 'call-request-failed'}
             className="rounded-full size-12"
             size="icon"
             variant="destructive"
