@@ -31,10 +31,11 @@ export function getDisplayNameFromPeerId(peerId: string) {
 
 export class TimeoutError extends Error {}
 
-export function timer(ms: number) {
+export function sleep(ms: number) {
   const promise = new Promise<void>((res) => {
-    const timeoutSignal = AbortSignal.timeout(ms)
-    timeoutSignal.addEventListener('abort', () => res())
+    setTimeout(() => {
+      res()
+    }, ms)
   })
   return promise
 }

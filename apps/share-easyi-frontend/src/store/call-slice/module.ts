@@ -1,5 +1,5 @@
 import type { DataConnection } from 'peerjs'
-import { TimeoutError, timer } from '@/lib/utils.js'
+import { sleep, TimeoutError } from '@/lib/utils.js'
 import { useStore } from '@/store/index.js'
 import { ResultAsync } from 'neverthrow'
 import { CallAction } from './actions/incoming-call.js'
@@ -35,7 +35,7 @@ export function getCallResponse(conn: DataConnection): ResultAsync<string, Error
       }
     }
 
-    timer(5000).then(() => {
+    sleep(5000).then(() => {
       if (isDone) {
         return
       }
