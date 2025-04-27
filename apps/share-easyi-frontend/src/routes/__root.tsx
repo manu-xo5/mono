@@ -1,9 +1,30 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query"
+import { OutgoingCall } from "@/components/CallHandlerDialog"
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
 
-export const Route = createRootRoute({
-  component: RootComponent,
-});
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 
-function RootComponent() {
-  return <Outlet />;
+import Header from "../components/Header"
+
+import TanstackQueryLayout from "../integrations/tanstack-query/layout"
+
+type MyRouterContext = {
+    queryClient: QueryClient
 }
+
+export const Route = createRootRouteWithContext<MyRouterContext>()({
+    component: () => (
+        <>
+            <Header />
+
+            <div className="bg-muted">
+                <Outlet />
+
+                <OutgoingCall />
+            </div>
+            <TanStackRouterDevtools />
+
+            <TanstackQueryLayout />
+        </>
+    ),
+})

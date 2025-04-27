@@ -1,24 +1,25 @@
 {
-  "extends": "@workspace/typescript-config/base.json",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "lib": [
-      "es2024",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    }
-  },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "extends": "@workspace/typescript-config/nextjs.json",
+    "compilerOptions": {
+        "jsx": "preserve",
+        "lib": ["ES2024", "DOM", "DOM.Iterable"],
+        "baseUrl": ".",
+        /* Bundler mode */
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "types": ["vite/client"],
+        /* Linting */
+        "noFallthroughCasesInSwitch": true,
+        "noEmit": true
+    },
+    "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "eslint.config.js",
+        "prettier.config.js",
+        "vite.config.js"
+    ]
 }

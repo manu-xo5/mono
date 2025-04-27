@@ -1,41 +1,38 @@
-import type { ClassValue } from 'clsx'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import type { ClassValue } from "clsx"
+import { clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export function cn(...inputs: Array<ClassValue>) {
+    return twMerge(clsx(inputs))
 }
 
-export async function getScreenCaptureStream() {
-  try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-      audio: false,
-    })
-
-    return stream
-  }
-  catch (err) {
-    console.error(err)
-    return null
-  }
+type PeerListener<Event> = {
+    on: (event: Event, listener: (...args: any[]) => void) => void
+    off: (event: Event, listener: (...args: any[]) => void) => void
 }
+export async function waitEvent<
+    Event extends string,
+    Target extends PeerListener<Event>,
+>(target: Target, event: Event, { signal }: { signal?: AbortSignal } = {}) {
+    const { promise, resolve, reject } = Promise.withResolvers<void>()
 
-export function createPeerId(displayName: string) {
-  return `share-easyi${crypto.randomUUID()}${displayName}`
-}
-export function getDisplayNameFromPeerId(peerId: string) {
-  const prefixLen = 'share-easyi'.length + 36
-  return peerId.substring(prefixLen)
-}
+    function cleanup() {
+        signal?.removeEventListener("abort", handleAbort)
+        target.off(event, handleEvent)
+    }
 
-export class TimeoutError extends Error {}
+    function handleEvent() {
+        cleanup()
+        resolve()
+    }
 
-export function sleep(ms: number) {
-  const promise = new Promise<void>((res) => {
-    setTimeout(() => {
-      res()
-    }, ms)
-  })
-  return promise
+    function handleAbort() {
+        cleanup()
+        reject(new Error("Listener Aborted"))
+    }
+
+    signal?.addEventListener("abort", handleAbort)
+    target.on(event, handleEvent)
+
+    return promise
 }

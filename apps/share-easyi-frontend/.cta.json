@@ -1,13 +1,13 @@
 {
-  "framework": "react",
-  "projectName": ".",
-  "typescript": false,
-  "tailwind": false,
-  "packageManager": "pnpm",
-  "toolchain": "none",
-  "mode": "code-router",
-  "git": true,
-  "variableValues": {},
-  "version": 1,
-  "existingAddOns": []
+    "framework": "react",
+    "typescript": true,
+    "projectName": "share-easyi-frontend",
+    "mode": "file-router",
+    "tailwind": true,
+    "packageManager": "pnpm",
+    "toolchain": "eslint+prettier",
+    "variableValues": {},
+    "git": true,
+    "version": 1,
+    "existingAddOns": ["tanstack-query", "shadcn"]
 }
