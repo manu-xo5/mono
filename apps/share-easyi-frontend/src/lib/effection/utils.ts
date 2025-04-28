@@ -1,4 +1,5 @@
-import { action } from "effection"
+import type { Operation } from "effection"
+import { action, sleep } from "effection"
 
 export function onAbort(signal: AbortSignal) {
     const operator = action<void>((k) => {
@@ -12,4 +13,9 @@ export function onAbort(signal: AbortSignal) {
     })
 
     return operator
+}
+
+export function* sleepWith<Value>(duration: number, value: Value): Operation<Value> {
+    yield* sleep(duration)
+    return value
 }

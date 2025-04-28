@@ -7,6 +7,7 @@ export const useCallStore = create(() => ({
     | "idle"
     | "incoming-call"
     | "outgoing-call"
+    | "request-rejected"
     | "ongoing-call"
     | "call-failed",
     dataConn: null as null | DataConnection,

@@ -17,6 +17,7 @@ export const Route = createFileRoute("/")({
 
 function App() {
     const [otherPeerId, _setOtherPeerId] = useState(() => localStorage.getItem("share-easyi:other") ?? "")
+
     const setOtherPeerId = (value: string) => {
         localStorage.setItem("share-easyi:other", value)
         _setOtherPeerId(value)

@@ -1,5 +1,3 @@
-import type { DataConnection } from "peerjs"
-import { warn } from "node:console"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useCallStore } from "@/store"
@@ -53,8 +51,6 @@ export function OutgoingCall() {
             variant="destructive"
             onClick={() => {
                 dataConn?.send("end")
-                console.log("dataConn.open", dataConn?.open)
-                console.log("dataConn.send", dataConn?.send)
                 dataConn?.close()
                 abortCall?.()
 
@@ -80,7 +76,7 @@ export function OutgoingCall() {
         ? (incomingCallBtns)
         : callStatus === "outgoing-call" || callStatus === "ongoing-call"
             ? (ongoingCallBtns)
-            : callStatus === "call-failed"
+            : callStatus === "call-failed" || callStatus === "request-rejected"
                 ? (callFailedBtns)
                 : null
 
@@ -94,9 +90,11 @@ export function OutgoingCall() {
                             ? "Ringing..."
                             : callStatus === "ongoing-call"
                                 ? "On Call"
-                                : callStatus === "call-failed"
-                                    ? "Call Failed"
-                                    : "Standby"}
+                                : callStatus === "request-rejected"
+                                    ? "Busy"
+                                    : callStatus === "call-failed"
+                                        ? "Call Failed"
+                                        : "Standby"}
                 </DialogTitle>
 
                 <div className="inline-flex flex-col items-center pb-20">
@@ -116,7 +114,4 @@ export function OutgoingCall() {
         </Dialog>
 
     )
-}
-
-function handleEndCall(conn: DataConnection) {
 }

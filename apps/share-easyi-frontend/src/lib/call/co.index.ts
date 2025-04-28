@@ -1,31 +1,24 @@
 import type { Peer } from "peerjs"
 import { CALL_RESPONSE_TIMEOUT } from "@/constants"
+import { onAbort, sleepWith } from "@/lib/effection/utils"
+import * as PeerX from "@/lib/peer"
 import { useCallStore } from "@/store"
 import { action, race, sleep } from "effection"
-import { onAbort } from "../effection/utils"
 
 const setState = useCallStore.setState
 
 export function* makeRequest(peer: Peer, otherPeerId: string) {
     const conn = peer.connect(otherPeerId, { metadata: { type: "call" } })
-
     const ac = new AbortController()
+
     setState({
         status: "outgoing-call",
         abortCall: () => ac.abort(),
         dataConn: conn,
     })
 
-    console.debug("awaiting conn open")
-    const waitTillOpen = action<boolean>((resolve) => {
-        const handleOpen = () => {
-            resolve(true)
-        }
-        conn.on("open", handleOpen)
-        return () => void conn.off("open", handleOpen)
-    })
+    const hasOpen = yield* race([PeerX.dataConnectionOnce(conn, "open"), sleep(2000), onAbort(ac.signal)])
 
-    const hasOpen = yield* race([waitTillOpen, sleep(2000), onAbort(ac.signal)])
     if (!hasOpen) {
         conn.close()
         setState({ status: "call-failed" })
@@ -44,10 +37,20 @@ export function* makeRequest(peer: Peer, otherPeerId: string) {
         return () => conn.off("data", handleData)
     })
 
-    const response = yield* race([waitForResponse, onAbort(ac.signal), sleep(CALL_RESPONSE_TIMEOUT)])
+    const response = yield* race([waitForResponse, sleepWith(CALL_RESPONSE_TIMEOUT, "rejected"), onAbort(ac.signal)])
 
-    if (!response || response === "rejected") {
+    if (!response) {
         conn.close()
+        setState({ status: "call-failed" })
+        yield* sleep(1000)
+        setState({ status: "idle" })
+        return
+    }
+
+    if (response === "rejected") {
+        conn.close()
+        setState({ status: "request-rejected" })
+        yield* sleep(1000)
         setState({ status: "idle" })
         return
     }

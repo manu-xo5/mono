@@ -38,3 +38,5 @@ export function createPeer(peerId: string, handlers: { onConnection?: (conn: Dat
 
     return peer
 }
+
+export * from "./operation"
