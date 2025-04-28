@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button"
-import * as call from "@/lib/call/index"
+import * as callCo from "@/lib/call/co.index"
 import { useCallStore } from "@/store"
-import { dispatchCallAction } from "@/store/call-store"
 import { useUserStore } from "@/store/user-store"
 import { ensurePeer } from "@/store/user-store/utils"
 import { createFileRoute } from "@tanstack/react-router"
+import { run } from "effection"
 import { CopyIcon, RefreshCwIcon } from "lucide-react"
 import { useState } from "react"
 
@@ -70,7 +70,9 @@ function App() {
                                     return
                                 }
 
-                                dispatchCallAction(call.makeRequest(peer, otherPeerId))
+                                await run(function* () {
+                                    yield* callCo.makeRequest(peer, otherPeerId)
+                                })
                             }}
                         >
                             Make Call

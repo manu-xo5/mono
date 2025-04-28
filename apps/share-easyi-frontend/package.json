@@ -25,6 +25,7 @@
         "@workspace/utils": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "effection": "^3.4.0",
         "lucide-react": "^0.476.0",
         "peerjs": "^1.5.4",
         "react": "^19.0.0",
