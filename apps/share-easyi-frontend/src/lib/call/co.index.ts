@@ -37,7 +37,11 @@ export function* makeRequest(peer: Peer, otherPeerId: string) {
         return () => conn.off("data", handleData)
     })
 
-    const response = yield* race([waitForResponse, sleepWith(CALL_RESPONSE_TIMEOUT, "rejected"), onAbort(ac.signal)])
+    const response = yield* race([
+        waitForResponse,
+        sleepWith(CALL_RESPONSE_TIMEOUT, "rejected"),
+        onAbort(ac.signal),
+    ])
 
     if (!response) {
         conn.close()
