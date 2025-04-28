@@ -59,5 +59,28 @@ export function* makeRequest(peer: Peer, otherPeerId: string) {
         return
     }
 
+    startCallTimer()
     setState({ status: "ongoing-call", dataConn: conn })
 }
+
+export function startCallTimer() {
+    const timerId = window.setInterval(() => {
+        setState(prev => ({ callDuration: {
+            ...prev.callDuration,
+            elapsedSeconds: ++prev.callDuration.elapsedSeconds,
+        } }))
+    }, 1000)
+
+    setState({ callDuration: {
+        elapsedSeconds: 0,
+        timerId,
+    } })
+}
+
+// type EndCallArg = {
+//    conn: data
+//    onUpdate: () => void
+// }
+// export function* endCall({onUpdate, conn}: {}) {
+//
+// }

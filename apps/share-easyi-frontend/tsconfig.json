@@ -2,7 +2,7 @@
     "extends": "@workspace/typescript-config/nextjs.json",
     "compilerOptions": {
         "jsx": "preserve",
-        "lib": ["ES2024", "DOM", "DOM.Iterable"],
+        "lib": ["ESNEXT", "DOM", "DOM.Iterable"],
         "baseUrl": ".",
         /* Bundler mode */
         "module": "ESNext",

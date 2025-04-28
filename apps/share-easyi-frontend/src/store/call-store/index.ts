@@ -13,6 +13,11 @@ export const useCallStore = create(() => ({
     dataConn: null as null | DataConnection,
     mediaConn: null as null | MediaConnection,
     abortCall: null as null | (() => void),
+
+    callDuration: {
+        elapsedSeconds: 0,
+        timerId: 0,
+    },
 }))
 
 export type ThunkFn<Store extends StoreApi<any>> = (set: Store["setState"], get: ReturnType<Store["getState"]>) => void
