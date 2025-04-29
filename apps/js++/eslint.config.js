@@ -7,7 +7,7 @@ export default antfu({
         quotes: "double",
         semi: true,
         overrides: {
-            "no-console": ["error", { allow: ["debug"] }],
+            "no-console": ["error", { allow: ["debug", "dir", "error"] }],
             "antfu/consistent-chaining": "error",
             "import/no-default-export": "error",
         },

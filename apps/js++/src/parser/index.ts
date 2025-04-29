@@ -5,17 +5,25 @@ import * as stmt from "./stmt/index.js";
 function parse(code: string) {
     const tokenizer = Tokenizer.new();
     tokenizer.init(code);
-    const body: unknown[] = [];
+    const program: unknown[] = [];
 
     try {
-        body.push(stmt.parse_stmt(tokenizer));
-        return body;
+        while (tokenizer.has_token()) {
+            const x = stmt.parse_stmt(tokenizer);
+            program.push(x);
+        }
+
+        return program;
     }
     finally {
         try {
-            console.debug("debug");
-            while (tokenizer.has_token()) {
-                console.debug(tokenizer.eat(tokenizer.current_token().name));
+            if (tokenizer.has_token()) {
+                console.debug("debug");
+                console.debug(`source: "${tokenizer.source.substring(tokenizer.cursor)}"`);
+
+                while (tokenizer.has_token()) {
+                    console.debug(tokenizer.eat(tokenizer.current_token().name));
+                }
             }
         }
         catch {

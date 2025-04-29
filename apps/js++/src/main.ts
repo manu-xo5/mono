@@ -1,17 +1,22 @@
+import * as JsInterpreter from "@/interpreter/index.js";
 import * as Parser from "@/parser/index.js";
-import * as Tokenizer from "@/tokenizer/index.js";
 
 void (function main() {
-    const program = `(1 + 21 + 3)`;
-    const tokenizer = Tokenizer.new()
-    tokenizer.init(program);
-    while(tokenizer.has_token()) {
-      console.dir(tokenizer.eat(tokenizer.current_token().name))
-    }
+    const program = `
+    let x = (1 + 21 + 3 + (111))
+    let y = x
 
-    return;
+    let z = y - x + 19
+    `;
+
+    // const lexer = Tokenizer.new();
+    // lexer.init(program);
+    // lexer.dump();
+
     const body = Parser.parse(program);
-    console.dir(body, {
-        depth: null,
-    });
+    const validate = body.every(value => typeof value === "object" && value != null);
+    if (!validate) {
+        throw new Error("invalid stmts");
+    }
+    JsInterpreter.run(body);
 }());

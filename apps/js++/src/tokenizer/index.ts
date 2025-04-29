@@ -29,6 +29,7 @@ const SPEC: [RegExp, TokenType][] = [
     [/^\+/, "Plus"],
     [/^-/, "Dash"],
     [/^\*/, "Times"],
+    [/^=/, "Equal"],
     [/^[()]/, "Paran"],
     [/^\d+/, "NumberLiteral"],
     [/^[_$a-z][\w$]*/i, "Identifier"],
@@ -38,21 +39,29 @@ const SPEC: [RegExp, TokenType][] = [
 
 export type tokenizer_t = Tokenizer;
 class Tokenizer {
-    private cursor = 0;
+    cursor = 0;
     public source = "";
     private _current_token!: TokenNode;
 
     init(source: string) {
         this.cursor = 0;
         this.source = source;
-        this._current_token = this.parse_token();
+        while (true) {
+            this._current_token = this.parse_token();
+            if (this._current_token.name === "Whitespace") {
+                this.cursor += this._current_token.value.length;
+                continue;
+            }
+
+            break;
+        }
     }
 
     eat(name: TokenType | (string & {})): TokenNode {
         const temp = this.current_token();
         assert(temp.name === name, this.ERR_SYNTAX(name).message);
 
-        if (temp.name === "EOF") 
+        if (temp.name === "EOF")
             return temp;
 
         do {
@@ -104,6 +113,12 @@ class Tokenizer {
             name: "UnknownToken",
             value: slice[0],
         } as TokenNode;
+    }
+
+    dump() {
+        while (this.has_token()) {
+            console.dir(this.eat(this.current_token().name));
+        }
     }
 
     ERR_SYNTAX(expected?: string[] | string, relativeIdx: number = 0) {
