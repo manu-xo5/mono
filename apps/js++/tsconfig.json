@@ -7,7 +7,7 @@
     "incremental": false,
     "isolatedModules": true,
     "lib": [
-      "es2024",
+      "ESNext",
       "DOM",
       "DOM.Iterable"
     ],
