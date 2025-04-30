@@ -24,22 +24,55 @@ type binary_expr_t = t_expr<"BinaryExpr"> & {
  * PrimaryExpr
  */
 
-export function parse_additive_expr(tokenizer: lexer_t): binary_expr_t {
-    let left = parse_multiplicative_expr(tokenizer) as unknown as binary_expr_t;
+function parse_primary_expr(lexer: lexer_t): primary_expr_t | t_expr {
+    const token = lexer.current_token();
 
-    while (["Plus", "Dash"].includes(tokenizer.current_token().name)) {
-        const operator = tokenizer.eat(tokenizer.current_token().name).name;
-        const right = parse_multiplicative_expr(tokenizer);
+    switch (token.name) {
+        case "NumberLiteral": {
+            void lexer.eat(token.name);
 
-        left = {
-            name: "BinaryExpr",
-            left,
-            operator,
-            right,
-        };
+            return {
+                name: token.name,
+                value: token.value,
+            };
+        }
+        case "StringLiteral": {
+            void lexer.eat(token.name);
+            return {
+                name: token.name,
+                value: token.value.substring(1, token.value.length - 1),
+            };
+        }
+        case "Identifier": {
+            if (lexer.lookahead().value === "(") {
+                void lexer.eat(token.name);
+                void lexer.eat("Paran");
+                void lexer.eat("Paran");
+
+                return {
+                    name: "FuncCall",
+                    value: token.value,
+                } as unknown as primary_expr_t;
+                // todo: ^^^
+            }
+            else {
+                void lexer.eat(token.name);
+                return {
+                    name: "Reference",
+                    value: token.value,
+                } as unknown as primary_expr_t;
+            }
+        }
+        case "Paran": {
+            lexer.eat("Paran");
+            const expr = parse_expr(lexer);
+            lexer.eat("Paran");
+            return expr;
+        }
+        default: {
+            throw lexer.ERR_SYNTAX(["Literal", "Identifier"]);
+        }
     }
-
-    return left;
 }
 
 export function parse_multiplicative_expr(tokenizer: lexer_t): binary_expr_t {
@@ -60,36 +93,22 @@ export function parse_multiplicative_expr(tokenizer: lexer_t): binary_expr_t {
     return left;
 }
 
-function parse_primary_expr(tokenizer: lexer_t): primary_expr_t | t_expr {
-    const token = tokenizer.current_token();
+export function parse_additive_expr(lexer: lexer_t): binary_expr_t {
+    let left = parse_multiplicative_expr(lexer) as unknown as binary_expr_t;
 
-    switch (token.name) {
-        case "NumberLiteral":
-        case "Identifier": {
-            const { value } = tokenizer.eat(token.name);
-            return {
-                name: token.name,
-                value,
-            };
-        }
-        case "StringLiteral": {
-            const { value } = tokenizer.eat(token.name);
-            return {
-                name: token.name,
-                value: value.substring(1, value.length - 1),
-            };
-        }
-        case "Paran": {
-            tokenizer.eat("Paran");
-            const expr = parse_expr(tokenizer);
-            tokenizer.eat("Paran");
-            return expr;
-        }
+    while (["Plus", "Dash"].includes(lexer.current_token().name)) {
+        const operator = lexer.eat(lexer.current_token().name).name;
+        const right = parse_multiplicative_expr(lexer);
 
-        default: {
-            throw tokenizer.ERR_SYNTAX(["Literal", "Identifier"]);
-        }
+        left = {
+            name: "BinaryExpr",
+            left,
+            operator,
+            right,
+        };
     }
+
+    return left;
 }
 
 export function parse_expr(tokenizer: lexer_t): t_expr {

@@ -1,15 +1,14 @@
 import { Parser } from "@/parser/index.js";
 import { Eval } from "./interpreter/index.js";
+import { Lexer } from "./tokenizer/index.js";
 
 void (function main() {
     const program = `
-    let x = (1 + 21 + 3 + (111))
-    let y = "hello"
-    let z = x
-    `;
+    function main() {}
+    let m = main()`;
 
     const ast = Parser.parse(program);
     console.debug(ast);
     console.debug("----------");
-    console.debug(Eval.runMachine("main", ast));
+    Eval.runMachine("main", ast);
 }());

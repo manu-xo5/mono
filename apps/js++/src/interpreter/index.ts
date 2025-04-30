@@ -1,29 +1,45 @@
 import type { stmt } from "@/parser/index.js";
+import type { stack_ptr, value_t } from "./eval_expr.js";
 import { eval_expr } from "./eval_expr.js";
 
 function runMachine(name: string, lines: stmt[]) {
-    // const stack: string[] = [];
-    const heap: Record<string, ReturnType<typeof eval_expr>> = {};
+    const stack: unknown[] = [];
+    const heap: Record<string, value_t> = {};
     let ip = 0;
 
     while (ip < lines.length) {
-        const ins = lines[ip]!;
+        const stmt = lines[ip]!;
 
-        switch (ins.kind) {
-            case "var": {
-                const value = eval_expr(ins.value, heap);
-                heap[ins.symbol] = value;
+        switch (stmt.kind) {
+            case "var_declaration": {
+                const value = eval_expr(stmt.value, heap);
+                heap[stmt.symbol] = value;
+                break;
+            }
+            case "func_declaration": {
+                const top = stack.length;
+                const ptr: stack_ptr = {
+                    name: stmt.symbol,
+                    index: top,
+
+                };
+                stack.push({
+                    kind: "func",
+                    body: stmt.body,
+                });
+                heap[stmt.symbol] = ptr;
+                break;
             }
         }
 
         ip++;
     }
 
+    console.debug(`stack`);
+    console.dir(stack, { depth: null });
     console.debug(`heap`);
     console.dir(heap, { depth: null });
     console.debug(`end of ${name}`);
-
-    return undefined;
 }
 
 export const Eval = {

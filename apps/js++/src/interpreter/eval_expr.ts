@@ -1,14 +1,25 @@
 import type { t_expr } from "@/parser/expr/index.js";
 
-type value_t = number | string;
+export type value_t = number | string | stack_ptr;
 
 type stack_t = Record<string, value_t>;
+export type stack_ptr = {
+    name: string;
+    index: number;
+};
 
 type expr_t = { name: string };
 
 type literal_expr_t = { value: number | string } & expr_t;
 
 type ref_expr_t = { value: string } & expr_t;
+
+type bin_expr_t = {
+    name: "BinaryExpr";
+    left: bin_expr_t | literal_expr_t;
+    right: bin_expr_t | literal_expr_t;
+    operator: string;
+} & expr_t;
 
 const OPERATION = {
     Plus: (x: unknown, y: unknown) => Number(x) + Number(y),
@@ -20,8 +31,6 @@ function assert_ref_expr(expr: unknown): asserts expr is ref_expr_t {
     if (
         !expr
         || typeof expr !== "object"
-        || !("name" in expr)
-        || expr.name !== "Identifier"
         || !("value" in expr)
         || typeof expr.value !== "string"
     ) {
@@ -29,23 +38,22 @@ function assert_ref_expr(expr: unknown): asserts expr is ref_expr_t {
     }
 }
 
-function eval_ref_expr(expr: expr_t, stack: stack_t): literal_expr_t["value"] {
+function eval_ref_expr(expr: expr_t, heap: stack_t): literal_expr_t["value"] {
     assert_ref_expr(expr);
 
-    const ref = expr.value in stack && stack[expr.value];
+    const ref = expr.value in heap && heap[expr.value];
     if (!ref) {
         throw new Error(`${expr.value} is not defined in local or global scope`);
+    }
+    if (typeof ref !== "number" && typeof ref !== "string") {
+        throw new TypeError(`TODO: ptr are not supported`);
     }
 
     return ref;
 }
 
-type bin_expr_t = {
-    name: "BinaryExpr";
-    left: bin_expr_t | literal_expr_t;
-    right: bin_expr_t | literal_expr_t;
-    operator: string;
-} & expr_t;
+function eval_func(expr: expr_t) {
+}
 
 function assert_bin_expr(expr: expr_t): asserts expr is bin_expr_t {
     if (!("left" in expr)) {
@@ -85,7 +93,11 @@ export function eval_expr(expr: t_expr, stack: stack_t): value_t {
     else if (expr.name === "BinaryExpr") {
         return eval_binary(expr, stack);
     }
-    else if (expr.name === "Identifier") {
+    else if (expr.name === "FuncCall") {
+        // here;
+        throw new Error("todo: runFunction");
+    }
+    else if (expr.name === "Reference") {
         return eval_ref_expr(expr, stack);
     }
 

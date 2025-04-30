@@ -1,4 +1,4 @@
-import { humanizeListJoin } from "@/format/array.js";
+import { FormatList } from "@/format/array.js";
 import { assert } from "@workspace/assert";
 
 export type TokenType =
@@ -12,15 +12,17 @@ export type TokenType =
     | "Slash"
     | "Equal"
     | "Paran"
+    | "OpenBracket"
+    | "CloseBracket"
     | "NumberLiteral"
     | "StringLiteral"
     | "Identifier"
     | "UnknownToken";
 
-export interface TokenNode {
+export type TokenNode = {
     name: TokenType;
     value: string;
-}
+};
 
 const SPEC: [RegExp, TokenType][] = [
     [/^\s+/, "Whitespace"],
@@ -31,6 +33,8 @@ const SPEC: [RegExp, TokenType][] = [
     [/^\*/, "Times"],
     [/^=/, "Equal"],
     [/^[()]/, "Paran"],
+    [/^\{/, "OpenBracket"],
+    [/^\}/, "CloseBracket"],
     [/^\d+/, "NumberLiteral"],
     [/^[_$a-z][\w$]*/i, "Identifier"],
     [/^"[^"]*"/, "StringLiteral"],
@@ -138,7 +142,7 @@ export class Lexer {
         const marker = " ".repeat(left_slice.length + 1).concat("^");
 
         const expectedTypeMsg = Array.isArray(expected)
-            ? humanizeListJoin(expected)
+            ? FormatList.humanizeListJoin(expected)
             : expected != null
                 ? expected
                 : undefined;
