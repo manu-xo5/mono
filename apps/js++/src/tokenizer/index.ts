@@ -37,8 +37,12 @@ const SPEC: [RegExp, TokenType][] = [
     [/^'[^']*'/, "StringLiteral"],
 ];
 
-export type tokenizer_t = Tokenizer;
-class Tokenizer {
+export type lexer_t = Lexer;
+export class Lexer {
+    static new() {
+        return new Lexer();
+    }
+
     cursor = 0;
     public source = "";
     private _current_token!: TokenNode;
@@ -146,7 +150,3 @@ class Tokenizer {
         return new Error(msg);
     }
 }
-
-const _new = () => new Tokenizer();
-
-export { _new as new };

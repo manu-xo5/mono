@@ -10,6 +10,7 @@ export default antfu({
             "no-console": ["error", { allow: ["debug", "dir", "error"] }],
             "antfu/consistent-chaining": "error",
             "import/no-default-export": "error",
+            "ts/consistent-type-definitions": ["error", "type"],
         },
     },
 });

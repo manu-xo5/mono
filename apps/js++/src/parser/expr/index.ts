@@ -1,8 +1,10 @@
-import type { tokenizer_t } from "@/tokenizer/index.js";
+import type { lexer_t } from "@/tokenizer/index.js";
 
-export interface t_expr<name extends string = string> {
+export type t_expr<name extends string = string> = {
     name: name;
-}
+};
+
+type primary_expr_t = t_expr<"NumberLiteral" | "StringLiteral" | "Identifier"> & { value: string };
 
 // helper type for defining and return type of binary parser
 type binary_expr_t = t_expr<"BinaryExpr"> & {
@@ -22,7 +24,7 @@ type binary_expr_t = t_expr<"BinaryExpr"> & {
  * PrimaryExpr
  */
 
-export function parse_additive_expr(tokenizer: tokenizer_t): binary_expr_t {
+export function parse_additive_expr(tokenizer: lexer_t): binary_expr_t {
     let left = parse_multiplicative_expr(tokenizer) as unknown as binary_expr_t;
 
     while (["Plus", "Dash"].includes(tokenizer.current_token().name)) {
@@ -40,7 +42,7 @@ export function parse_additive_expr(tokenizer: tokenizer_t): binary_expr_t {
     return left;
 }
 
-export function parse_multiplicative_expr(tokenizer: tokenizer_t): binary_expr_t {
+export function parse_multiplicative_expr(tokenizer: lexer_t): binary_expr_t {
     let left = parse_primary_expr(tokenizer) as unknown as binary_expr_t;
 
     while (["Times", "Slash"].includes(tokenizer.current_token().name)) {
@@ -58,18 +60,23 @@ export function parse_multiplicative_expr(tokenizer: tokenizer_t): binary_expr_t
     return left;
 }
 
-type primary_expr_t = t_expr<"NumberLiteral" | "StringLiteral" | "Identifier"> & { value: string };
-function parse_primary_expr(tokenizer: tokenizer_t): primary_expr_t | t_expr {
+function parse_primary_expr(tokenizer: lexer_t): primary_expr_t | t_expr {
     const token = tokenizer.current_token();
 
     switch (token.name) {
         case "NumberLiteral":
-        case "StringLiteral":
         case "Identifier": {
             const { value } = tokenizer.eat(token.name);
             return {
                 name: token.name,
                 value,
+            };
+        }
+        case "StringLiteral": {
+            const { value } = tokenizer.eat(token.name);
+            return {
+                name: token.name,
+                value: value.substring(1, value.length - 1),
             };
         }
         case "Paran": {
@@ -85,6 +92,6 @@ function parse_primary_expr(tokenizer: tokenizer_t): primary_expr_t | t_expr {
     }
 }
 
-export function parse_expr(tokenizer: tokenizer_t): t_expr {
+export function parse_expr(tokenizer: lexer_t): t_expr {
     return parse_additive_expr(tokenizer);
 }
