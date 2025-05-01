@@ -2,7 +2,10 @@ import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
 
-import { getContext, Provider as TanstackQueryProvider } from "./integrations/tanstack-query/root-provider"
+import {
+    getContext,
+    Provider as TanstackQueryProvider,
+} from "./integrations/tanstack-query/root-provider"
 
 import reportWebVitals from "./reportWebVitals"
 
@@ -42,5 +45,15 @@ if (rootElement && !rootElement.innerHTML) {
         </StrictMode>,
     )
 }
+
+const worker = new SharedWorker(new URL("./background.ts", import.meta.url), { type: "module" })
+
+worker.port.addEventListener("message", () => {
+    console.debug("from worker")
+})
+worker.port.start()
+worker.onerror = err => console.error(err)
+worker.port.onmessageerror = err => console.error(err)
+console.dir(worker, { depth: null })
 
 reportWebVitals()
