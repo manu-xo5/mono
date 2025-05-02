@@ -1,5 +1,5 @@
+import type * as React from "react";
 import { createElement } from "react";
-import * as React from "react";
 
 /**
  * component:
@@ -24,12 +24,12 @@ import * as React from "react";
  * LOD handleClick
  * STP onClick
  * ELM button
- * 
+ *
  * PUSH World
  * SETP children
  * ELEM button
  *
- * RETU 
+ * RETU
  */
 
 export enum OP {
@@ -38,117 +38,119 @@ export enum OP {
     POP,
 
     // regs operations
-    LOD,
-    MOV, // MOVe
+    LOAD,
+    MOVE, // MOVe
 
-    RET, // RETurn
+    RETURN, // RETurn
     HALT, // HALT
 
-    CAL, // CALl
+    SUB,  // SUBroutine
+    CALL, // CALl
     NATC, // NATive Code
-
-    FUNC,
 
     STP,
     ELM,
+    LOC, // LOad Children
 }
 
-const nativeCode = {
-  "log": (...arg: any[]) => console.log(...arg)
-}
+type stack_value_t =
+    | string
+    | number
+    | object
+    | (string | number)[];
 
-export class Runtime {
-    stack: object[] = [];
-    registers: Record<string, object> = {};
+export class VM {
+    stack: stack_value_t[] = [];
+    registers: Record<string, stack_value_t> = {};
     propsAcc: Record<string, any> = {};
     children: React.ReactElement[] = [];
     labels: Record<string, [number, ...any[]][]> = {};
-    sp: number = 0;
 
+    sp: number = 0;
+    ip: number = 0;
+    fp: number = 0;
     constructor(public name: string, public instruction: [number, ...any[]][]) {}
 
     // Execute opcode
     execute() {
-        for (let ip = 0; ip < this.instruction.length; ip++) {
-            const [opcode, ...args] = this.instruction[ip]!;
+        console.log(this.ip);
+        for (; this.ip < this.instruction.length; this.ip++) {
+            const [opcode, ...args] = this.instruction[this.ip]!;
 
-            console.log(opcode);
             switch (opcode) {
                 case OP.PSH:
-                    this.stack.push(args[0]);
+                    this.push(args[0]);
                     break;
                 case OP.POP:
-                    this.stack.pop();
+                    this.pop();
                     break;
-                case OP.LOD: {
-                    const [name] = args;
-                    const value = this.stack.pop()!;
-                    this.registers[name] = value;
-                    break;
-                }
-                case OP.STP: {
-                    const name = args[0];
-                    const value = this.stack.pop()!;
-                    this.propsAcc[name] = value;
-                    break;
-                }
-                case OP.ELM: {
-                    const name = args[0];
-                    const props = {...this.propsAcc};
-                    this.propsAcc = {};
 
-                    this.children.push(createElement(
-                      name,
-                      { ...props }
-                    ))
-                    break;
-                }
-
-                case OP.FUNC: {
-                  break
-                }
-                case OP.CAL: {
-                    this.sp = ip;
-                    ip = 7;
-                    console.log(ip, this.sp);
-                    break;
-                }
-                case OP.NATC: {
-                    const name = args[0];
-                    const argN = Number(this.stack.pop()!);
-                    const acc:object[] = [];
-                    let i = 0;
-                    while(i++ < argN) {
-                      acc.push(this.stack.pop()!);
-                    }
-                    if (!(name in nativeCode)) {
-                        throw new Error(`${name} function not found`);
-                    }
-
-                    const fn = nativeCode[name as keyof typeof nativeCode]
-                    if (!fn) {
-                        throw new Error(`${name} function not found`);
-                    }
-
-                    const value = fn()!;
-                    this.stack.push(value);
-                    break;
-                }
-
-                case OP.MOV: {
+                case OP.MOVE: {
                     const [name, value] = args;
                     this.registers[name] = value;
                     break;
                 }
 
-                case OP.RET: {
-                    ip = this.sp - 1;
+                case OP.LOAD: {
+                    const [name] = args;
+                    const value = this.registers[name]!;
+                    this.push(value);
                     break;
                 }
-                
+
+                case OP.STP: {
+                    const name = args[0];
+                    const value = this.pop()!;
+                    if (typeof value === "object" && "jump" in value && typeof value.jump === "number") {
+                      const jump = value.jump;
+                      this.propsAcc[name] = () => {
+                        console.log("click");
+                        this.ip = jump;
+                        this.execute()
+                      }
+                    } else {
+                      this.propsAcc[name] = value;
+                    }
+                    break;
+                }
+
+                case OP.ELM: {
+                    const name = args[0];
+                    const {children,...props} =  this.propsAcc;
+                    this.propsAcc = {};
+
+                    this.children.push(createElement(
+                        name,
+                        props,
+                        children,
+                    ));
+                    break;
+                }
+
+                case OP.LOC: {
+                    this.push([...this.children]);
+                    this.children = [];
+                    break;
+                }
+
+                case OP.CALL:
+                    this.callFunc(Number(args[0]), Number(args[1]));
+                    break;
+                case OP.NATC:
+                    this.nativeCallFunc(String(args[0]));
+                    break;
+
+                case OP.RETURN:{
+                    if (this.fp === 0) {
+                        return;
+                    } else {
+                        this.returnFunc();
+                    }
+                    break;
+                }
+
                 case OP.HALT: {
-                    const elm = createElement(this.name, { children: this.children });
-                    console.log('returning', elm);
+                    const elm = createElement(this.name, { }, ...this.children);
                     return elm;
                 }
                 default:
@@ -157,30 +159,74 @@ export class Runtime {
         }
     }
 
-    // Start a render block for an element
-    // renderStart(tagOrComponent) {
-    //     this.elementStack.push({
-    //         tag: tagOrComponent,
-    //         props: {},
-    //         children: [],
-    //     });
-    // }
+    push(value: stack_value_t) {
+        this.pushN(1, [value]);
+    }
 
-    // End the render block and add to the final element
-    // renderEnd() {
-    //     const ctx = this.elementStack.pop();
-    //     const el = this.createElementOrComponent(ctx);
-    //     if (this.elementStack.length > 0) {
-    //         this.elementStack[this.elementStack.length - 1].children.push(el);
-    //     }
-    //     else {
-    //         this.rootElement = el;
-    //     }
-    // }
+    pushN(n: number, values: stack_value_t[]) {
+        for (let i = 0; i < n; i++) {
+            this.stack[this.sp] = values[i]!;
+            this.sp += 1;
+        }
+    }
 
-    // Call a function (subroutine) and handle arguments from the stack
-    // or built-in JavaScript functions (like `console.log`)
-    callFunc(funcName: string) {
-        
+    pop() {
+        return this.popN(1)[0]!;
+    }
+
+    popN(n: number): stack_value_t[] {
+        const values: stack_value_t[] = [];
+
+        for (let i = 0; i < n; i++) {
+            this.sp -= 1;
+            values.push(this.stack[this.sp]!);
+            delete this.stack[this.sp];
+        }
+
+        return values;
+    }
+
+    callFunc(jumpIp: number, nArgs: number) {
+        // collect args
+        const captureArgs = this.popN(nArgs);
+
+        // push ip first and then arguments
+        this.push(this.ip);
+        this.push(this.fp);
+        this.fp = this.sp;
+
+        this.pushN(nArgs, captureArgs);
+        this.push(nArgs);
+
+        // jump
+        this.ip = jumpIp - 1;
+    }
+
+    returnFunc() {
+        const returnValue = this.pop()!;
+
+        this.sp = this.fp;
+        this.fp = Number(this.pop());
+        this.ip = Number(this.pop());
+        this.push(returnValue);
+    }
+
+    nativeCallFunc(functionName: string) {
+        switch (functionName) {
+            case "log": {
+                const nArgs = Number(this.pop());
+                const args = [];
+                for (let i = 0; i < nArgs; i++) {
+                    args.push(this.pop());
+                }
+
+                console.debug(...args);
+                this.push(0);
+                break;
+            }
+
+            default:
+                throw new Error(`${functionName} not found`);
+        }
     }
 }
