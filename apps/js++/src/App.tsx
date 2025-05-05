@@ -1,49 +1,60 @@
-import { INST, VM } from "@/runtime/index";
+import type { instr_t } from "@/runtime/instructions";
+import { FuctionRuntime } from "@/runtime/index";
+import { OP } from "@/runtime/instructions";
 import { useState } from "react";
 
-const Button2 = () => <button onClick={() => console.log("button2")}>Btn2</button>
+/**
+ * const c = 0
+ *
+ * const handleClick = function() {
+ * }
+ *
+ * const getFirstMockClick = handleClick();
+ *
+ * const handleFetch = function () {
+ *  return fetch(...).then(r => r.json());
+ * }
+ *
+ * const renderAsFetch = handleFetch();
+ *
+ * useEffect(handleFetch, []);
+ *
+ * return (
+ *  <button onClick={handleClick} />
+ * )
+ *
+ */
 
-function CustomDslComp() {
-    return new VM("div", [
-        [INST.PSH, "⭐"],
-        [INST.STP, "children"],
-        [INST.ELM, "span"],
-        [INST.PSH, "Hello"],
-        [INST.STP, "children"],
-        [INST.ELM, "span"],
-        [INST.LOC],
-        [INST.STP, "children"],
-        [INST.PSH, {jump: 12}],
-        [INST.STP, "onClick"],
-        [INST.ELM, "button"],
-        [INST.ELM, Button2],
-        [INST.HALT],
-        [INST.PSH, "Hello from OP Code"],
-        [INST.PSH, 1],
-        [INST.NATC, "log"],
-        [INST.CALL, 20, 0],
-        [INST.PSH, "Hello after"],
-        [INST.PSH, 1],
-        [INST.NATC, "log"],
-        [INST.RETURN],
-        [INST.PSH, "Should not be logged"],
-        [INST.PSH, 1],
-        [INST.NATC, "log"],
-        [INST.PSH, "Hello from Sub routine OP Code"],
-        [INST.PSH, 1],
-        [INST.NATC, "log"],
-        [INST.RETURN],
-    ]).execute_inst();
-}
+/**
+ * tempChildren = [];
+ *
+ * tempProps = {
+ * }
+ *
+ * const temp = {
+ *  name: "button",
+ *  props: tempProps,
+ *  children: tempChildren
+ * }
+ * return temp as button
+ */
 
-// console.debug(CustomDslComp());
+const x: Record<string, instr_t[]> = ({
+    main: [
+        [OP.LOCAL, "count", 1],
+        [OP.TXT, "count"],
+        [OP.ELM, "button"],
+    ],
+});
+
+const el = new FuctionRuntime("div", x.main!).run();
 
 function App() {
-    const [count, setCount] = useState(0);
+    const [[count, setCount]] = [useState(0)];
 
     return (
         <>
-            <CustomDslComp />
+            {el}
             <div>
                 <button onClick={() => setCount(count => count + 1)}>
                     count is
