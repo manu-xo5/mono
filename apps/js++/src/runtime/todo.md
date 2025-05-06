@@ -1,3 +1,4 @@
+[ ] convert instr_t[] -> instr_t i.e. [ OP ARG ARG OP ARG OP ARG ARG OP ... ]
 [ ] basic walk for loops
 [ ] branching
 [ ] function call

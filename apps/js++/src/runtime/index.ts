@@ -1,15 +1,13 @@
-import type { instr_t, stack_value_t } from "@/runtime/instructions";
-import type * as React from "react";
-import { OP } from "@/runtime/instructions";
-import { createElement } from "react";
+import "@/runtime/test";
 
 const todo = () => new Error("not implemented");
 
-export class FunctionRuntime {
+export class FuctionRuntime {
     locals: Record<string, stack_value_t> = {};
     mem_stack: stack_value_t[] = [];
 
-    acc: React.ReactNode[] = [];
+    acc: stack_value_t = 0;
+    children: React.ReactNode[] = [];
 
     r1: stack_value_t = 0;
     r2: stack_value_t = 0;
@@ -19,7 +17,7 @@ export class FunctionRuntime {
     sp: number = 0;
     ip: number = 0;
     fp: number = 0;
-    constructor(public name: string, public program: readonly instr_t[]) {}
+    constructor(public program: readonly instr_t[]) {}
 
     run() {
         for (this.ip = 0; this.ip < this.program.length; this.ip++) {
@@ -27,27 +25,48 @@ export class FunctionRuntime {
             this.execute(instruction);
         }
 
-        return this.acc[this.acc.length - 1];
+        return this.children[this.children.length - 1];
     }
 
     execute(instruction: instr_t) {
         const [inst, ...args] = instruction;
 
         switch (inst) {
+            // vm
             case OP.PSH: {
-                this.mem_stack[this.sp++] = args[0];
+                this.push(args[0]!);
                 break;
             }
+
+            case OP.POP: {
+                this.pop();
+                break;
+            }
+
             case OP.LOCAL: {
                 const name = String(args[0]);
-                const value = args[1];
+                const value = args[1]!;
                 this.locals[name] = value;
                 break;
             }
 
+            // loads a ptr or literal to acc
+            case OP.LOAD: {
+                const value = args[0]!;
+                this.acc = value;
+                break;
+            }
+
+            case OP.JMP: {
+                const jumpAddr = Number(args[0]!);
+                this.ip += jumpAddr;
+                break;
+            }
+
+            // react
             case OP.TXT: {
                 const str = String(args[0]);
-                this.acc.push(this.resolveValue(str) as string[]);
+                this.children.push(this.resolveValue(str) as string[]);
                 break;
             }
 
@@ -57,10 +76,10 @@ export class FunctionRuntime {
                     ? {}
                     : this.r3;
 
-                const children = [...this.acc];
-                this.acc = [];
+                const children = [...this.children];
+                this.children = [];
 
-                this.acc.push(createElement(name, props, children));
+                this.children.push(createElement(name, props, children));
                 break;
             }
 
@@ -78,6 +97,25 @@ export class FunctionRuntime {
             default:
                 throw new Error(`Unknown opcode: ${OP[inst]}`);
         }
+    }
+
+    fetch(value: stack_value_t) {
+        if (typeof value === "object" && "ptr" in value) {
+            return this.mem_stack[value.ptr]!;
+        }
+        else {
+            return value;
+        }
+    }
+
+    push(value: stack_value_t) {
+        this.mem_stack[this.sp++] = value;
+    }
+
+    pop() {
+        const value = this.mem_stack[--this.sp];
+
+        return value;
     }
 
     resolveValue(value: unknown) {

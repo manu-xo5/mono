@@ -1,0 +1,1 @@
+import type { DataConnection } from "peerjs"

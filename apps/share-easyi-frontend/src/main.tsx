@@ -7,8 +7,6 @@ import {
     Provider as TanstackQueryProvider,
 } from "./integrations/tanstack-query/root-provider"
 
-import reportWebVitals from "./reportWebVitals"
-
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen"
 import "./styles.css"
@@ -44,16 +42,4 @@ if (rootElement && !rootElement.innerHTML) {
             </TanstackQueryProvider>
         </StrictMode>,
     )
-}
-
-const worker = new SharedWorker(new URL("./background.ts", import.meta.url), { type: "module" })
-
-worker.port.addEventListener("message", () => {
-    console.debug("from worker")
-})
-worker.port.start()
-worker.onerror = err => console.error(err)
-worker.port.onmessageerror = err => console.error(err)
-console.dir(worker, { depth: null })
-
-reportWebVitals()
+};

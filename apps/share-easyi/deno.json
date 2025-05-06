@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "@effection/effection": "jsr:@effection/effection@^3.5.0",
+    "@hono/oauth-providers": "npm:@hono/oauth-providers@^0.7.1",
+    "hono": "jsr:@hono/hono@^4.7.9"
+  },
+  "tasks": {
+    "dev": "deno --watch --allow-net main.ts",
+    "start": "deno run --allow-net main.ts"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx"
+  }
+}
