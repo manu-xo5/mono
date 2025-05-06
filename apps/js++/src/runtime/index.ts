@@ -5,8 +5,9 @@ import { createElement } from "react";
 
 const todo = () => new Error("not implemented");
 
-export class FuctionRuntime {
+export class FunctionRuntime {
     locals: Record<string, stack_value_t> = {};
+    mem_stack: stack_value_t[] = [];
 
     acc: React.ReactNode[] = [];
 
@@ -33,6 +34,10 @@ export class FuctionRuntime {
         const [inst, ...args] = instruction;
 
         switch (inst) {
+            case OP.PSH: {
+                this.mem_stack[this.sp++] = args[0];
+                break;
+            }
             case OP.LOCAL: {
                 const name = String(args[0]);
                 const value = args[1];

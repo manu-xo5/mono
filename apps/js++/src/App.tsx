@@ -1,5 +1,10 @@
 import type { instr_t } from "@/runtime/instructions";
-import { FuctionRuntime } from "@/runtime/index";
+import { Branch } from "@/parser/ast/branch.ts";
+import { Constant } from "@/parser/ast/def_const.ts";
+import { Program } from "@/parser/ast/program.ts";
+import { Scope } from "@/parser/scope.ts";
+import { to_string } from "@/parser/stringify.ts";
+import { FunctionRuntime } from "@/runtime/index";
 import { OP } from "@/runtime/instructions";
 import { useState } from "react";
 
@@ -38,6 +43,17 @@ import { useState } from "react";
  * }
  * return temp as button
  */
+const global_scope = new Scope(0);
+
+const prg = new Program();
+prg.append_stmt([
+    new Constant(global_scope, "count", 0),
+    new Branch(global_scope, false)
+        .cond(global_scope.read("count"))
+        .then(scope => [new Constant(scope, "count2", 1000)]),
+]);
+
+console.debug(to_string(prg.generate_bytecode()));
 
 const x: Record<string, instr_t[]> = ({
     main: [
@@ -47,7 +63,7 @@ const x: Record<string, instr_t[]> = ({
     ],
 });
 
-const el = new FuctionRuntime("div", x.main!).run();
+const el = new FunctionRuntime("div", x.main!).run();
 
 function App() {
     const [[count, setCount]] = [useState(0)];
