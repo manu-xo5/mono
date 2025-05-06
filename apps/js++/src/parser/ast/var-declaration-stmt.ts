@@ -1,16 +1,13 @@
 import type { Bytecode } from "@/parser/ast/bytecode.ts";
-import type { Scope } from "@/parser/scope.ts";
 import type { instr_t, stack_value_t } from "@/runtime/instructions.ts";
 import { OP } from "@/runtime/instructions.ts";
 
 export class VarDeclarationStmt implements Bytecode {
-    constructor(parent: Scope, name: string, public value: stack_value_t) {
-        parent.set_local(name, value);
-    }
+    constructor(public name: string, public value: stack_value_t) { }
 
     generate_bytecode(): instr_t[] {
         return [
-            [OP.PSH, this.value],
+            [OP.LOCAL, this.name, this.value],
         ];
     }
 }

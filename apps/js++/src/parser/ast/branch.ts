@@ -1,11 +1,11 @@
 import type { Bytecode } from "@/parser/ast/bytecode.ts";
-import type { Constant } from "@/parser/ast/def_const.ts";
+import type { VarDeclarationStmt } from "@/parser/ast/def_const.ts";
 import type { stack_value_t } from "@/runtime/instructions.ts";
 import { Scope } from "@/parser/scope.ts";
 import { OP } from "@/runtime/instructions.ts";
 
 export class Branch extends Scope implements Bytecode {
-    true_branch: Constant[] = [];
+    true_branch: VarDeclarationStmt[] = [];
     cond_value: stack_value_t = 0;
 
     constructor(parent: Scope, public has_else: boolean) {
@@ -17,7 +17,7 @@ export class Branch extends Scope implements Bytecode {
         return this;
     }
 
-    then(stmts: (scope: Scope) => Constant[]) {
+    then(stmts: (scope: Scope) => VarDeclarationStmt[]) {
         this.true_branch = stmts(this);
         return this;
     }
