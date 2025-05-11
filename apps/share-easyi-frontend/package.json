@@ -23,6 +23,7 @@
         "@tanstack/react-router-devtools": "^1.114.3",
         "@tanstack/router-plugin": "^1.114.3",
         "@workspace/utils": "workspace:*",
+        "better-auth": "^1.2.7",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "effection": "^3.4.0",

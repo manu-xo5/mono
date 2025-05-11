@@ -7,15 +7,8 @@ export type WS = WSContext<WebSocket>;
 export type Manager = {
   clients: Map<string, WS>;
   addClient(ws: WS): void;
+  removeClient(clientId: string): void;
 };
-
-export function removeClient(m: Manager, clientId: string) {
-  const ws = m.clients.get(clientId);
-  if (ws != null) {
-    ws.close(1006, "Server Closed");
-  }
-  m.clients.delete(clientId);
-}
 
 export function createManager(): Manager {
   const m: Manager = {
@@ -30,6 +23,14 @@ export function createManager(): Manager {
         yield* spawn(() => pingPongHandler(m, clientId));
         yield* spawn(() => messageHandler(m, clientId));
       });
+    },
+
+    removeClient(clientId) {
+      const ws = m.clients.get(clientId);
+      if (ws != null) {
+        ws.close(1006, "Server Closed");
+      }
+      m.clients.delete(clientId);
     },
   };
 
