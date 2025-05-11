@@ -1,11 +1,17 @@
 {
   "imports": {
+    "@better-auth/cli": "npm:@better-auth/cli@^1.2.7",
     "@effection/effection": "jsr:@effection/effection@^3.5.0",
-    "@hono/oauth-providers": "npm:@hono/oauth-providers@^0.7.1",
+    "@neondatabase/serverless": "npm:@neondatabase/serverless@^1.0.0",
+    "better-auth": "npm:better-auth@^1.2.7",
+    "drizzle-kit": "npm:drizzle-kit@^0.31.1",
+    "drizzle-orm": "npm:drizzle-orm@^0.43.1",
     "hono": "jsr:@hono/hono@^4.7.9"
   },
   "tasks": {
-    "dev": "deno --watch --allow-net main.ts",
+    "dev": "deno run -A --watch main.ts",
+    "auth": "deno run -A --node-modules-dir npm:@better-auth/cli generate --output=db/schema/auth.ts --config=auth/index.ts",
+    "db": "deno --env -A --node-modules-dir npm:drizzle-kit --config=drizzle.config.ts",
     "start": "deno run --allow-net main.ts"
   },
   "compilerOptions": {

@@ -1,14 +1,6 @@
 import { SECOND } from "../time.utils.ts";
-import {
-  action,
-  each,
-  on,
-  once,
-  Operation,
-  race,
-  sleep,
-} from "@effection/effection";
-import { Manager, removeClient } from "./index.ts";
+import { action, once, race, sleep } from "@effection/effection";
+import { Manager } from "./index.ts";
 import { safeJsonParse } from "../utils.ts";
 
 type EventType = {
@@ -52,7 +44,7 @@ export function* pingPongHandler(m: Manager, clientId: string) {
     const msg = yield* race([waitForMessage, sleep(PING_INTERVAL)]);
 
     if (msg == null) {
-      removeClient(m, clientId);
+      m.removeClient(clientId);
       break;
     }
   }
