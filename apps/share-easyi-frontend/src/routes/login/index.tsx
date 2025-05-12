@@ -5,13 +5,12 @@ import { authClient } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import { PageContainer } from '@/components/page-container'
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute('/login/')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const [loading, setLoading] = useState(false)
-  const navigate = Route.useNavigate()
 
   return (
     <PageContainer className="flex">
@@ -36,7 +35,12 @@ function RouteComponent() {
                 className={cn('w-full gap-2')}
                 disabled={loading}
                 onClick={async () => {
-                  await authClient.signIn.social({ provider: 'google' })
+                  setLoading(true)
+                  await authClient.signIn.social({
+                    provider: 'google',
+                    callbackURL: 'http://localhost:3000',
+                  })
+                  setLoading(false)
                 }}
               >
                 <svg

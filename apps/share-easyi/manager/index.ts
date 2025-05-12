@@ -1,8 +1,7 @@
-import type { WSContext } from "hono/ws";
-import { messageHandler, pingPongHandler } from "./handler.ts";
-import { run, spawn } from "@effection/effection";
+import { messageHandler, pinger } from "./handler.ts";
+import { all, run, spawn } from "@effection/effection";
 
-export type WS = WSContext<WebSocket>;
+export type WS = WebSocket;
 
 export type Manager = {
   clients: Map<string, WS>;
@@ -20,8 +19,10 @@ export function createManager(): Manager {
 
       // setup pingpong
       run(function* () {
-        yield* spawn(() => pingPongHandler(m, clientId));
-        yield* spawn(() => messageHandler(m, clientId));
+        const pingerProc = yield* spawn(() => pinger(m, clientId));
+        const messageHandlerProc = yield* spawn(() => messageHandler(m, clientId));
+
+        yield* all([pingerProc, messageHandlerProc]);
       });
     },
 

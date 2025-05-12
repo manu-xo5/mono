@@ -11,18 +11,13 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as LoginImport } from './routes/login'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
+import { Route as ServerDownIndexImport } from './routes/server-down/index'
+import { Route as LoginIndexImport } from './routes/login/index'
 import { Route as AuthHomeImport } from './routes/_auth/home'
 
 // Create/Update Routes
-
-const LoginRoute = LoginImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const AuthRoute = AuthImport.update({
   id: '/_auth',
@@ -32,6 +27,18 @@ const AuthRoute = AuthImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ServerDownIndexRoute = ServerDownIndexImport.update({
+  id: '/server-down/',
+  path: '/server-down/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const LoginIndexRoute = LoginIndexImport.update({
+  id: '/login/',
+  path: '/login/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -59,19 +66,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthImport
       parentRoute: typeof rootRoute
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginImport
-      parentRoute: typeof rootRoute
-    }
     '/_auth/home': {
       id: '/_auth/home'
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof AuthHomeImport
       parentRoute: typeof AuthImport
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/server-down/': {
+      id: '/server-down/'
+      path: '/server-down'
+      fullPath: '/server-down'
+      preLoaderRoute: typeof ServerDownIndexImport
+      parentRoute: typeof rootRoute
     }
   }
 }
@@ -91,44 +105,49 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/login': typeof LoginRoute
   '/home': typeof AuthHomeRoute
+  '/login': typeof LoginIndexRoute
+  '/server-down': typeof ServerDownIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/login': typeof LoginRoute
   '/home': typeof AuthHomeRoute
+  '/login': typeof LoginIndexRoute
+  '/server-down': typeof ServerDownIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
-  '/login': typeof LoginRoute
   '/_auth/home': typeof AuthHomeRoute
+  '/login/': typeof LoginIndexRoute
+  '/server-down/': typeof ServerDownIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/login' | '/home'
+  fullPaths: '/' | '' | '/home' | '/login' | '/server-down'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/login' | '/home'
-  id: '__root__' | '/' | '/_auth' | '/login' | '/_auth/home'
+  to: '/' | '' | '/home' | '/login' | '/server-down'
+  id: '__root__' | '/' | '/_auth' | '/_auth/home' | '/login/' | '/server-down/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
-  LoginRoute: typeof LoginRoute
+  LoginIndexRoute: typeof LoginIndexRoute
+  ServerDownIndexRoute: typeof ServerDownIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
-  LoginRoute: LoginRoute,
+  LoginIndexRoute: LoginIndexRoute,
+  ServerDownIndexRoute: ServerDownIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -143,7 +162,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/_auth",
-        "/login"
+        "/login/",
+        "/server-down/"
       ]
     },
     "/": {
@@ -155,12 +175,15 @@ export const routeTree = rootRoute
         "/_auth/home"
       ]
     },
-    "/login": {
-      "filePath": "login.tsx"
-    },
     "/_auth/home": {
       "filePath": "_auth/home.tsx",
       "parent": "/_auth"
+    },
+    "/login/": {
+      "filePath": "login/index.tsx"
+    },
+    "/server-down/": {
+      "filePath": "server-down/index.tsx"
     }
   }
 }

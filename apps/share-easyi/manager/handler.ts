@@ -23,30 +23,33 @@ function listenPong(ws: WebSocket) {
   return op;
 }
 
-export function* pingPongHandler(m: Manager, clientId: string) {
-  const PONG_INTERVAL = 5 * SECOND;
+export function* pinger(m: Manager, clientId: string) {
+  const PONG_INTERVAL = 2 * SECOND;
   const PING_INTERVAL = PONG_INTERVAL * 0.9;
 
-  while (true) {
-    yield* sleep(PONG_INTERVAL);
+  const socket = m.clients.get(clientId);
 
-    const ws = m.clients.get(clientId);
-    if (ws == null) return;
+  if (socket == null) {
+    return;
+  }
 
-    if (ws.raw == null) {
-      ws.close(1006, "Killed");
-      return;
+  try {
+    console.log("started ping pong");
+    while (true) {
+      yield* sleep(PONG_INTERVAL);
+
+      // setup handler before send"ping"
+      const waitForMessage = listenPong(socket);
+      socket.send("ping");
+      const msg = yield* race([waitForMessage, sleep(PING_INTERVAL)]);
+
+      if (msg == null) {
+        m.removeClient(clientId);
+        break;
+      }
     }
-
-    // setup handler before send"ping"
-    const waitForMessage = listenPong(ws.raw);
-    ws.send("ping");
-    const msg = yield* race([waitForMessage, sleep(PING_INTERVAL)]);
-
-    if (msg == null) {
-      m.removeClient(clientId);
-      break;
-    }
+  } finally {
+    console.log("stopping ping pong");
   }
 }
 
@@ -59,9 +62,8 @@ function handleFileTransferReq(msg: EventType) {
 }
 
 export function* messageHandler(m: Manager, clientId: string) {
-  const ws_ = m.clients.get(clientId);
-  if (ws_?.raw == null) return;
-  const ws = ws_.raw;
+  const socket = m.clients.get(clientId);
+  if (socket == null) return;
 
   const handleMessage = (rawMsg: MessageEvent) => {
     const msg = safeJsonParse<EventType>(String(rawMsg));
@@ -82,9 +84,9 @@ export function* messageHandler(m: Manager, clientId: string) {
   };
 
   try {
-    ws.addEventListener("message", handleMessage);
-    yield* race([once(ws, "close"), once(ws, "error")]);
+    socket.addEventListener("message", handleMessage);
+    yield* race([once(socket, "close"), once(socket, "error")]);
   } finally {
-    ws.removeEventListener("message", handleMessage);
+    socket.removeEventListener("message", handleMessage);
   }
 }
