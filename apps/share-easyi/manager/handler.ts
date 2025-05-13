@@ -1,5 +1,5 @@
 import { SECOND } from "../time.utils.ts";
-import { action, once, race, sleep } from "@effection/effection";
+import { action, race, sleep, suspend } from "@effection/effection";
 import { Manager } from "./index.ts";
 import { safeJsonParse } from "../utils.ts";
 
@@ -61,7 +61,7 @@ function handleFileTransferReq(msg: EventType) {
   void msg;
 }
 
-export function* messageHandler(m: Manager, clientId: string) {
+export function messageHandler(m: Manager, clientId: string) {
   const socket = m.clients.get(clientId);
   if (socket == null) return;
 
@@ -85,7 +85,6 @@ export function* messageHandler(m: Manager, clientId: string) {
 
   try {
     socket.addEventListener("message", handleMessage);
-    yield* race([once(socket, "close"), once(socket, "error")]);
   } finally {
     socket.removeEventListener("message", handleMessage);
   }
