@@ -1,30 +1,27 @@
-import type { QueryClient } from "@tanstack/react-query"
-import { OutgoingCall } from "@/components/CallHandlerDialog"
-import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
-
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
-
-import Header from "../components/Header"
-
-import TanstackQueryLayout from "../integrations/tanstack-query/layout"
+import type { QueryClient } from '@tanstack/react-query'
+import { OutgoingCall } from '@/components/CallHandlerDialog'
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
+import Header from '@/components/Header'
+import TanstackQueryLayout from '@/integrations/tanstack-query/layout'
 
 type MyRouterContext = {
-    queryClient: QueryClient
+  queryClient: QueryClient
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-    component: () => (
-        <>
-            <Header />
+  component: () => (
+    <>
+      <Header />
 
-            <div className="bg-muted">
-                <Outlet />
+      <div className="bg-background">
+        <Outlet />
 
-                <OutgoingCall />
-            </div>
-            <TanStackRouterDevtools />
+        <OutgoingCall />
+      </div>
+      <TanStackRouterDevtools />
 
-            <TanstackQueryLayout />
-        </>
-    ),
+      <TanstackQueryLayout />
+    </>
+  ),
 })

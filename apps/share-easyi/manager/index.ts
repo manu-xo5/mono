@@ -1,8 +1,6 @@
-import type { WSContext } from "hono/ws";
-import { messageHandler, pingPongHandler } from "./handler.ts";
-import { run, spawn } from "@effection/effection";
+import { messageHandler } from "./handler.ts";
 
-export type WS = WSContext<WebSocket>;
+export type WS = WebSocket;
 
 export type Manager = {
   clients: Map<string, WS>;
@@ -13,26 +11,30 @@ export type Manager = {
 export function createManager(): Manager {
   const m: Manager = {
     clients: new Map(),
+    addClient: addClient,
 
-    addClient(ws) {
-      const clientId = crypto.randomUUID();
-      m.clients.set(clientId, ws);
-
-      // setup pingpong
-      run(function* () {
-        yield* spawn(() => pingPongHandler(m, clientId));
-        yield* spawn(() => messageHandler(m, clientId));
-      });
-    },
-
-    removeClient(clientId) {
-      const ws = m.clients.get(clientId);
-      if (ws != null) {
-        ws.close(1006, "Server Closed");
-      }
-      m.clients.delete(clientId);
-    },
+    removeClient: removeClient,
   };
+
+  function addClient(ws: WS) {
+    const clientId = crypto.randomUUID();
+    m.clients.set(clientId, ws);
+
+    // attach messageHandler
+    messageHandler(m, clientId);
+    // setup pingpong
+    //run(function* () {
+    //  yield* pinger(m, clientId);
+    //});
+  }
+
+  function removeClient(clientId: string) {
+    const ws = m.clients.get(clientId);
+    if (ws != null) {
+      ws.close(1006, "Server Closed");
+    }
+    m.clients.delete(clientId);
+  }
 
   return m;
 }
