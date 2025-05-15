@@ -16,6 +16,8 @@ import { Route as IndexImport } from './routes/index'
 import { Route as ServerDownIndexImport } from './routes/server-down/index'
 import { Route as LoginIndexImport } from './routes/login/index'
 import { Route as AuthHomeImport } from './routes/_auth/home'
+import { Route as AuthHomeIndexImport } from './routes/_auth/home/index'
+import { Route as AuthHomeRoomIdIndexImport } from './routes/_auth/home/$roomId/index'
 
 // Create/Update Routes
 
@@ -46,6 +48,18 @@ const AuthHomeRoute = AuthHomeImport.update({
   id: '/home',
   path: '/home',
   getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthHomeIndexRoute = AuthHomeIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthHomeRoute,
+} as any)
+
+const AuthHomeRoomIdIndexRoute = AuthHomeRoomIdIndexImport.update({
+  id: '/$roomId/',
+  path: '/$roomId/',
+  getParentRoute: () => AuthHomeRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -87,17 +101,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServerDownIndexImport
       parentRoute: typeof rootRoute
     }
+    '/_auth/home/': {
+      id: '/_auth/home/'
+      path: '/'
+      fullPath: '/home/'
+      preLoaderRoute: typeof AuthHomeIndexImport
+      parentRoute: typeof AuthHomeImport
+    }
+    '/_auth/home/$roomId/': {
+      id: '/_auth/home/$roomId/'
+      path: '/$roomId'
+      fullPath: '/home/$roomId'
+      preLoaderRoute: typeof AuthHomeRoomIdIndexImport
+      parentRoute: typeof AuthHomeImport
+    }
   }
 }
 
 // Create and export the route tree
 
+interface AuthHomeRouteChildren {
+  AuthHomeIndexRoute: typeof AuthHomeIndexRoute
+  AuthHomeRoomIdIndexRoute: typeof AuthHomeRoomIdIndexRoute
+}
+
+const AuthHomeRouteChildren: AuthHomeRouteChildren = {
+  AuthHomeIndexRoute: AuthHomeIndexRoute,
+  AuthHomeRoomIdIndexRoute: AuthHomeRoomIdIndexRoute,
+}
+
+const AuthHomeRouteWithChildren = AuthHomeRoute._addFileChildren(
+  AuthHomeRouteChildren,
+)
+
 interface AuthRouteChildren {
-  AuthHomeRoute: typeof AuthHomeRoute
+  AuthHomeRoute: typeof AuthHomeRouteWithChildren
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthHomeRoute: AuthHomeRoute,
+  AuthHomeRoute: AuthHomeRouteWithChildren,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -105,34 +147,54 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/home': typeof AuthHomeRoute
+  '/home': typeof AuthHomeRouteWithChildren
   '/login': typeof LoginIndexRoute
   '/server-down': typeof ServerDownIndexRoute
+  '/home/': typeof AuthHomeIndexRoute
+  '/home/$roomId': typeof AuthHomeRoomIdIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/home': typeof AuthHomeRoute
   '/login': typeof LoginIndexRoute
   '/server-down': typeof ServerDownIndexRoute
+  '/home': typeof AuthHomeIndexRoute
+  '/home/$roomId': typeof AuthHomeRoomIdIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
-  '/_auth/home': typeof AuthHomeRoute
+  '/_auth/home': typeof AuthHomeRouteWithChildren
   '/login/': typeof LoginIndexRoute
   '/server-down/': typeof ServerDownIndexRoute
+  '/_auth/home/': typeof AuthHomeIndexRoute
+  '/_auth/home/$roomId/': typeof AuthHomeRoomIdIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/home' | '/login' | '/server-down'
+  fullPaths:
+    | '/'
+    | ''
+    | '/home'
+    | '/login'
+    | '/server-down'
+    | '/home/'
+    | '/home/$roomId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/home' | '/login' | '/server-down'
-  id: '__root__' | '/' | '/_auth' | '/_auth/home' | '/login/' | '/server-down/'
+  to: '/' | '' | '/login' | '/server-down' | '/home' | '/home/$roomId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/_auth/home'
+    | '/login/'
+    | '/server-down/'
+    | '/_auth/home/'
+    | '/_auth/home/$roomId/'
   fileRoutesById: FileRoutesById
 }
 
@@ -177,13 +239,25 @@ export const routeTree = rootRoute
     },
     "/_auth/home": {
       "filePath": "_auth/home.tsx",
-      "parent": "/_auth"
+      "parent": "/_auth",
+      "children": [
+        "/_auth/home/",
+        "/_auth/home/$roomId/"
+      ]
     },
     "/login/": {
       "filePath": "login/index.tsx"
     },
     "/server-down/": {
       "filePath": "server-down/index.tsx"
+    },
+    "/_auth/home/": {
+      "filePath": "_auth/home/index.tsx",
+      "parent": "/_auth/home"
+    },
+    "/_auth/home/$roomId/": {
+      "filePath": "_auth/home/$roomId/index.tsx",
+      "parent": "/_auth/home"
     }
   }
 }

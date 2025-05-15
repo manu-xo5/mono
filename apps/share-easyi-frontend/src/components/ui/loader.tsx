@@ -12,8 +12,8 @@ export function Loader({ className }: Props) {
         className,
       )}
     >
-      <div className="absolute z-10 border-4 size-11/12 border-transparent animate-spin border-t-black/40 rounded-full" />
-      <div className="absolute z-20 border-4 size-9/12 border-transparent animate-spin duration-700 border-t-black/60 rounded-full" />
+      <div className="absolute z-10 border-4 size-11/12 border-transparent animate-spin border-t-white/30 rounded-full" />
+      <div className="absolute z-20 border-4 size-9/12 border-transparent animate-spin duration-700 border-t-white/20 rounded-full" />
     </div>
   )
 }

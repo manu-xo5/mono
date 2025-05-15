@@ -1,5 +1,4 @@
-import { messageHandler, pinger } from "./handler.ts";
-import { run } from "@effection/effection";
+import { messageHandler } from "./handler.ts";
 
 export type WS = WebSocket;
 
@@ -24,10 +23,9 @@ export function createManager(): Manager {
     // attach messageHandler
     messageHandler(m, clientId);
     // setup pingpong
-    run(function* () {
-      yield* pinger(m, clientId);
-    });
-
+    //run(function* () {
+    //  yield* pinger(m, clientId);
+    //});
   }
 
   function removeClient(clientId: string) {
