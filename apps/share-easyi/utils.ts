@@ -10,3 +10,7 @@ export function safeJsonParse<T>(input: string): T | null {
     return null;
   }
 }
+
+export function todo(): never {
+  throw new Error("Not Implemented");
+}

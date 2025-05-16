@@ -4,7 +4,7 @@ export type WS = WebSocket;
 
 export type Manager = {
   clients: Map<string, WS>;
-  addClient(ws: WS): void;
+  addClient(clientId: string, ws: WS): void;
   removeClient(clientId: string): void;
 };
 
@@ -16,12 +16,11 @@ export function createManager(): Manager {
     removeClient: removeClient,
   };
 
-  function addClient(ws: WS) {
-    const clientId = crypto.randomUUID();
-    m.clients.set(clientId, ws);
+  function addClient(userId: string, ws: WS) {
+    m.clients.set(userId, ws);
 
     // attach messageHandler
-    messageHandler(m, clientId);
+    messageHandler(m, userId);
     // setup pingpong
     //run(function* () {
     //  yield* pinger(m, clientId);

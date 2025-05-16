@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { WsContext } from '@/routes/_auth/home'
-import { use, useEffect, useState } from 'react'
+import { ComponentRef, use, useEffect, useRef, useState } from 'react'
 import { Loader } from '@/components/ui/loader'
 import { Flexbox } from '@/components/ui/flex'
 import { Stack } from '@/components/ui/stack'
@@ -58,8 +58,9 @@ function createMessageHandler({
  *
  *
  *
- * did  implemented receiving funnel
- * next is send and handling sent message on server
+ * did send and handling sent message on server
+ * next is pull messages from server with rq and
+ * invalidate on success ful sent, show red text if failed
  *
  *
  *
@@ -71,6 +72,8 @@ function RouteComponent() {
   const { user } = Route.useRouteContext()
   const [messages, setMessages] = useState<TextMessagePayload[]>([])
   const { ws, wsStatus } = use(WsContext)
+
+  const messageInputRef = useRef<ComponentRef<'textarea'>>(null)
 
   const userId = user.id
 
@@ -114,13 +117,34 @@ function RouteComponent() {
 
         <div className="grid grid-cols-[1fr_auto] w-full border border-zinc-800 dark:bg-transparent py-2 px-3 rounded-lg">
           <textarea
+            ref={messageInputRef}
             rows={2}
             className="w-full resize-none outline-none"
             placeholder="Send a message"
           />
 
           <div className="self-end">
-            <Button className="font-bold" size="sm">
+            <Button
+              className="font-bold"
+              size="sm"
+              onClick={() => {
+                const value = messageInputRef.current?.value
+                if (!value) {
+                  messageInputRef.current?.focus()
+                }
+
+                ws.send(
+                  JSON.stringify({
+                    type: 'text',
+                    body: {
+                      to: "1IRVf8bdb82IkH0JafZ9dwkUohy0URkE",
+                      from: user.id,
+                      text: value,
+                    },
+                  }),
+                )
+              }}
+            >
               Send
             </Button>
           </div>

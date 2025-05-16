@@ -1,12 +1,24 @@
 import { SECOND } from "../time.utils.ts";
-import { action, race, sleep, suspend } from "@effection/effection";
+import { action, race, sleep } from "@effection/effection";
 import { Manager } from "./index.ts";
-import { safeJsonParse } from "../utils.ts";
+import { safeJsonParse, todo } from "../utils.ts";
+import { storeMessage } from "../db/helpers/messsage.ts";
 
-type EventType = {
-  type: string;
+type TextMsgEvent = {
+  type: "text";
+  body: {
+    to: string;
+    from: string;
+    text: string;
+  };
+};
+
+type GenericEvent = {
+  type: "file" | "call";
   body: object;
 };
+
+type EventType = TextMsgEvent | GenericEvent;
 
 function listenPong(ws: WebSocket) {
   const op = action<MessageEvent>((k) => {
@@ -53,23 +65,32 @@ export function* pinger(m: Manager, clientId: string) {
   }
 }
 
-function handleCallRequest(msg: EventType) {
+async function handleTextMessage(msg: TextMsgEvent, userId: string) {
+  await storeMessage(msg.body, userId);
+}
+
+function handleCallRequest(msg: GenericEvent) {
   void msg;
 }
 
-function handleFileTransferReq(msg: EventType) {
+function handleFileTransferReq(msg: GenericEvent) {
   void msg;
 }
 
-export function messageHandler(m: Manager, clientId: string) {
-  const socket = m.clients.get(clientId);
+export function messageHandler(m: Manager, userId: string) {
+  const socket = m.clients.get(userId);
   if (socket == null) return;
 
   const handleMessage = (rawMsg: MessageEvent) => {
-    const msg = safeJsonParse<EventType>(String(rawMsg));
+    const msg = safeJsonParse<EventType>(String(rawMsg.data));
     if (!msg) return;
 
     switch (msg.type) {
+      case "text":
+        msg.type;
+        handleTextMessage(msg, userId);
+        break;
+
       case "file":
         handleFileTransferReq(msg);
         break;
@@ -79,13 +100,15 @@ export function messageHandler(m: Manager, clientId: string) {
         break;
 
       default:
-        console.log(`Unknown event type "${msg.type}"`);
+        console.error(
+          `Unknown event type "${
+            String(
+              (msg as Record<string, unknown>)?.type,
+            )
+          }"`,
+        );
     }
   };
 
-  try {
-    socket.addEventListener("message", handleMessage);
-  } finally {
-    socket.removeEventListener("message", handleMessage);
-  }
+  socket.onmessage = handleMessage;
 }

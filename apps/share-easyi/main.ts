@@ -6,7 +6,12 @@ import { createManager } from "./manager/index.ts";
 import { auth } from "./auth/index.ts";
 
 const manager = createManager();
-const app = new Hono();
+const app = new Hono<{
+  Variables: {
+    user: typeof auth.$Infer.Session.user;
+    session: typeof auth.$Infer.Session.session;
+  };
+}>();
 
 app.use(
   "/api/*",
@@ -17,6 +22,28 @@ app.use(
   }),
 );
 
+app.use("*", async (c, next) => {
+  if (
+    c.req.path === "/api/ping" ||
+    c.req.path.startsWith("/api/auth") ||
+    c.req.method.toLowerCase() == "options"
+  ) {
+    // c.set("user", null);
+    // c.set("session", null);
+    return next();
+  }
+
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+
+  if (!session) {
+    return c.json({}, 403);
+  }
+
+  c.set("user", session.user);
+  c.set("session", session.session);
+  return next();
+});
+
 app.get("/api/ping", (c) => {
   console.log("sent");
   return c.text("pong", 200);
@@ -26,10 +53,10 @@ app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.get(
   "/ws",
-  upgradeWebSocket(() => ({
+  upgradeWebSocket((c) => ({
     onOpen(_, ws) {
       if (ws.raw) {
-        manager.addClient(ws.raw);
+        manager.addClient(c.get("user").id, ws.raw);
       }
     },
   })),
@@ -58,4 +85,5 @@ app.get(
   //  }
   //}
 );
-Deno.serve({ port: 1553 }, app.fetch);
+
+Deno.serve({ port: Number.parseInt(Deno.env.get("PORT")!) }, app.fetch);

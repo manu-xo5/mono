@@ -36,7 +36,10 @@ function RouteComponent() {
                 className={cn('w-full gap-2')}
                 disabled={loading}
                 onClick={async () => {
-                  await authClient.signIn.social({ provider: 'google' })
+                  await authClient.signIn.social({
+                    provider: 'google',
+                    callbackURL: window.location.origin + '/home',
+                  })
                 }}
               >
                 <svg
