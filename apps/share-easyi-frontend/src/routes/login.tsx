@@ -38,7 +38,7 @@ function RouteComponent() {
                 onClick={async () => {
                   await authClient.signIn.social({
                     provider: 'google',
-                    callbackURL: window.location.origin + '/home',
+                    callbackURL: 'http://localhost:3000/home',
                   })
                 }}
               >

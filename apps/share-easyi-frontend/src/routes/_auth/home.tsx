@@ -6,10 +6,67 @@ import { signOutUser } from '@/lib/auth'
 import { createStorage } from '@/lib/create-storage'
 import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router'
 import { useEffect, useState, createContext } from 'react'
+import { SERVER_BASE } from '@/constants'
+import { createMessageHandler, messagesActions } from '@/message-service'
+import { Loader } from '@/components/ui/loader'
 
 export const Route = createFileRoute('/_auth/home')({
   component: LayoutComponent,
+  preload: false,
+  staleTime: 30,
+  loader: async () => {
+    const roomsRes: { ok: { roomId: string }[] } = await fetch(
+      SERVER_BASE + '/api/vx/room',
+      {
+        credentials: 'include',
+      },
+    ).then((r) => r.json())
+
+    const rooms = roomsRes.ok.map((i) => i.roomId)
+
+    recentAddrStorage.setItem('all', rooms)
+
+    const messagesRes = await getInitialMessages(rooms)
+    for (const { roomId, messages } of messagesRes) {
+      messages.forEach((message) => {
+        messagesActions.overwriteMessage(roomId, {
+          id: message.id,
+          status: 'ok',
+          text: message.body,
+          type: message.type,
+        })
+      })
+    }
+    console.log({ messages: messagesRes.flatMap((m) => m.messages) })
+
+    return {
+      rooms,
+    }
+  },
 })
+
+async function getInitialMessages(roomIdList: string[]) {
+  const getQueryParam = (roomId: string) =>
+    new URLSearchParams({
+      roomId,
+    }).toString()
+
+  const messagesPromises = roomIdList.map((roomId) =>
+    fetch(SERVER_BASE + '/api/vx/message?' + getQueryParam(roomId), {
+      credentials: 'include',
+    })
+      .then((r) => r.json() as Promise<{ ok: any[] }>)
+      .catch(() => ({
+        ok: [] as any[],
+      }))
+      .then((messages) => ({
+        roomId,
+        messages: messages.ok,
+      })),
+  )
+
+  return Promise.all(messagesPromises)
+}
 
 function useWebSocket() {
   const [ws, setWs] = useState<null | WebSocket>(null)
@@ -23,12 +80,10 @@ function useWebSocket() {
 
     return () => {
       if (socket.readyState === WebSocket.OPEN) {
-        console.log('ws1', socket.readyState)
         socket.close(1000, 'GoingAway')
         return
       }
 
-      console.log('ws2', socket.readyState)
       socket.onopen = () => {
         socket.close(1000, 'GoingAway')
       }
@@ -47,22 +102,24 @@ function useWebSocket() {
 }
 
 export const WsContext = createContext<{
-  ws: WebSocket | null
+  ws: WebSocket
   wsStatus: string
 }>({
   wsStatus: 'CLOSED',
-  ws: null,
+  ws: null as unknown as WebSocket,
 })
 
 const recentAddrStorage = createStorage({
-  getItem: (name) => localStorage.getItem(name),
-  setItem: (name, value) => localStorage.setItem(name, value),
+  getItem: (name) => localStorage.getItem('rooms' + name),
+  setItem: (name, value) => localStorage.setItem('rooms' + name, value),
 })
 
 function LayoutComponent() {
   const router = useRouter()
   const navigate = Route.useNavigate()
   const wsState = useWebSocket()
+
+  const { ws } = wsState
 
   function navigateToRoom(roomId: string) {
     navigate({
@@ -76,8 +133,28 @@ function LayoutComponent() {
     })
   }
 
+  useEffect(() => {
+    if (!ws) return
+
+    const handler = createMessageHandler()
+
+    ws.addEventListener('message', handler)
+    ws.addEventListener('error', (e) => console.error(e))
+    ws.addEventListener('close', () => console.error())
+
+    return () => ws.removeEventListener('message', handler)
+  }, [ws])
+
+  if (ws == null) {
+    return (
+      <div className="flex justify-center items-center">
+        <Loader />
+      </div>
+    )
+  }
+
   return (
-    <WsContext value={wsState}>
+    <WsContext value={{ ...wsState, ws }}>
       <PageContainer className="grid grid-cols-[300px_1fr]">
         <Stack className="bg-muted/20 border-r p-3 gap-3">
           <Input
@@ -88,13 +165,13 @@ function LayoutComponent() {
 
               const all = recentAddrStorage
                 .getItem<string[]>('all')
-                .unwrapOr([])
+                .unwrapOr<string[]>([])
 
               if (!all.includes(value)) {
                 recentAddrStorage.setItem('all', all.concat(value))
               }
 
-              navigateToRoom(value);
+              navigateToRoom(value)
             }}
           />
 

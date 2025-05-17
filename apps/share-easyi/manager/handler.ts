@@ -1,10 +1,11 @@
 import { SECOND } from "../time.utils.ts";
 import { action, race, sleep } from "@effection/effection";
 import { Manager } from "./index.ts";
-import { safeJsonParse, todo } from "../utils.ts";
+import { safeJsonParse, tryCatch } from "../utils.ts";
 import { storeMessage } from "../db/helpers/messsage.ts";
 
 type TextMsgEvent = {
+  id: string;
   type: "text";
   body: {
     to: string;
@@ -14,6 +15,7 @@ type TextMsgEvent = {
 };
 
 type GenericEvent = {
+  id: string;
   type: "file" | "call";
   body: object;
 };
@@ -65,8 +67,70 @@ export function* pinger(m: Manager, clientId: string) {
   }
 }
 
-async function handleTextMessage(msg: TextMsgEvent, userId: string) {
-  await storeMessage(msg.body, userId);
+function createRoomId(user1: string, user2: string) {
+  return [user1, user2].sort().join("-");
+}
+
+async function handleTextMessage(
+  m: Manager,
+  userId: string,
+  event: TextMsgEvent,
+) {
+  const body = event.body;
+
+  const roomId = createRoomId(body.from, body.to);
+  console.log({ roomId });
+  // zod validation
+  const otherUserSocket = m.clients.get(body.to);
+
+  otherUserSocket?.send(
+    JSON.stringify({
+      id: crypto.randomUUID(),
+      type: "message-receive",
+      roomId: roomId,
+      body: {
+        type: "text",
+        from: body.from,
+        to: body.to,
+        body: body.text,
+      },
+    }),
+  );
+
+  const [error, message] = await tryCatch(
+    storeMessage(roomId, {
+      type: "text",
+      from: body.from,
+      to: body.to,
+      body: body.text,
+    }),
+  );
+
+  const socket = m.clients.get(userId);
+  if (!socket) return;
+
+  if (error) {
+    socket.send(
+      JSON.stringify({
+        id: event.id,
+        type: "message-delivery",
+        status: "fail",
+        error: String(error),
+      }),
+    );
+    return;
+  }
+
+  socket.send(
+    JSON.stringify({
+      id: event.id,
+      type: "message-delivery",
+      body: {
+        id: message.id,
+      },
+      status: "ok",
+    }),
+  );
 }
 
 function handleCallRequest(msg: GenericEvent) {
@@ -87,8 +151,7 @@ export function messageHandler(m: Manager, userId: string) {
 
     switch (msg.type) {
       case "text":
-        msg.type;
-        handleTextMessage(msg, userId);
+        handleTextMessage(m, userId, msg);
         break;
 
       case "file":
@@ -101,11 +164,9 @@ export function messageHandler(m: Manager, userId: string) {
 
       default:
         console.error(
-          `Unknown event type "${
-            String(
-              (msg as Record<string, unknown>)?.type,
-            )
-          }"`,
+          `Unknown event type "${String(
+            (msg as Record<string, unknown>)?.type,
+          )}"`,
         );
     }
   };

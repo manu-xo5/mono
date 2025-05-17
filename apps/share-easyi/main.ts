@@ -1,9 +1,10 @@
 import "jsr:@std/dotenv/load";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { upgradeWebSocket } from "hono/deno";
 import { createManager } from "./manager/index.ts";
 import { auth } from "./auth/index.ts";
+import { authMiddleware } from "./auth/middleware.ts";
+import * as apiRoutes from "./api/index.ts";
 
 const manager = createManager();
 const app = new Hono<{
@@ -21,69 +22,37 @@ app.use(
     credentials: true,
   }),
 );
+app.use("/api/vx/*", authMiddleware());
 
-app.use("*", async (c, next) => {
-  if (
-    c.req.path === "/api/ping" ||
-    c.req.path.startsWith("/api/auth") ||
-    c.req.method.toLowerCase() == "options"
-  ) {
-    // c.set("user", null);
-    // c.set("session", null);
-    return next();
-  }
-
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-
-  if (!session) {
-    return c.json({}, 403);
-  }
-
-  c.set("user", session.user);
-  c.set("session", session.session);
-  return next();
-});
-
-app.get("/api/ping", (c) => {
-  console.log("sent");
-  return c.text("pong", 200);
-});
+app.get("/api/ping", (c) => c.text("pong", 200));
 
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-app.get(
-  "/ws",
-  upgradeWebSocket((c) => ({
-    onOpen(_, ws) {
-      if (ws.raw) {
-        manager.addClient(c.get("user").id, ws.raw);
-      }
-    },
-  })),
-  //(c) => {
-  //  try {
-  //    if (c.req.header("Upgrade") != "websocket") {
-  //      return c.text("not a websocket request", 501);
-  //    }
-  //    const { socket, response } = Deno.upgradeWebSocket(c.req.raw);
-  //
-  //    console.log(["CONNECTING", "OPEN", "CLOSING", "CLOSED"][socket.readyState]);
-  //    if (
-  //      !(
-  //        socket.readyState === WebSocket.CLOSED ||
-  //          socket.readyState === WebSocket.CLOSING
-  //      )
-  //    ) {
-  //      console.log("client added")
-  //      manager.addClient(socket);
-  //    }
-  //
-  //    return response;
-  //  } catch (err) {
-  //    console.log(err);
-  //    return c.text("server error", 500);
-  //  }
-  //}
-);
+app.get("/ws", async (c) => {
+  if (c.req.header("Upgrade") != "websocket") {
+    return c.text("not a websocket request", 400);
+  }
+
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) {
+    return c.text("not authenticated");
+  }
+
+  const { socket, response } = Deno.upgradeWebSocket(c.req.raw);
+  manager.addClient(session.user.id, socket);
+
+  return response;
+});
+
+for (const [moduleName, module] of Object.entries(apiRoutes)) {
+  if ("GET" in module) {
+    const url = "/api/vx/" + moduleName;
+    app.get(url, module.GET);
+  }
+
+  if ("POST" in module) {
+    app.get(moduleName, module.POST as () => Promise<Response>);
+  }
+}
 
 Deno.serve({ port: Number.parseInt(Deno.env.get("PORT")!) }, app.fetch);

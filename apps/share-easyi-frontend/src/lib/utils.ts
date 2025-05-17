@@ -38,5 +38,9 @@ export async function waitEvent<
 }
 
 export function createRoomId(user1Id: string, user2Id: string) {
-  return [user1Id, user2Id].sort().join("-")
+  return [user1Id, user2Id].sort().join('-')
+}
+
+export function sleep(ms: number) {
+  return new Promise<void>((res) => setTimeout(() => res(), ms))
 }

@@ -27,6 +27,26 @@ export namespace Result {
 }
 
 export class Option<V> {
+  static async fromPromise<T>(tar: Promise<T>) {
+    try {
+      const value = await tar
+      return Option.some(value)
+    } catch (error) {
+      console.error(error)
+      return Option.none
+    }
+  }
+
+  static fromSync<T>(tar: () => T) {
+    try {
+      const value = tar()
+      return Option.some(value)
+    } catch (error) {
+      console.error(error)
+      return Option.none
+    }
+  }
+
   static some<R>(value: R) {
     return new Option(value)
   }
@@ -56,7 +76,7 @@ export class Option<V> {
     return new Option<R>(_value)
   }
 
-  unwrapOr<F extends V>(fallback: F): V {
+  unwrapOr<F>(fallback: F): V | F {
     return this.value ?? fallback
   }
 }

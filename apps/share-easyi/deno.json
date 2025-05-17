@@ -9,6 +9,7 @@
     "hono": "jsr:@hono/hono@^4.7.9"
   },
   "tasks": {
+    "dev:client": "cd ../share-easyi-frontend && pnpm dev",
     "dev": "deno run -A --watch main.ts",
     "auth": "deno run -A --node-modules-dir npm:@better-auth/cli generate --output=db/schema/auth.ts --config=auth/index.ts",
     "db": "deno --env -A --node-modules-dir npm:drizzle-kit --config=drizzle.config.ts",

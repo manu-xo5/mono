@@ -1,103 +1,59 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { WsContext } from '@/routes/_auth/home'
-import { ComponentRef, use, useEffect, useRef, useState } from 'react'
-import { Loader } from '@/components/ui/loader'
+import { Button } from '@/components/ui/button'
 import { Flexbox } from '@/components/ui/flex'
 import { Stack } from '@/components/ui/stack'
-import { Button } from '@/components/ui/button'
+import { SERVER_BASE } from '@/constants'
 import { createRoomId } from '@/lib/utils'
+import { messagesActions } from '@/message-service'
+import { useMessageStore } from '@/message-service/store'
+import { WsContext } from '@/routes/_auth/home'
+import { queryOptions, useQuery } from '@tanstack/react-query'
+import { createFileRoute } from '@tanstack/react-router'
+import { ComponentRef, use, useRef } from 'react'
 
 export const Route = createFileRoute('/_auth/home/$roomId/')({
   component: RouteComponent,
 })
-
-// maybe use zod
-
-type TextMessageEvent = {
-  type: 'message'
-  data: {
-    forRoomId: string
-    text: string
-  }
-}
-type TextMessagePayload = TextMessageEvent['data'] & {
-  id: string
-}
-
-function createMessageHandler({
-  roomId,
-  setState,
-}: {
-  roomId: string
-  setState: React.Dispatch<React.SetStateAction<TextMessagePayload[]>>
-}) {
-  return function (message: MessageEvent) {
-    const parsedMessage = (() => {
-      try {
-        return JSON.parse(message.data) as TextMessageEvent
-      } catch {
-        return null
-      }
-    })()
-
-    if (!parsedMessage) return
-    if (parsedMessage.data.forRoomId !== roomId) return
-
-    setState((prev) => {
-      const id = crypto.randomUUID()
-      return prev.concat({
-        id,
-        ...parsedMessage.data,
-      })
-    })
-  }
-}
 
 /*
  *
  *
  *
  *
- * did send and handling sent message on server
+ * did send and unsent event on front end.
  * next is pull messages from server with rq and
- * invalidate on success ful sent, show red text if failed
+ * invalidate on reload, show red text if failed
  *
  *
  *
  *
  */
 
+const messageQO = (userId: string, roomId: string) =>
+  queryOptions({
+    queryKey: [userId, 'roomId', roomId],
+    queryFn: () => {
+      const qp = new URLSearchParams({
+        roomId,
+        limit: '50',
+        offset: '0',
+      }).toString()
+      return fetch(SERVER_BASE + '/api/vx/message?' + qp, {
+        credentials: 'include',
+      })
+    },
+  })
+
 function RouteComponent() {
-  const { roomId: otherUserId } = Route.useParams()
+  const { roomId } = Route.useParams()
   const { user } = Route.useRouteContext()
-  const [messages, setMessages] = useState<TextMessagePayload[]>([])
   const { ws, wsStatus } = use(WsContext)
 
-  const messageInputRef = useRef<ComponentRef<'textarea'>>(null)
-
   const userId = user.id
+  const messages = useMessageStore().messagesRecord
+  const otherUserId = roomId.split("-").find(id => id != userId)!;
 
-  useEffect(() => {
-    if (!ws) return
-    const roomId = createRoomId(userId, otherUserId)
-
-    const handler = createMessageHandler({
-      roomId,
-      setState: setMessages,
-    })
-
-    ws.addEventListener('message', handler)
-
-    return () => ws.removeEventListener('message', handler)
-  }, [ws, otherUserId, userId])
-
-  if (!ws) {
-    return (
-      <div className="flex justify-center items-center">
-        <Loader />
-      </div>
-    )
-  }
+  const messageInputRef = useRef<ComponentRef<'textarea'>>(null)
+  const messagesQry = useQuery(messageQO(userId, roomId))
 
   return (
     <Stack className="relative">
@@ -109,9 +65,14 @@ function RouteComponent() {
       </Flexbox>
 
       <Stack className="flex-1 w-full px-3 pb-3">
-        <ul className="flex-1 h-full">
-          {messages.map((msg) => (
-            <li key={msg.id}>{msg.text}</li>
+        <ul className="flex-1 h-full overflow-y-auto">
+          {Object.values(messages).map((msg) => (
+            <li key={msg.id}>
+              {msg.text}
+              {msg.status == null
+                ? '[ ]'
+                : { ok: '[x]', fail: '[!]' }[msg.status]}
+            </li>
           ))}
         </ul>
 
@@ -131,15 +92,28 @@ function RouteComponent() {
                 const value = messageInputRef.current?.value
                 if (!value) {
                   messageInputRef.current?.focus()
+                  return
+                }
+
+                const msg = messagesActions.newMessage(roomId, {
+                  status: null,
+                  type: 'text',
+                  text: value,
+                })
+
+                if (!msg) {
+                  // maybe failed to generate id
+                  return
                 }
 
                 ws.send(
                   JSON.stringify({
-                    type: 'text',
+                    id: msg.id,
+                    type: msg.type,
                     body: {
-                      to: "1IRVf8bdb82IkH0JafZ9dwkUohy0URkE",
+                      to: otherUserId,
                       from: user.id,
-                      text: value,
+                      text: msg.text,
                     },
                   }),
                 )

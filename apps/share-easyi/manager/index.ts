@@ -20,11 +20,11 @@ export function createManager(): Manager {
     m.clients.set(userId, ws);
 
     // attach messageHandler
-    messageHandler(m, userId);
     // setup pingpong
     //run(function* () {
     //  yield* pinger(m, clientId);
     //});
+    messageHandler(m, userId);
   }
 
   function removeClient(clientId: string) {

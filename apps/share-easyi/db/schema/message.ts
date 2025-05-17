@@ -1,65 +1,55 @@
-import { boolean, integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgTable,
+  serial,
+  text,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
-import { sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 
-function createIntPrimary<Name extends string>(name: Name) {
-  return integer().primaryKey().generatedAlwaysAsIdentity({
-    name: name,
-    startWith: 1,
-    increment: 1,
-    minValue: 1,
-    maxValue: 2147483647,
-    cache: 1,
-  });
-}
+export const messageTable = pgTable(
+  "message",
+  {
+    id: serial("id").primaryKey(),
+    roomId: text("room_id")
+      .notNull()
+      .references(() => roomTable.roomId),
 
-export const messageTable = pgTable("message", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity({
-    name: "messages_id_seq",
-    startWith: 1,
-    increment: 1,
-    minValue: 1,
-    maxValue: 2147483647,
-    cache: 1,
+    type: text("type", { enum: ["text"] }).notNull(),
+
+    from: text("sender_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "no action" }),
+
+    to: text("receiver_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "no action" }),
+
+    body: varchar({ length: 512 }).notNull(),
+    deleted: boolean("deleted"),
+  },
+  (t) => [index().on(t.id)],
+);
+
+export const messageRelations = relations(messageTable, ({ one }) => ({
+  room: one(roomTable, {
+    fields: [messageTable.roomId],
+    references: [roomTable.roomId],
   }),
+}));
 
-  from: text("sender_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+export const roomTable = pgTable(
+  "rooms",
+  {
+    roomId: text("room_id").primaryKey(),
+    user1: text().references(() => user.id),
+    user2: text().references(() => user.id)
+  },
+  (table) => [index().on(table.roomId)],
+);
 
-  to: text("receiver_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-
-  deleted: boolean("deleted"),
-
-  text: varchar({ length: 512 }).notNull(),
-});
-
-export const messagesPagedTable = pgTable("messagesPaged", {
-  id: createIntPrimary("messages_paged_id_seq"),
-
-  messageIds: integer("message_ids")
-    .array()
-    .notNull()
-    .default(sql`ARRAY[]::integer[]`),
-
-  prevCursor: integer("prev_cursor"),
-  nextCursor: integer("next_cursor"),
-});
-
-export const messageOwnerTable = pgTable("messages_owner", {
-  id: createIntPrimary("messages_owner_id"),
-
-  userId: text("user_id")
-    .notNull()
-    .unique()
-    .references(() => user.id, {
-      onDelete: "cascade",
-    }),
-
-  messagePagedId: integer("message_paged_id")
-    .notNull()
-    .unique()
-    .references(() => messagesPagedTable.id),
-});
+export const roomRelations = relations(roomTable, ({ many }) => ({
+  messages: many(messageTable),
+}));
