@@ -3,7 +3,7 @@ import { messageTable, roomTable } from "../schema/message.ts";
 
 type Values = Pick<
   typeof messageTable.$inferInsert,
-  "from" | "to" | "body" | "type"
+  "from" | "to" | "body" | "type" | "id" | "updatedAt"
 >;
 export async function storeMessage(roomId: string, values: Values) {
   await db
@@ -18,11 +18,13 @@ export async function storeMessage(roomId: string, values: Values) {
   const [message] = await db
     .insert(messageTable)
     .values({
+      id: values.id,
       from: values.from,
       roomId: roomId,
       to: values.to,
       type: values.type,
       body: values.body,
+      updatedAt: values.updatedAt,
     })
     .returning();
 

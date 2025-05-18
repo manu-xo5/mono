@@ -1,109 +1,59 @@
 import { Message, MessageId, messageStore, RoomId } from './store'
+import { nanoid } from 'nanoid'
 
-function appendMessageId(roomId: RoomId, messageId: MessageId): MessageId[] {
+export function appendMessageIds(
+  roomId: RoomId,
+  ...messageId: MessageId[]
+): MessageId[] {
   const { rooms } = messageStore.getState()
+  const room = rooms[roomId]
 
-  if (!rooms[roomId]) {
+  if (!room) {
     return []
   }
 
-  if (rooms[roomId].includes(messageId)) {
-    return rooms[roomId]
-  }
+  const uniqueIds = messageId.filter((msgId) => !room.includes(msgId))
 
-  return rooms[roomId].concat(messageId)
+  return room.concat(uniqueIds)
 }
 
-export function updateMessage(
-  msgId: MessageId,
-  values: Partial<Omit<Message, 'id'>>,
-) {
-  const { messagesRecord } = messageStore.getState()
+export function addToStorage(value: Message) {
+  const store = messageStore.getState()
 
-  const message = messagesRecord[msgId]
-  if (!message) {
-    return
-  }
+  store.messages[value.id] = value
 
-  messagesRecord[msgId] = Object.assign({}, message, values)
-  messageStore.setState({ messagesRecord: { ...messagesRecord } })
+  messageStore.setState({ ...store })
 }
 
-export function updateMessageId(currentId: MessageId, newId: MessageId) {
-  const { messagesRecord, rooms } = messageStore.getState()
+export function moveToPersistStorage(msgId: string) {
+  const { messages, optimisticMessages } = messageStore.getState()
+  const message = optimisticMessages[msgId]
 
-  const message = messagesRecord[currentId]
-  if (!message) {
-    return
-  }
+  if (!message) return
 
-  messagesRecord[newId] = { ...message }
+  messages[msgId] = { ...message, status: 'ok' }
+  delete optimisticMessages[msgId]
 
-  for (const roomMessages of Object.values(rooms)) {
-    for (let i = 0; i < roomMessages.length; i++) {
-      if (roomMessages[i] === currentId) {
-        roomMessages[i] = newId
-      }
-    }
-  }
+  console.log(messages)
+  console.log(messages[msgId])
 
-  delete messagesRecord[currentId]
-
-  messageStore.setState((prev) =>
-    Object.assign({}, prev, { messagesRecord, rooms }),
-  )
+  messageStore.setState({ ...{ messages, optimisticMessages } })
 }
 
-export function overwriteMessage(roomId: RoomId, values: Message) {
-  const { rooms, messagesRecord } = messageStore.getState()
-
-  messagesRecord[values.id] = values
-
-  rooms[roomId] = appendMessageId(roomId, values.id)
-
-  messageStore.setState((prev) =>
-    Object.assign({}, prev, { messagesRecord, rooms }),
-  )
-}
-
-// TODO: remove id?: string
 export function newMessage(
   roomId: RoomId,
-  msg: Omit<Message, 'id'> & { id?: string },
+  msg: Omit<Message, 'id'>,
 ) {
-  const { messagesRecord, rooms } = messageStore.getState()
+  const { optimisticMessages, rooms } = messageStore.getState()
 
-  console.log(msg)
-  let id: string | null =
-    msg.id ??
-    (() => {
-      let newId: string | null = crypto.randomUUID()
-      let i = 0
-      while (newId in messagesRecord) {
-        if (i > 100) {
-          newId = null
-          break
-        }
-        newId = crypto.randomUUID()
-      }
-      return newId
-    })()
+  const id = nanoid()
 
-  if (id == null) {
-    return null
-  }
+  const message: Message = { id, ...msg }
 
-  const message: Message = {
-    id: id,
-    ...msg,
-  }
+  optimisticMessages[id] = message
+  rooms[roomId] = appendMessageIds(roomId, id)
 
-  messagesRecord[id] = message
-  rooms[roomId] = (rooms[roomId] ?? []).concat(id)
-  messageStore.setState({
-    messagesRecord: { ...messagesRecord },
-    rooms: { ...rooms },
-  })
+  messageStore.setState({ ...{ optimisticMessages, rooms } })
 
   return message
 }

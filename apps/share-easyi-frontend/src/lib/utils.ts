@@ -44,3 +44,7 @@ export function createRoomId(user1Id: string, user2Id: string) {
 export function sleep(ms: number) {
   return new Promise<void>((res) => setTimeout(() => res(), ms))
 }
+
+export function pgTimestamp(date: Date): string {
+  return date.toISOString().replace('T', ' ').replace('Z', '').slice(0, 19)
+}

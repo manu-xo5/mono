@@ -1,33 +1,41 @@
-import { sleep } from '@/lib/utils'
-import { MessageId, MessageStoreApi } from './store'
+import { messageStore, MessageStoreApi } from './store'
 import * as messagesActions from './actions'
 
 // maybe use zod
 export type MessageDeliveryEvent =
   | {
-      id: string
       type: 'message-delivery'
-      body: {
-        id: MessageId
-      }
       status: 'ok'
+      body: {
+        id: string
+        roomId: string
+        updatedAt: string
+        type: 'text'
+        from: string
+        to: string
+        body: string
+        deleted: boolean | null
+      }
     }
   | {
-      id: string
       type: 'message-delivery'
       status: 'fail'
-      error: string
+      body: {
+        id: string
+        error: string
+      }
     }
 
 export type MessageReceiveEvent = {
-  id: string
   type: 'message-receive'
   roomId: string
   body: {
+    id: string
     type: 'text'
     from: string
     to: string
     body: string
+    updatedAt: string
   }
 }
 
@@ -38,28 +46,27 @@ export type HandlerArg = {
 }
 
 async function handleMessageDelivery(msg: MessageDeliveryEvent) {
-  await sleep(1000)
-  messagesActions.updateMessage(msg.id, {
-    status: msg.status,
-  })
-
   if (msg.status == 'ok') {
-    messagesActions.updateMessageId(msg.id, msg.body.id)
+    messagesActions.moveToPersistStorage(msg.body.id)
   }
 }
 
 async function handleMessageReceive(msg: MessageReceiveEvent) {
   const body = msg.body
 
-  const ok = messagesActions.newMessage(msg.roomId, {
+  messagesActions.addToStorage({
+    id: body.id,
     type: body.type,
     text: body.body,
     status: 'ok',
+    updatedAt: body.updatedAt,
   })
-
-  if (!ok) {
-    console.error('received message but failed to update view')
-  }
+  messageStore.setState(prev => ({
+    rooms: {
+      ...prev.rooms,
+      [msg.roomId]: messagesActions.appendMessageIds(msg.roomId, body.id)
+    }
+  }))
 }
 
 export function createMessageHandler() {
@@ -71,8 +78,6 @@ export function createMessageHandler() {
         return null
       }
     })()
-
-    console.log({ parsedMessage })
 
     if (!parsedMessage) return
 

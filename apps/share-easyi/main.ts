@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import { createManager } from "./manager/index.ts";
 import { auth } from "./auth/index.ts";
 import { authMiddleware } from "./auth/middleware.ts";
-import * as apiRoutes from "./api/index.ts";
+import { router } from "./api/index.ts";
 
 const manager = createManager();
 const app = new Hono<{
@@ -27,6 +27,7 @@ app.use("/api/vx/*", authMiddleware());
 app.get("/api/ping", (c) => c.text("pong", 200));
 
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+app.route("/api/vx", router.routes);
 
 app.get("/ws", async (c) => {
   if (c.req.header("Upgrade") != "websocket") {
@@ -43,16 +44,5 @@ app.get("/ws", async (c) => {
 
   return response;
 });
-
-for (const [moduleName, module] of Object.entries(apiRoutes)) {
-  if ("GET" in module) {
-    const url = "/api/vx/" + moduleName;
-    app.get(url, module.GET);
-  }
-
-  if ("POST" in module) {
-    app.get(moduleName, module.POST as () => Promise<Response>);
-  }
-}
 
 Deno.serve({ port: Number.parseInt(Deno.env.get("PORT")!) }, app.fetch);

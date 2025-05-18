@@ -1,4 +1,4 @@
-import { SECOND } from "../time.utils.ts";
+import { pgTimestamp, SECOND } from "../time.utils.ts";
 import { action, race, sleep } from "@effection/effection";
 import { Manager } from "./index.ts";
 import { safeJsonParse, tryCatch } from "../utils.ts";
@@ -8,6 +8,7 @@ type TextMsgEvent = {
   id: string;
   type: "text";
   body: {
+    updatedAt: string;
     to: string;
     from: string;
     text: string;
@@ -76,6 +77,7 @@ async function handleTextMessage(
   userId: string,
   event: TextMsgEvent,
 ) {
+  await new Promise((res) => setTimeout(res, 5 * 1000));
   const body = event.body;
 
   const roomId = createRoomId(body.from, body.to);
@@ -85,24 +87,27 @@ async function handleTextMessage(
 
   otherUserSocket?.send(
     JSON.stringify({
-      id: crypto.randomUUID(),
       type: "message-receive",
       roomId: roomId,
       body: {
+        id: event.id,
         type: "text",
         from: body.from,
         to: body.to,
         body: body.text,
+        updatedAt: body.updatedAt,
       },
     }),
   );
 
   const [error, message] = await tryCatch(
     storeMessage(roomId, {
+      id: event.id,
       type: "text",
       from: body.from,
       to: body.to,
       body: body.text,
+      updatedAt: body.updatedAt,
     }),
   );
 
@@ -112,10 +117,12 @@ async function handleTextMessage(
   if (error) {
     socket.send(
       JSON.stringify({
-        id: event.id,
         type: "message-delivery",
         status: "fail",
-        error: String(error),
+        body: {
+          id: event.id,
+          error: String(error),
+        },
       }),
     );
     return;
@@ -123,12 +130,9 @@ async function handleTextMessage(
 
   socket.send(
     JSON.stringify({
-      id: event.id,
       type: "message-delivery",
-      body: {
-        id: message.id,
-      },
       status: "ok",
+      body: message,
     }),
   );
 }

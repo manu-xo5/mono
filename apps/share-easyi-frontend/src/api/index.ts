@@ -1,3 +1,5 @@
+import { SERVER_BASE } from '@/constants'
+
 export class ApiError extends Error {
   constructor(message: string) {
     super(message)
@@ -5,12 +7,15 @@ export class ApiError extends Error {
   }
 }
 
-export const api = (async (url, init) => {
-  const res = await window.fetch(url, init)
+export const API_VX = async (url: RequestInfo, init?: RequestInit) => {
+  const res = await window.fetch(SERVER_BASE + '/api/vx' + url, {
+    credentials: 'include',
+    ...init,
+  })
 
   if (!res.ok) {
-    throw new ApiError("server error")
+    throw new ApiError('server error')
   }
 
   return res
-}) satisfies typeof window.fetch
+}

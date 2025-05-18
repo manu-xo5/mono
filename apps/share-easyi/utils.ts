@@ -24,3 +24,7 @@ export async function tryCatch<V, E = Error>(promise: Promise<V>) {
     return [error as E, null] as const;
   }
 }
+//
+// export function chunkArray<T>(arr: T[], size: number): T[][] {
+//   return Array.from
+// }

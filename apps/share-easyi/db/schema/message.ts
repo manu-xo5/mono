@@ -2,8 +2,8 @@ import {
   boolean,
   index,
   pgTable,
-  serial,
   text,
+  timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth.ts";
@@ -12,7 +12,7 @@ import { relations } from "drizzle-orm";
 export const messageTable = pgTable(
   "message",
   {
-    id: serial("id").primaryKey(),
+    id: text("id").primaryKey(),
     roomId: text("room_id")
       .notNull()
       .references(() => roomTable.roomId),
@@ -29,6 +29,8 @@ export const messageTable = pgTable(
 
     body: varchar({ length: 512 }).notNull(),
     deleted: boolean("deleted"),
+
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
   (t) => [index().on(t.id)],
 );
@@ -45,7 +47,7 @@ export const roomTable = pgTable(
   {
     roomId: text("room_id").primaryKey(),
     user1: text().references(() => user.id),
-    user2: text().references(() => user.id)
+    user2: text().references(() => user.id),
   },
   (table) => [index().on(table.roomId)],
 );

@@ -1,47 +1,18 @@
+import { MessageList } from '@/components/message-list'
 import { Button } from '@/components/ui/button'
 import { Flexbox } from '@/components/ui/flex'
 import { Stack } from '@/components/ui/stack'
-import { SERVER_BASE } from '@/constants'
-import { createRoomId } from '@/lib/utils'
+import { pgTimestamp } from '@/lib/utils'
 import { messagesActions } from '@/message-service'
-import { useMessageStore } from '@/message-service/store'
+import { getMessages, useMessageStore } from '@/message-service/store'
 import { WsContext } from '@/routes/_auth/home'
-import { queryOptions, useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { ComponentRef, use, useRef } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 
 export const Route = createFileRoute('/_auth/home/$roomId/')({
   component: RouteComponent,
 })
-
-/*
- *
- *
- *
- *
- * did send and unsent event on front end.
- * next is pull messages from server with rq and
- * invalidate on reload, show red text if failed
- *
- *
- *
- *
- */
-
-const messageQO = (userId: string, roomId: string) =>
-  queryOptions({
-    queryKey: [userId, 'roomId', roomId],
-    queryFn: () => {
-      const qp = new URLSearchParams({
-        roomId,
-        limit: '50',
-        offset: '0',
-      }).toString()
-      return fetch(SERVER_BASE + '/api/vx/message?' + qp, {
-        credentials: 'include',
-      })
-    },
-  })
 
 function RouteComponent() {
   const { roomId } = Route.useParams()
@@ -49,32 +20,30 @@ function RouteComponent() {
   const { ws, wsStatus } = use(WsContext)
 
   const userId = user.id
-  const messages = useMessageStore().messagesRecord
-  const otherUserId = roomId.split("-").find(id => id != userId)!;
+  const messages = useMessageStore(
+    useShallow((s) => getMessages(s.rooms[roomId] ?? [])),
+  )
+
+  const otherUserId = roomId.split('-').find((id) => id != userId)!
 
   const messageInputRef = useRef<ComponentRef<'textarea'>>(null)
-  const messagesQry = useQuery(messageQO(userId, roomId))
+  const messageListRef = useRef<ComponentRef<'ul'>>(null)
 
   return (
-    <Stack className="relative">
+    <Stack className="relative min-h-0">
       <Flexbox className="w-full bg-muted py-3 px-6 gap-3">
-        <span className="size-6  rounded-full inline-block bg-black" />
+        <span className="size-6 rounded-full inline-block bg-black" />
         <p className="relative top-[-1px]">
           {otherUserId} <span className="text-xs lowercase">`{wsStatus}`</span>
         </p>
       </Flexbox>
 
-      <Stack className="flex-1 w-full px-3 pb-3">
-        <ul className="flex-1 h-full overflow-y-auto">
-          {Object.values(messages).map((msg) => (
-            <li key={msg.id}>
-              {msg.text}
-              {msg.status == null
-                ? '[ ]'
-                : { ok: '[x]', fail: '[!]' }[msg.status]}
-            </li>
-          ))}
-        </ul>
+      <Stack className="flex-1 min-h-0 px-3 pb-3">
+        <MessageList
+          ref={messageListRef}
+          className="grow"
+          messages={messages}
+        />
 
         <div className="grid grid-cols-[1fr_auto] w-full border border-zinc-800 dark:bg-transparent py-2 px-3 rounded-lg">
           <textarea
@@ -99,6 +68,7 @@ function RouteComponent() {
                   status: null,
                   type: 'text',
                   text: value,
+                  updatedAt: pgTimestamp(new Date()),
                 })
 
                 if (!msg) {
@@ -116,6 +86,15 @@ function RouteComponent() {
                       text: msg.text,
                     },
                   }),
+                )
+
+                window.requestIdleCallback(
+                  () => {
+                    messageListRef.current?.scrollTo({
+                      top: 9999,
+                    })
+                  },
+                  { timeout: 500 },
                 )
               }}
             >
