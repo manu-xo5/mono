@@ -79,4 +79,11 @@ export class Option<V> {
   unwrapOr<F>(fallback: F): V | F {
     return this.value ?? fallback
   }
+
+  unwrap(): V {
+    if (this.value == null) {
+      throw 'panic: unwrap() on Option and value was null'
+    }
+    return this.value
+  }
 }

@@ -1,0 +1,15 @@
+{
+  "mode": "file-router",
+  "projectName": "pink-parrot",
+  "typescript": true,
+  "tailwind": true,
+  "git": true,
+  "packageManager": "pnpm",
+  "version": 1,
+  "framework": "solid",
+  "chosenAddOns": [
+    "solid-ui",
+    "tanstack-query",
+    "eslint"
+  ]
+}
