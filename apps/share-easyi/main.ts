@@ -24,7 +24,10 @@ app.use(
 );
 app.use("/api/vx/*", authMiddleware());
 
-app.get("/api/ping", (c) => c.text("pong", 200));
+app.get("/api/ping", (c) => {
+  console.log("pong")
+  return c.text("pong", 200);
+});
 
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 app.route("/api/vx", router.routes);
