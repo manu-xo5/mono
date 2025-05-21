@@ -2,11 +2,11 @@ FROM denoland/deno:2.0.1
 
 WORKDIR /app
 
-COPY deno.json .
+COPY ./apps/share-easyi/deno.json .
 
 RUN deno install --allow-scripts
 
-COPY . .
+COPY apps/share-easyi .
 RUN deno cache main.ts
 
 ARG PORT=1553
