@@ -1,5 +1,5 @@
 import type { MessageStoreApi } from './store'
-import { messageStore } from './store'
+import { setMessageStore } from './store'
 import * as messagesActions from './actions'
 
 // maybe use zod
@@ -55,19 +55,19 @@ async function handleMessageDelivery(msg: MessageDeliveryEvent) {
 async function handleMessageReceive(msg: MessageReceiveEvent) {
   const body = msg.body
 
-  messagesActions.addToStorage({
-    id: body.id,
-    type: body.type,
-    text: body.body,
-    status: 'ok',
-    updatedAt: body.updatedAt,
-  })
-  messageStore.setState((prev) => ({
-    ...prev,
-    rooms: {
-      ...prev.rooms,
-      [msg.roomId]: messagesActions.appendMessageIds(msg.roomId, body.id),
+  messagesActions.addToStorage([
+    {
+      id: body.id,
+      type: body.type,
+      text: body.body,
+      status: 'ok',
+      updatedAt: body.updatedAt,
     },
+  ])
+
+  setMessageStore('rooms', (rooms) => ({
+    ...rooms,
+    [msg.roomId]: messagesActions.appendMessageIds(msg.roomId, body.id),
   }))
 }
 

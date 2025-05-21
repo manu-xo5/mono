@@ -5,12 +5,12 @@ import { cn } from '@/lib/utils'
 import { PageContainer } from '@/components/page-container'
 import { createSignal } from 'solid-js'
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute('/_auth/login/')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const [loading] = createSignal(false)
+  const [loading, setLoading] = createSignal(false)
 
   return (
     <PageContainer class="flex">
@@ -35,10 +35,12 @@ function RouteComponent() {
                 class={cn('w-full gap-2')}
                 disabled={loading()}
                 onClick={async () => {
+                  setLoading(true)
                   await authClient.signIn.social({
                     provider: 'google',
-                    callbackURL: 'http://localhost:3000/home',
+                    callbackURL: 'http://localhost:3000',
                   })
+                  setLoading(false)
                 }}
               >
                 <svg

@@ -1,4 +1,5 @@
-import { createSignal, type Setter } from 'solid-js'
+import type { Setter } from 'solid-js'
+import { createStore } from 'solid-js/store'
 
 export type RoomId = string
 export type MessageId = string
@@ -25,24 +26,25 @@ const local = JSON.parse(localStorage.getItem('pink-parrot') ?? 'null') ?? {
   messages: {},
   optimisticMessages: {},
 }
-const [signal, setSignal] = createSignal<MessageStore>(local)
+const [messageStore, setMessageStore] = createStore<MessageStore>(local)
 
-export const messageStore = {
-  getState: () => signal(),
+export { messageStore, setMessageStore }
+
+export const messageStore__ = {
   setState: ((x) => {
-    setSignal(x)
+    setMessageStore(x)
 
-    localStorage.setItem('pink-parrot', JSON.stringify(signal()))
+    localStorage.setItem('pink-parrot', JSON.stringify(messageStore))
   }) as Setter<MessageStore>,
 }
 
 export type MessageStoreApi = typeof messageStore
-export const useMessageStore = signal;
+export const useMessageStore = messageStore
 
 export function getMessages(messageIdList: string[]) {
-  const { optimisticMessages, messages } = messageStore.getState()
+  const { optimisticMessages, messages } = messageStore
 
   return messageIdList
-    .map((id) => optimisticMessages[id] ?? messages[id] ?? null)
+    .map((id) => messages[id] ?? optimisticMessages[id] ?? null)
     .filter((message) => message != null)
 }

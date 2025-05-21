@@ -1,13 +1,12 @@
 import type { MessageId, Message, RoomId } from './store'
-import { messageStore } from './store'
+import { messageStore, setMessageStore } from './store'
 import { nanoid } from 'nanoid'
 
 export function appendMessageIds(
   roomId: RoomId,
   ...messageId: MessageId[]
 ): MessageId[] {
-  const { rooms } = messageStore.getState()
-  const room = rooms[roomId]
+  const room = messageStore.rooms[roomId]
 
   if (!room) {
     return []
@@ -18,45 +17,35 @@ export function appendMessageIds(
   return room.concat(uniqueIds)
 }
 
-export function addToStorage(value: Message) {
-  const store = messageStore.getState()
+export function addToStorage(value: Message[]) {
+  const messages: Record<string, Message> = {}
 
-  store.messages[value.id] = value
+  for (const message of value) {
+    messages[message.id] = message
+  }
 
-  messageStore.setState({ ...store })
+  setMessageStore('messages', messages)
 }
 
 export function moveToPersistStorage(msgId: string) {
-  const { messages, optimisticMessages } = messageStore.getState()
-  const message = optimisticMessages[msgId]
-
-  console.log("moving to persistent");
-
+  const message = messageStore.optimisticMessages[msgId]
   if (!message) return
 
-  messages[msgId] = { ...message, status: 'ok' }
-  delete optimisticMessages[msgId]
-
-  messageStore.setState((prev) => ({
-    ...prev,
-    ...{ messages, optimisticMessages },
-  }))
+  setMessageStore('messages', { [msgId]: { ...message, status: 'ok' } })
+  setMessageStore('optimisticMessages', { [msgId]: undefined! })
 }
 
 export function newMessage(roomId: RoomId, msg: Omit<Message, 'id'>) {
-  const { optimisticMessages, rooms } = messageStore.getState()
-
   const id = nanoid()
-
   const message: Message = { id, ...msg }
 
-  optimisticMessages[id] = message
-  rooms[roomId] = appendMessageIds(roomId, id)
+  setMessageStore('optimisticMessages', {
+    [id]: message,
+  })
 
-  messageStore.setState((prev) => ({
-    ...prev,
-    ...{ optimisticMessages, rooms },
-  }))
+  setMessageStore('rooms', {
+    [roomId]: appendMessageIds(roomId, message.id),
+  })
 
   return message
 }

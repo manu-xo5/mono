@@ -4,7 +4,7 @@ import { Flexbox } from '@/components/ui/flex'
 import { Stack } from '@/components/ui/stack'
 import { pgTimestamp } from '@/utils'
 import { messagesActions } from '@/message-service'
-import { getMessages, useMessageStore } from '@/message-service/store'
+import { getMessages, messageStore } from '@/message-service/store'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal } from 'solid-js'
 
@@ -21,14 +21,9 @@ function RouteComponent() {
   const [messageInput, setMessageInput] = createSignal('')
 
   const userId = user.id
-  const messages = () => getMessages(useMessageStore().rooms[roomId] ?? [])
+  const messages = () => getMessages(messageStore.rooms[roomId] ?? [])
 
   const otherUserId = roomId.split('-').find((id) => id != userId)!
-  console.log("room messages:")
-  console.log(messages())
-
-  // const messageInputRef = useRef<ComponentRef<'textarea'>>(null)
-  // const messageListRef = useRef<ComponentRef<'ul'>>(null)
 
   return (
     <Stack class="relative min-h-0">
@@ -83,6 +78,7 @@ function RouteComponent() {
                     },
                   }),
                 )
+                // TODO
 
                 window.requestIdleCallback(
                   () => {
