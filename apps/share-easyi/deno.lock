@@ -14,7 +14,8 @@
     "npm:drizzle-kit@*": "0.31.1_esbuild@0.25.4",
     "npm:drizzle-kit@0.31.1": "0.31.1_esbuild@0.25.4",
     "npm:drizzle-kit@~0.31.1": "0.31.1_esbuild@0.25.4",
-    "npm:drizzle-orm@~0.43.1": "0.43.1_@neondatabase+serverless@1.0.0"
+    "npm:drizzle-orm@~0.43.1": "0.43.1_@neondatabase+serverless@1.0.0",
+    "npm:esbuild@~0.25.4": "0.25.4"
   },
   "jsr": {
     "@effection/effection@3.5.0": {
@@ -1601,7 +1602,8 @@
       "npm:@neondatabase/serverless@1",
       "npm:better-auth@^1.2.7",
       "npm:drizzle-kit@~0.31.1",
-      "npm:drizzle-orm@~0.43.1"
+      "npm:drizzle-orm@~0.43.1",
+      "npm:esbuild@~0.25.4"
     ]
   }
 }

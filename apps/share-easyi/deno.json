@@ -6,6 +6,7 @@
     "better-auth": "npm:better-auth@^1.2.7",
     "drizzle-kit": "npm:drizzle-kit@^0.31.1",
     "drizzle-orm": "npm:drizzle-orm@^0.43.1",
+    "esbuild": "npm:esbuild@^0.25.4",
     "hono": "jsr:@hono/hono@^4.7.9"
   },
   "nodeModulesDir": "auto",
@@ -14,7 +15,9 @@
     "dev": "deno run -A --watch main.ts",
     "auth": "deno run -A --node-modules-dir npm:@better-auth/cli generate --output=db/schema/auth.ts --config=auth/index.ts",
     "db": "deno --env -A --node-modules-dir npm:drizzle-kit --config=drizzle.config.ts",
-    "start": "deno run -A main.ts"
+    "start": "deno run -A main.ts",
+    "build": "deno run -A build.mjs"
+
   },
   "compilerOptions": {
     "jsx": "precompile",
