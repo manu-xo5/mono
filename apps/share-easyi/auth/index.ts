@@ -11,9 +11,13 @@ export const auth = betterAuth({
       clientId: Deno.env.get("GOOGLE_CLIENT_ID") ?? "",
       clientSecret: Deno.env.get("GOOGLE_CLIENT_SECRET") ?? "",
       // Change this
-      redirectURI:
-        Deno.env.get("RAILWAY_PUBLIC_DOMAIN") ??
-        "http://localhost:1553/api/auth/callback/google",
+      redirectURI: (() => {
+        const PUBLIC_DOMAIN = Deno.env.get("RAILWAY_PUBLIC_DOMAIN");
+        if (PUBLIC_DOMAIN) {
+          return "https://" + PUBLIC_DOMAIN;
+        }
+        return "http://localhost:1553/api/auth/callback/google";
+      })(),
     },
   },
 
