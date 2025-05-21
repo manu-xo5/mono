@@ -17,7 +17,7 @@ const app = new Hono<{
 app.use(
   "/api/*",
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://localhost:3000"],
     allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "PUT"],
     credentials: true,
   }),
@@ -25,7 +25,7 @@ app.use(
 app.use("/api/vx/*", authMiddleware());
 
 app.get("/api/ping", (c) => {
-  console.log("pong")
+  console.log("pong");
   return c.text("pong", 200);
 });
 

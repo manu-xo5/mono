@@ -5,7 +5,7 @@ import * as schema from "../db/schema/auth.ts";
 
 export const auth = betterAuth({
   emailAndPassword: { enabled: false },
-  trustedOrigins: ["http://localhost:3000"],
+  trustedOrigins: ["http://localhost:3000", "https://localhost:3000"],
   advanced: {
     defaultCookieAttributes: {
       secure: true,
