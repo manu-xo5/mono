@@ -17,7 +17,11 @@ const app = new Hono<{
 app.use(
   "/api/*",
   cors({
-    origin: ["http://localhost:3000", "https://localhost:3000"],
+    origin: [
+      "http://localhost:3000",
+      "https://localhost:3000",
+      "https://mono-s.vercel.app",
+    ],
     allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "PUT"],
     credentials: true,
   }),
