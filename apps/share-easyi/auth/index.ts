@@ -7,10 +7,6 @@ export const auth = betterAuth({
   emailAndPassword: { enabled: false },
   trustedOrigins: ["http://localhost:3000"],
   advanced: {
-    crossSubDomainCookies: {
-			enabled: true,
-			domain: "localhost:3000"
-		},
     defaultCookieAttributes: {
       secure: true,
       httpOnly: true,
