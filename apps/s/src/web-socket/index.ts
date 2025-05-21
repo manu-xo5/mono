@@ -22,7 +22,7 @@ export async function getWebSocket() {
     }
   }
 
-  const socket = new WebSocket('http://localhost:1553/ws')
+  const socket = new WebSocket('wss://mono-production.up.railway.app')
   const { promise, resolve } = Promise.withResolvers<WebSocket | null>()
   promise1 = promise
 

@@ -3,7 +3,7 @@ import { redirect } from '@tanstack/solid-router'
 import { SERVER_BASE } from '@/constants'
 
 export const authClient = createAuthClient({
-  baseURL: 'http://localhost:1553',
+  baseURL: SERVER_BASE,
 })
 
 export type AuthSession = (typeof authClient.$Infer)['Session']
