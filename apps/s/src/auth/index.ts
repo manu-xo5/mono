@@ -15,7 +15,9 @@ export async function verifyUserSession() {
     return cacheUser
   }
 
-  const ok = await fetch(SERVER_BASE + '/api/ping')
+  const ok = await fetch(SERVER_BASE + '/api/ping', {
+    credentials: 'include',
+  })
     .then((r) => r.ok)
     .catch(() => false)
 
@@ -44,4 +46,3 @@ export async function signOutUser() {
   cacheUser = null
   await authClient.signOut()
 }
-

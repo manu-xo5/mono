@@ -38,7 +38,7 @@ function RouteComponent() {
                   setLoading(true)
                   await authClient.signIn.social({
                     provider: 'google',
-                    callbackURL: 'http://localhost:3000',
+                    callbackURL: import.meta.env.DEV ? 'https://localhost:3000' : window.location.origin,
                   })
                   setLoading(false)
                 }}
