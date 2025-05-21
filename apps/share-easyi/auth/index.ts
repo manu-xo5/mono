@@ -10,6 +10,13 @@ export const auth = betterAuth({
     "https://localhost:3000",
     "https://mono-s.vercel.app",
   ],
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true,
+    },
+  },
   socialProviders: {
     google: {
       clientId: Deno.env.get("GOOGLE_CLIENT_ID") ?? "",
