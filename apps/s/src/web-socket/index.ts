@@ -1,4 +1,4 @@
-import { createMessageHandler } from "@/message-service"
+import { createMessageHandler } from '@/message-service'
 
 const WEB_SOCKET_STATUS = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'] as const
 
@@ -22,7 +22,7 @@ export async function getWebSocket() {
     }
   }
 
-  const socket = new WebSocket('wss://mono-production.up.railway.app/ws')
+  const socket = new WebSocket(import.meta.env.VITE_SERVER_BASE + '/ws')
   const { promise, resolve } = Promise.withResolvers<WebSocket | null>()
   promise1 = promise
 
