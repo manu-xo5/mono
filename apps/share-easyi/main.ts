@@ -21,6 +21,7 @@ app.use(
       "http://localhost:3000",
       "https://localhost:3000",
       "https://mono-s.vercel.app",
+      "https://spirited-surprise-production.up.railway.app",
     ],
     allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "PUT"],
     credentials: true,
