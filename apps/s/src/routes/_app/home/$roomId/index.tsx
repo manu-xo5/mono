@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_app/home/$roomId/')({
 })
 
 function RouteComponent() {
-  const { roomId } = Route.useParams()()
+  const params = Route.useParams()
   const context = Route.useRouteContext()
   const { user, wsState } = context()
   const ws = wsState.ws!
@@ -21,16 +21,19 @@ function RouteComponent() {
   const [messageInput, setMessageInput] = createSignal('')
 
   const userId = user.id
-  const messages = () => getMessages(messageStore.rooms[roomId] ?? [])
+  const messages = () => getMessages(messageStore.rooms[params().roomId] ?? [])
 
-  const otherUserId = roomId.split('-').find((id) => id != userId)!
+  const otherUserId = () =>
+    params()
+      .roomId.split('-')
+      .find((id) => id != userId)!
 
   return (
     <Stack class="relative min-h-0">
       <Flexbox class="w-full bg-card py-3 px-6 gap-3 border-b">
         <span class="size-10 border rounded-full inline-block bg-black" />
 
-        <p class="relative top-[-1px]">{otherUserId}</p>
+        <p class="relative top-[-1px]">{otherUserId()}</p>
       </Flexbox>
 
       <Stack class="flex-1 min-h-0 px-3 pb-3">
@@ -55,7 +58,7 @@ function RouteComponent() {
                   return
                 }
 
-                const msg = messagesActions.newMessage(roomId, {
+                const msg = messagesActions.newMessage(params().roomId, {
                   status: null,
                   type: 'text',
                   text: value,
@@ -72,7 +75,7 @@ function RouteComponent() {
                     id: msg.id,
                     type: msg.type,
                     body: {
-                      to: otherUserId,
+                      to: otherUserId(),
                       from: user.id,
                       text: msg.text,
                     },

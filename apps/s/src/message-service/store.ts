@@ -19,12 +19,17 @@ type MessageStore = {
   }
   messages: MessagesRecord
   optimisticMessages: MessagesRecord
+  roomIds: RoomId[]
 }
 
 const local = JSON.parse(localStorage.getItem('pink-parrot') ?? 'null') ?? {
   rooms: {},
   messages: {},
   optimisticMessages: {},
+
+  get roomIds() {
+    return Object.keys(this.rooms)
+  },
 }
 const [messageStore, setMessageStore] = createStore<MessageStore>(local)
 
