@@ -67,7 +67,7 @@ async function handleMessageReceive(msg: MessageReceiveEvent) {
 
   setMessageStore('rooms', (rooms) => ({
     ...rooms,
-    [msg.roomId]: messagesActions.appendMessageIds(msg.roomId, body.id),
+    [msg.roomId]: messagesActions.appendMessageIds__(msg.roomId, body.id),
   }))
 }
 

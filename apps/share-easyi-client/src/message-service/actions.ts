@@ -2,7 +2,7 @@ import type { MessageId, Message, RoomId } from './store'
 import { messageStore, setMessageStore } from './store'
 import { nanoid } from 'nanoid'
 
-export function appendMessageIds(
+export function appendMessageIds__(
   roomId: RoomId,
   ...messageId: MessageId[]
 ): MessageId[] {
@@ -44,8 +44,30 @@ export function newMessage(roomId: RoomId, msg: Omit<Message, 'id'>) {
   })
 
   setMessageStore('rooms', {
-    [roomId]: appendMessageIds(roomId, message.id),
+    [roomId]: appendMessageIds__(roomId, message.id),
   })
 
   return message
+}
+
+export function upsertRoomIds(roomIds: RoomId[]) {
+  const existingRoomIds = Object.keys(messageStore.rooms)
+  const uniqueRoomIds = roomIds.filter((id) => !existingRoomIds.includes(id))
+
+  const roomsRecord = Object.fromEntries<MessageId[]>(
+    uniqueRoomIds.map((id) => [id, []]),
+  )
+
+  setMessageStore('rooms', roomsRecord)
+}
+
+export function appendMessageIds(roomId: RoomId, messageIds: MessageId[]) {
+  const existingMessageIds = messageStore.rooms[roomId]
+  if (!existingMessageIds)
+    return console.log('error: existingMessageIds not found')
+  const uniqueIds = messageIds.filter(
+    (msgId) => !existingMessageIds.includes(msgId),
+  )
+
+  setMessageStore('rooms', roomId, (prev) => prev.concat(uniqueIds))
 }

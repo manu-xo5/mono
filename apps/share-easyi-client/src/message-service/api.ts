@@ -52,6 +52,7 @@ export async function fetchNewMessages(roomId: string) {
         text: msg.body,
         id: msg.id,
         status: 'ok',
+        from: msg.from,
         updatedAt: msg.updatedAt,
       }),
     )

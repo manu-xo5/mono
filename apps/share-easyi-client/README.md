@@ -31,3 +31,8 @@ pnpm lint
 pnpm format
 pnpm check
 ```
+
+# Roadmap
+
+[ ] Create devtools for messageStore
+[ ] fetch rooms with user data

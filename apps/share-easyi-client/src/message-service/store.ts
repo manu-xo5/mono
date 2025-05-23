@@ -8,6 +8,7 @@ export type Message = {
   type: 'text'
   text: string
   status: null | 'ok' | 'fail'
+  from: string
   updatedAt: string
 }
 
@@ -22,6 +23,13 @@ type MessageStore = {
   roomIds: RoomId[]
 }
 
+type AuthUser = {
+  id: string
+  name: string
+  email: string
+  image: string
+}
+
 const local = JSON.parse(localStorage.getItem('pink-parrot') ?? 'null') ?? {
   rooms: {},
   messages: {},
@@ -31,9 +39,22 @@ const local = JSON.parse(localStorage.getItem('pink-parrot') ?? 'null') ?? {
     return Object.keys(this.rooms)
   },
 }
-const [messageStore, setMessageStore] = createStore<MessageStore>(local)
 
-export { messageStore, setMessageStore }
+const [messageStore, setMessageStore] = createStore<MessageStore>(local)
+const [roomStore, setRoomStore] = createStore<
+  Record<
+    RoomId,
+    {
+      roomId: string
+      user1: string
+      user2: string
+      user1Data: AuthUser
+      user2Data: AuthUser
+    }
+  >
+>({})
+
+export { messageStore, setMessageStore, roomStore, setRoomStore }
 
 export const messageStore__ = {
   setState: ((x) => {

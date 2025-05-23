@@ -7,10 +7,51 @@ import { messagesActions } from '@/message-service'
 import { getMessages, messageStore } from '@/message-service/store'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal } from 'solid-js'
+import { authClient } from '@/auth'
+import type { AuthSession } from '@/auth'
 
 export const Route = createFileRoute('/_app/home/$roomId/')({
   component: RouteComponent,
 })
+
+function sendMessage({
+  user,
+  ws,
+  body,
+  roomId,
+  toUserId,
+}: {
+  user: AuthSession['user']
+  ws: WebSocket
+  body: string
+  roomId: string
+  toUserId: string
+}) {
+  const msg = messagesActions.newMessage(roomId, {
+    status: null,
+    type: 'text',
+    text: body,
+    updatedAt: pgTimestamp(new Date()),
+    from: user.id,
+  })
+
+  if (!msg) {
+    // maybe failed to generate id
+    return
+  }
+
+  ws.send(
+    JSON.stringify({
+      id: msg.id,
+      type: msg.type,
+      body: {
+        to: toUserId,
+        from: user.id,
+        text: msg.text,
+      },
+    }),
+  )
+}
 
 function RouteComponent() {
   const params = Route.useParams()
@@ -43,8 +84,26 @@ function RouteComponent() {
           <textarea
             rows={2}
             class="w-full resize-none outline-none"
-            placeholder="Send a message"
+            placeholder="Send a message (Ctrl+Enter for new line)"
             onInput={(ev) => setMessageInput(ev.currentTarget.value)}
+            onKeyDown={(ev) => {
+              if (ev.key === 'Enter' && ev.ctrlKey) return
+
+              const value = messageInput()
+              //messageInputRef.current?.focus()
+              if (!value) return
+
+              ev.currentTarget.value = ''
+              sendMessage({
+                ws,
+
+                body: value,
+                user: user,
+                roomId: params().roomId,
+                toUserId: otherUserId(),
+              })
+
+            }}
           />
 
           <div class="self-end">
@@ -53,35 +112,16 @@ function RouteComponent() {
               size="sm"
               onClick={() => {
                 const value = messageInput()
-                if (!value) {
-                  //messageInputRef.current?.focus()
-                  return
-                }
+                //messageInputRef.current?.focus()
+                if (!value) return
+                sendMessage({
+                  ws,
 
-                const msg = messagesActions.newMessage(params().roomId, {
-                  status: null,
-                  type: 'text',
-                  text: value,
-                  updatedAt: pgTimestamp(new Date()),
+                  body: value,
+                  user: user,
+                  roomId: params().roomId,
+                  toUserId: otherUserId(),
                 })
-
-                if (!msg) {
-                  // maybe failed to generate id
-                  return
-                }
-
-                ws.send(
-                  JSON.stringify({
-                    id: msg.id,
-                    type: msg.type,
-                    body: {
-                      to: otherUserId(),
-                      from: user.id,
-                      text: msg.text,
-                    },
-                  }),
-                )
-                // TODO
 
                 window.requestIdleCallback(
                   () => {
