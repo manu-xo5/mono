@@ -7,7 +7,6 @@ import { messagesActions } from '@/message-service'
 import { getMessages, messageStore } from '@/message-service/store'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal } from 'solid-js'
-import { authClient } from '@/auth'
 import type { AuthSession } from '@/auth'
 
 export const Route = createFileRoute('/_app/home/$roomId/')({

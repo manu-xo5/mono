@@ -2,7 +2,7 @@ import { Sidebar } from '@/components/main-sidebar'
 import { PageContainer } from '@/components/page-container'
 import { messagesActions } from '@/message-service'
 import { fetchNewMessages, fetchRooms } from '@/message-service/api'
-import { messageStore, roomStore, setRoomStore } from '@/message-service/store'
+import { roomStore, setRoomStore } from '@/message-service/store'
 import { getWebSocket } from '@/web-socket'
 import { createFileRoute, Outlet } from '@tanstack/solid-router'
 
@@ -39,7 +39,7 @@ function LayoutComponent() {
 
   return (
     <PageContainer class="grid grid-cols-[300px_1fr]">
-      <Sidebar user={context().user} />
+      <Sidebar />
 
       {context().wsState.ws == null ? null : <Outlet />}
     </PageContainer>

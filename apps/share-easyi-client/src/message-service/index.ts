@@ -61,6 +61,7 @@ async function handleMessageReceive(msg: MessageReceiveEvent) {
       type: body.type,
       text: body.body,
       status: 'ok',
+      from: body.from,
       updatedAt: body.updatedAt,
     },
   ])

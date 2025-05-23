@@ -5,13 +5,9 @@ import { useNavigate, useRouter } from '@tanstack/solid-router'
 import { authClient, signOutUser } from '@/auth'
 import { Input } from './ui/input'
 
-import type { AuthSession } from '@/auth'
-import { messageStore, roomStore } from '@/message-service/store'
+import { roomStore } from '@/message-service/store'
 
-const extractUserId = (roomId: string, userId: string) =>
-  roomId.split('-').find((id) => id != userId)!
-
-export function Sidebar(props: { user: AuthSession['user'] }) {
+export function Sidebar() {
   const navigate = useNavigate({ from: '/home' })
   const router = useRouter()
   const authSession = authClient.useSession()
