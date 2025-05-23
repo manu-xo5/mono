@@ -85,9 +85,15 @@ function RouteComponent() {
             rows={2}
             class="w-full resize-none outline-none"
             placeholder="Send a message (Ctrl+Enter for new line)"
+            value={messageInput()}
             onInput={(ev) => setMessageInput(ev.currentTarget.value)}
             onKeyDown={(ev) => {
-              if (ev.key === 'Enter' && ev.ctrlKey) return
+              if (ev.key !== 'Enter') return;
+              ev.preventDefault()
+              if (ev.ctrlKey) {
+                setMessageInput(prev => prev + "\n")
+                return
+              }
 
               const value = messageInput()
               //messageInputRef.current?.focus()
