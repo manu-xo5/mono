@@ -2,7 +2,7 @@ import { Sidebar } from '@/components/main-sidebar'
 import { PageContainer } from '@/components/page-container'
 import { messagesActions } from '@/message-service'
 import { fetchNewMessages, fetchRooms } from '@/message-service/api'
-import { roomStore, setRoomStore } from '@/message-service/store'
+import { messageStore, roomStore, setRoomStore } from '@/message-service/store'
 import { getWebSocket } from '@/web-socket'
 import { createFileRoute, Outlet } from '@tanstack/solid-router'
 
@@ -27,8 +27,14 @@ export const Route = createFileRoute('/_app/home')({
 
       allRooms.forEach(async (roomId) => {
         const newMessages = await fetchNewMessages(roomId)
-        messagesActions.addToStorage(Object.values(newMessages.records))
-        messagesActions.appendMessageIds(roomId, newMessages.ids)
+        const lastMessageIdx = messageStore.rooms[roomId].length
+        const messagesRecord = Object.values(newMessages.records)
+        messagesActions.addToStorage(messagesRecord)
+        messagesActions.appendMessageIds(
+          roomId,
+          newMessages.ids,
+          lastMessageIdx,
+        )
       })
     })()
   },

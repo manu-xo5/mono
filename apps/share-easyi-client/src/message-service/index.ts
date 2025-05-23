@@ -66,10 +66,7 @@ async function handleMessageReceive(msg: MessageReceiveEvent) {
     },
   ])
 
-  setMessageStore('rooms', (rooms) => ({
-    ...rooms,
-    [msg.roomId]: messagesActions.appendMessageIds__(msg.roomId, body.id),
-  }))
+  messagesActions.appendMessageIds(msg.roomId, [body.id])
 }
 
 export function createMessageHandler() {

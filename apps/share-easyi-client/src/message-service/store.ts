@@ -1,5 +1,5 @@
-import type { Setter } from 'solid-js'
-import { createStore } from 'solid-js/store'
+import { createEffect, createReaction, type Setter } from 'solid-js'
+import { createStore, unwrap, type SetStoreFunction } from 'solid-js/store'
 
 export type RoomId = string
 export type MessageId = string
@@ -40,7 +40,17 @@ const local = JSON.parse(localStorage.getItem('pink-parrot') ?? 'null') ?? {
   },
 }
 
-const [messageStore, setMessageStore] = createStore<MessageStore>(local)
+const [messageStore, _setMessageStore] = createStore<MessageStore>(local)
+// @ts-ignore
+const setMessageStore: SetStoreFunction<MessageStore> = (...x) => {
+  // @ts-ignore
+  _setMessageStore(...x)
+  queueMicrotask(() => {
+    const store = unwrap(messageStore)
+    localStorage.setItem('pink-parrot', JSON.stringify(store))
+  })
+}
+
 const [roomStore, setRoomStore] = createStore<
   Record<
     RoomId,

@@ -34,5 +34,6 @@ pnpm check
 
 # Roadmap
 
-[ ] Create devtools for messageStore
-[ ] fetch rooms with user data
+[x] Create devtools for messageStore
+[x] fetch rooms with user data
+[ ] correct message ordering

@@ -61,13 +61,25 @@ export function upsertRoomIds(roomIds: RoomId[]) {
   setMessageStore('rooms', roomsRecord)
 }
 
-export function appendMessageIds(roomId: RoomId, messageIds: MessageId[]) {
+export function appendMessageIds(
+  roomId: RoomId,
+  messageIds: MessageId[],
+  start?: number,
+) {
   const existingMessageIds = messageStore.rooms[roomId]
-  if (!existingMessageIds)
-    return console.log('error: existingMessageIds not found')
+  if (!existingMessageIds) {
+    console.log('error: existingMessageIds not found')
+    return
+  }
   const uniqueIds = messageIds.filter(
     (msgId) => !existingMessageIds.includes(msgId),
   )
 
-  setMessageStore('rooms', roomId, (prev) => prev.concat(uniqueIds))
+  if (start != null) {
+    setMessageStore('rooms', roomId, (prev) =>
+      prev.toSpliced(start, 0, ...uniqueIds),
+    )
+  } else {
+    setMessageStore('rooms', roomId, (prev) => prev.concat(uniqueIds))
+  }
 }

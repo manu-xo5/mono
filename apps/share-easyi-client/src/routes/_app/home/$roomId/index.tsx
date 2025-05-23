@@ -1,13 +1,13 @@
+import type { AuthSession } from '@/auth'
 import { MessageList } from '@/components/message-list'
 import { Button } from '@/components/ui/button'
 import { Flexbox } from '@/components/ui/flex'
 import { Stack } from '@/components/ui/stack'
-import { pgTimestamp } from '@/utils'
 import { messagesActions } from '@/message-service'
 import { getMessages, messageStore } from '@/message-service/store'
+import { pgTimestamp } from '@/utils'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal } from 'solid-js'
-import type { AuthSession } from '@/auth'
 
 export const Route = createFileRoute('/_app/home/$roomId/')({
   component: RouteComponent,
@@ -87,10 +87,10 @@ function RouteComponent() {
             value={messageInput()}
             onInput={(ev) => setMessageInput(ev.currentTarget.value)}
             onKeyDown={(ev) => {
-              if (ev.key !== 'Enter') return;
+              if (ev.key !== 'Enter') return
               ev.preventDefault()
               if (ev.ctrlKey) {
-                setMessageInput(prev => prev + "\n")
+                setMessageInput((prev) => prev + '\n')
                 return
               }
 
@@ -107,7 +107,6 @@ function RouteComponent() {
                 roomId: params().roomId,
                 toUserId: otherUserId(),
               })
-
             }}
           />
 
