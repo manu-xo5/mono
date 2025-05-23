@@ -77,7 +77,6 @@ async function handleTextMessage(
   userId: string,
   event: TextMsgEvent,
 ) {
-  await new Promise((res) => setTimeout(res, 5 * 1000));
   const body = event.body;
 
   const roomId = createRoomId(body.from, body.to);
