@@ -1,12 +1,12 @@
-import { Stack } from './ui/stack'
-import { Button } from './ui/button'
-import { For } from 'solid-js'
-import { useNavigate, useRouter } from '@tanstack/solid-router'
 import { authClient, signOutUser } from '@/auth'
+import { useNavigate, useRouter } from '@tanstack/solid-router'
+import { For } from 'solid-js'
+import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { Stack } from './ui/stack'
 
+import { setCallStore } from '@/call-service/store'
 import { roomStore } from '@/message-service/store'
-import { callStore, setCallStore } from '@/call-service/store'
 
 export function Sidebar() {
   const navigate = useNavigate({ from: '/home' })

@@ -1,6 +1,5 @@
-import type { MessageStoreApi } from './store'
-import { setMessageStore } from './store'
 import * as messagesActions from './actions'
+import type { MessageStoreApi } from './store'
 
 // maybe use zod
 export type MessageDeliveryEvent =

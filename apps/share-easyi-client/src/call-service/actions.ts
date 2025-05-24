@@ -1,7 +1,7 @@
-import { race, run, type Operation } from 'effection'
-import { callStore, setCallStatus, setCallStore } from './store'
 import { sleep } from '@/effection.utils'
 import { untilMessageOf } from '@/web-socket/utils'
+import { race, run } from 'effection'
+import { callStore, setCallStatus, setCallStore } from './store'
 
 type MakeCallRequest = {
   type: 'make-call-request'

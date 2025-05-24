@@ -1,4 +1,4 @@
-import { action, type EventList } from 'effection'
+import { action } from 'effection'
 
 function safeParse(value: string) {
   try {
