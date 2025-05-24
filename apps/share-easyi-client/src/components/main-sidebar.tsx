@@ -6,6 +6,7 @@ import { authClient, signOutUser } from '@/auth'
 import { Input } from './ui/input'
 
 import { roomStore } from '@/message-service/store'
+import { callStore, setCallStore } from '@/call-service/store'
 
 export function Sidebar() {
   const navigate = useNavigate({ from: '/home' })
@@ -26,7 +27,7 @@ export function Sidebar() {
   }
 
   return (
-    <Stack class="bg-card border-r p-3 gap-3">
+    <Stack class="bg-sidebar border-r p-3 gap-3">
       <Input
         placeholder="User Id"
         onKeyDown={(ev) => {
@@ -46,6 +47,19 @@ export function Sidebar() {
         }}
       >
         Sign out
+      </Button>
+
+      <Button
+        class="w-full"
+        variant="secondary"
+        onClick={async () => {
+          setCallStore({
+            id: '',
+            status: 'on-call',
+          })
+        }}
+      >
+        Call Dialog
       </Button>
 
       <ul class="divide-y border-b flex flex-col w-full">

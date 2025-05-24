@@ -1,13 +1,13 @@
 import type { AuthSession } from '@/auth'
 import { MessageList } from '@/components/message-list'
+import { RoomHeader } from '@/components/room-header'
 import { Button } from '@/components/ui/button'
-import { Flexbox } from '@/components/ui/flex'
 import { Stack } from '@/components/ui/stack'
 import { messagesActions } from '@/message-service'
-import { getMessages, messageStore } from '@/message-service/store'
+import { getMessages, messageStore, roomStore } from '@/message-service/store'
 import { pgTimestamp } from '@/utils'
 import { createFileRoute } from '@tanstack/solid-router'
-import { createSignal } from 'solid-js'
+import { createEffect, createSignal } from 'solid-js'
 
 export const Route = createFileRoute('/_app/home/$roomId/')({
   component: RouteComponent,
@@ -53,6 +53,7 @@ function sendMessage({
 }
 
 function RouteComponent() {
+  let messageDiv!: undefined | HTMLUListElement
   const params = Route.useParams()
   const context = Route.useRouteContext()
   const { user, wsState } = context()
@@ -68,16 +69,26 @@ function RouteComponent() {
       .roomId.split('-')
       .find((id) => id != userId)!
 
+  const otherUserData = () => {
+    const room = roomStore[params().roomId]
+
+    if (room) {
+      return room.user1 === userId ? room.user2Data : room.user1Data
+    }
+    return null
+  }
+
+  createEffect(() => {
+    void messages()
+    messageDiv?.scrollTo({ top: 9999, behavior: 'smooth' })
+  })
+
   return (
     <Stack class="relative min-h-0">
-      <Flexbox class="w-full bg-card py-3 px-6 gap-3 border-b">
-        <span class="size-10 border rounded-full inline-block bg-black" />
-
-        <p class="relative top-[-1px]">{otherUserId()}</p>
-      </Flexbox>
+      <RoomHeader otherUser={otherUserData()} />
 
       <Stack class="flex-1 min-h-0 px-3 pb-3">
-        <MessageList class="grow" messages={messages()} />
+        <MessageList ref={messageDiv} class="grow" messages={messages()} />
 
         <div class="grid grid-cols-[1fr_auto] w-full border border-zinc-800 dark:bg-transparent py-2 px-3 rounded-lg">
           <textarea
@@ -129,7 +140,7 @@ function RouteComponent() {
 
                 window.requestIdleCallback(
                   () => {
-                    // messageListRef.current?.scrollTo({ top: 9999, })
+                    messageDiv?.scrollTo({ top: 9999, behavior: 'smooth' })
                   },
                   { timeout: 500 },
                 )

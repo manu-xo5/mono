@@ -25,6 +25,8 @@
     "better-auth": "^1.2.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "effection": "^3.5.0",
+    "lucide-solid": "^0.511.0",
     "nanoid": "^5.1.5",
     "solid-js": "^1.9.4",
     "tailwind-merge": "^3.0.2",

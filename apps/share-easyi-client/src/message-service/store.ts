@@ -23,7 +23,7 @@ type MessageStore = {
   roomIds: RoomId[]
 }
 
-type AuthUser = {
+export type AuthUser = {
   id: string
   name: string
   email: string

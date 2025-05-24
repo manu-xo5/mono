@@ -175,6 +175,12 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      effection:
+        specifier: ^3.5.0
+        version: 3.5.0
+      lucide-solid:
+        specifier: ^0.511.0
+        version: 0.511.0(solid-js@1.9.5)
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
@@ -3769,6 +3775,10 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
+  effection@3.5.0:
+    resolution: {integrity: sha512-PcKRGoP68CM3c/DODTc38xp0rIjfREH7/fBGu4tiHU/aPb/PvSxv3tvWaJt6JxpxqT0jIXvcOyn+yjk46KcNXw==}
+    engines: {node: '>= 16'}
+
   electron-to-chromium@1.5.136:
     resolution: {integrity: sha512-kL4+wUTD7RSA5FHx5YwWtjDnEEkIIikFgWHR4P6fqjw1PPLlqYkxeOb++wAauAssat0YClCy8Y3C5SxgSkjibQ==}
 
@@ -5199,6 +5209,11 @@ packages:
     resolution: {integrity: sha512-NJzvVu1HwFVeZ+Gwq2q00KygM1aBhy/ZrhY9FsAgJtpB+E4R7uxRk9M2iKvHa6/vNxZydIB59htha4c2vvwvVg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  lucide-solid@0.511.0:
+    resolution: {integrity: sha512-0Fmpc7+nyiDckSG1QoCj1w6qy7X5oe8Vhr/XZwsVwWYqXLXoHtGh5L8MYvJ8ivhSu4/oDKHe6MNuj/3gRSj3OA==}
+    peerDependencies:
+      solid-js: ^1.4.7
 
   luxon@3.6.1:
     resolution: {integrity: sha512-tJLxrKJhO2ukZ5z0gyjY1zPh3Rh88Ej9P7jNrZiHMUXHae1yvI2imgOZtL1TO8TW6biMMKfTtAOoEJANgtWBMQ==}
@@ -10791,6 +10806,8 @@ snapshots:
 
   ee-first@1.1.1: {}
 
+  effection@3.5.0: {}
+
   electron-to-chromium@1.5.136: {}
 
   emoji-regex@8.0.0: {}
@@ -12559,6 +12576,10 @@ snapshots:
   lucide-react@0.475.0(react@19.0.0):
     dependencies:
       react: 19.0.0
+
+  lucide-solid@0.511.0(solid-js@1.9.5):
+    dependencies:
+      solid-js: 1.9.5
 
   luxon@3.6.1: {}
 
