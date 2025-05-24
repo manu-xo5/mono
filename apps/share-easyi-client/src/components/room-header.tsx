@@ -11,7 +11,7 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
   const authSession = authClient.useSession()
 
   return (
-    <Flexbox class="w-full py-3 px-6 gap-3 border-b">
+    <Flexbox class="w-full h-16 px-6 gap-3 border-b">
       <span class="border-white/20 border bg-background rounded-full overflow-hidden size-10 inline-block">
         <Show when={props.otherUser != null}>
           <img
@@ -33,7 +33,7 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
       <div class="ml-auto">
         <Button
           size="icon"
-          variant="outline"
+          variant="ghost"
           onClick={async () => {
             const otherUser = props.otherUser
             if (!otherUser) return

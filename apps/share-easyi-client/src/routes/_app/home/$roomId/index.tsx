@@ -123,7 +123,6 @@ function RouteComponent() {
 
           <div class="self-end">
             <Button
-              class="font-bold"
               size="sm"
               onClick={() => {
                 const value = messageInput()
