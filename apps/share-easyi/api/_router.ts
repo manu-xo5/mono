@@ -15,7 +15,13 @@ function query(fn: QueryHandler["handler"]): QueryHandler {
   return {
     _type: "handler",
     method: "GET",
-    handler: fn,
+    handler: (c) => {
+      try {
+        return fn(c);
+      } catch (err) {
+        return c.json({ fail: String(err) });
+      }
+    },
   };
 }
 

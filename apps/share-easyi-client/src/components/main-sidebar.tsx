@@ -31,7 +31,7 @@ export function Sidebar() {
 
   return (
     <Stack class="bg-[url(/bg1.webp)]">
-      <Flexbox class="h-16 w-full border-b backdrop-blur-md p-3">
+      <Flexbox class="h-16 w-full border-b border-r backdrop-blur-md p-3">
         <Input
           placeholder="User Id"
           onKeyDown={(ev) => {
@@ -84,7 +84,7 @@ export function Sidebar() {
                     class={cn(
                       'flex justify-start items-center p-3 gap-3 h-auto w-full hover:bg-transparent',
                       isActive()
-                        ? 'bg-primary hover:bg-primary text-primary-foreground'
+                        ? 'bg-popover hover:bg-popover text-primary-foreground'
                         : '',
                     )}
                     onClick={() => navigateToRoom(addr)}
@@ -100,16 +100,9 @@ export function Sidebar() {
                     />
 
                     <Stack class="flex-1">
-                      <span class={cn(isActive() ? 'font-bold' : '')}>
-                        {otherUser.name}
-                      </span>
+                      {otherUser.name}
 
-                      <span
-                        class={cn(
-                          'text-xs text-muted-foreground pointer-events-none',
-                          isActive() ? 'text-primary-foreground' : '',
-                        )}
-                      >
+                      <span class="text-xs text-muted-foreground pointer-events-none">
                         Lorem Ipsume text sample
                       </span>
                     </Stack>

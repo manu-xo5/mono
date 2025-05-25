@@ -1,5 +1,7 @@
 import { type Setter } from 'solid-js'
 import { createStore, unwrap, type SetStoreFunction } from 'solid-js/store'
+import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
+import { messageSync } from './sync'
 
 export type RoomId = string
 export type MessageId = string
@@ -9,18 +11,19 @@ export type Message = {
   text: string
   status: null | 'ok' | 'fail'
   from: string
+  to: string
+  roomId: string
   updatedAt: string
 }
 
 export type MessagesRecord = Record<MessageId, Message>
 
-type MessageStore = {
+export type MessageStore = {
   rooms: {
     [roomId: RoomId]: MessageId[]
   }
   messages: MessagesRecord
   optimisticMessages: MessagesRecord
-  roomIds: RoomId[]
 }
 
 export type AuthUser = {
@@ -30,25 +33,18 @@ export type AuthUser = {
   image: string
 }
 
-const local = JSON.parse(localStorage.getItem('pink-parrot') ?? 'null') ?? {
-  rooms: {},
-  messages: {},
-  optimisticMessages: {},
-
-  get roomIds() {
-    return Object.keys(this.rooms)
-  },
-}
+export const local =
+  JSON.parse(localStorage.getItem(LOCAL_STORAGE_NAME) ?? 'null') ??
+  INITIAL_VALUE
 
 const [messageStore, _setMessageStore] = createStore<MessageStore>(local)
 // @ts-ignore
 const setMessageStore: SetStoreFunction<MessageStore> = (...x) => {
   // @ts-ignore
   _setMessageStore(...x)
-  queueMicrotask(() => {
-    const store = unwrap(messageStore)
-    localStorage.setItem('pink-parrot', JSON.stringify(store))
-  })
+
+  const store = unwrap(messageStore)
+  messageSync.write(store)
 }
 
 const [roomStore, setRoomStore] = createStore<
@@ -64,7 +60,13 @@ const [roomStore, setRoomStore] = createStore<
   >
 >({})
 
-export { messageStore, roomStore, setMessageStore, setRoomStore }
+export {
+  messageStore,
+  roomStore,
+  _setMessageStore,
+  setMessageStore,
+  setRoomStore,
+}
 
 export const messageStore__ = {
   setState: ((x) => {

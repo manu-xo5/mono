@@ -1,10 +1,16 @@
 import { Sidebar } from '@/components/main-sidebar'
 import { PageContainer } from '@/components/page-container'
 import { messagesActions } from '@/message-service'
-import { fetchNewMessages, fetchRooms } from '@/message-service/api'
-import { messageStore, roomStore, setRoomStore } from '@/message-service/store'
+import { fetchRooms, flushUnsentMessage } from '@/message-service/api'
+import {
+  roomStore,
+  setMessageStore,
+  setRoomStore,
+} from '@/message-service/store'
+import { messageSync } from '@/message-service/sync'
 import { getWebSocket } from '@/web-socket'
 import { createFileRoute, Outlet } from '@tanstack/solid-router'
+import { unwrap } from 'solid-js/store'
 
 export const Route = createFileRoute('/_app/home')({
   component: LayoutComponent,
@@ -14,6 +20,10 @@ export const Route = createFileRoute('/_app/home')({
   beforeLoad: async () => ({ wsState: await getWebSocket() }),
   loader: () => {
     ;(async () => {
+      setMessageStore(messageSync.read())
+
+      messageSync.sync
+
       const roomsRes = await fetchRooms()
       const allRooms = roomsRes.all.map((room) => room.roomId)
       setRoomStore(
@@ -25,17 +35,10 @@ export const Route = createFileRoute('/_app/home')({
 
       messagesActions.upsertRoomIds(allRooms)
 
-      allRooms.forEach(async (roomId) => {
-        const newMessages = await fetchNewMessages(roomId)
-        const lastMessageIdx = messageStore.rooms[roomId].length
-        const messagesRecord = Object.values(newMessages.records)
-        messagesActions.addToStorage(messagesRecord)
-        messagesActions.appendMessageIds(
-          roomId,
-          newMessages.ids,
-          lastMessageIdx,
-        )
-      })
+      const messageStore = await messageSync.sync(allRooms)
+      setMessageStore(messageStore)
+
+      flushUnsentMessage()
     })()
   },
 })

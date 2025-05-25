@@ -1,18 +1,5 @@
+import { safeParse } from '@/utils'
 import { action } from 'effection'
-
-function safeParse(value: string) {
-  try {
-    const json = JSON.parse(value)
-
-    if (!json) {
-      return [null, false] as [data: null, ok: false]
-    }
-
-    return [json, true] as [data: {}, ok: true]
-  } catch {
-    return [null, false] as [data: null, ok: false]
-  }
-}
 
 export function untilMessageOf<T>(target: WebSocket, messageType: string) {
   return action<T>((res) => {

@@ -1,6 +1,8 @@
 import { API_VX } from '@/api'
-import type { Message, MessagesRecord } from './store'
+import type { Message, MessageId, MessagesRecord } from './store'
 import { messageStore } from './store'
+import { unwrap } from 'solid-js/store'
+import { messagesActions } from '.'
 
 export async function fetchRooms() {
   const storedRooms = Object.keys(messageStore.rooms)
@@ -18,7 +20,68 @@ export async function fetchRooms() {
   }
 }
 
-export async function fetchNewMessages(roomId: string) {
+export async function flushUnsentMessage() {
+  const messages = Object.values(unwrap(messageStore.optimisticMessages))
+  if (messages.length === 0) return
+
+  const res = await API_VX('/message/send', {
+    method: 'POST',
+    body: JSON.stringify(messages),
+  })
+
+  const messagesRes = await res.json().then((json) => json.ok as Message[])
+  messagesRes.forEach((message) => {
+    messagesActions.moveToPersistStorage(message.id)
+  })
+
+  console.log('optimisticMessages', unwrap(messageStore.optimisticMessages))
+}
+
+export async function fetchRoomMessages(
+  roomId: string,
+  { afterUpdatedAt }: { afterUpdatedAt?: string } = {},
+) {
+  const filters: [string, string][] = []
+
+  filters.push(['roomId', roomId])
+  if (afterUpdatedAt) {
+    filters.push(['afterUpdatedAt', afterUpdatedAt])
+  }
+
+  const qp = new URLSearchParams(filters).toString()
+
+  const res = await API_VX('/message/byRoomId?' + qp)
+
+  if (!res.ok) return {
+    list: [],
+    record: {},
+  }
+
+  const newMessages = ((await res.json()).ok as any[]).map(
+    (msg): Message => ({
+      type: msg.type,
+      text: msg.body,
+      id: msg.id,
+      status: 'ok',
+      from: msg.from,
+      to: msg.to,
+      roomId: msg.roomId,
+      updatedAt: msg.updatedAt,
+    }),
+  )
+
+  const newMessagesRecord = newMessages.reduce(
+    (acc, msg) => Object.assign(acc, { [msg.id]: msg }),
+    {} as Record<MessageId, Message>,
+  )
+
+  return {
+    list: newMessages,
+    record: newMessagesRecord,
+  }
+}
+
+export async function syncRoomMessages(roomId: string) {
   const { messages, rooms } = messageStore
   const lastMessageId = rooms[roomId]?.at(-1)
   const lastMessage = lastMessageId ? messages[lastMessageId] : undefined
@@ -53,6 +116,8 @@ export async function fetchNewMessages(roomId: string) {
         id: msg.id,
         status: 'ok',
         from: msg.from,
+        to: msg.to,
+        roomId: msg.roomId,
         updatedAt: msg.updatedAt,
       }),
     )

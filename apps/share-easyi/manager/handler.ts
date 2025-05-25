@@ -93,6 +93,7 @@ async function handleTextMessage(
         type: "text",
         from: body.from,
         to: body.to,
+        roomId: roomId,
         body: body.text,
         updatedAt: body.updatedAt,
       },
@@ -167,9 +168,11 @@ export function messageHandler(m: Manager, userId: string) {
 
       default:
         console.error(
-          `Unknown event type "${String(
-            (msg as Record<string, unknown>)?.type,
-          )}"`,
+          `Unknown event type "${
+            String(
+              (msg as Record<string, unknown>)?.type,
+            )
+          }"`,
         );
     }
   };

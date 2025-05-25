@@ -32,6 +32,8 @@ function sendMessage({
     text: body,
     updatedAt: pgTimestamp(new Date()),
     from: user.id,
+    to: toUserId,
+    roomId: roomId,
   })
 
   if (!msg) {
@@ -80,7 +82,7 @@ function RouteComponent() {
 
   createEffect(() => {
     void messages()
-    messageDiv?.scrollTo({ top: 9999, behavior: 'smooth' })
+    messageDiv?.scrollTo({ top: 9999, behavior: 'instant' })
   })
 
   return (

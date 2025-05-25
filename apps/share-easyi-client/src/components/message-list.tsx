@@ -24,7 +24,7 @@ export function MessageList(props: {
   messages: Message[]
 }) {
   const authSession = authClient.useSession()
-  const me = () => authSession().data?.user
+  const isMyMessage = (msg: Message) => authSession().data?.user.id === msg.from
 
   return (
     <ul
@@ -36,13 +36,13 @@ export function MessageList(props: {
           <li class="py-2 flex">
             <div
               class={cn(
-                'rounded-lg py-1 pl-2 pr-6 bg-secondary inline-block animate-in fade-in duration-1000 relative border-b',
-                me()?.id === msg.from ? 'ml-auto' : '',
+                'rounded-lg py-1 px-2 bg-secondary inline-block animate-in fade-in duration-1000 relative border-b',
+                isMyMessage(msg) && 'ml-auto pr-5',
               )}
             >
               {msg.text}
 
-              <SimpleMessageIndicator message={msg} />
+              {isMyMessage(msg) && <SimpleMessageIndicator message={msg} />}
             </div>
           </li>
         )}

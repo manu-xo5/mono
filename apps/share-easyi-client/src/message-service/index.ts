@@ -34,6 +34,7 @@ export type MessageReceiveEvent = {
     type: 'text'
     from: string
     to: string
+    roomId: string
     body: string
     updatedAt: string
   }
@@ -61,6 +62,8 @@ async function handleMessageReceive(msg: MessageReceiveEvent) {
       text: body.body,
       status: 'ok',
       from: body.from,
+      to: body.to,
+      roomId: msg.roomId,
       updatedAt: body.updatedAt,
     },
   ])
