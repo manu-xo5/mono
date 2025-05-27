@@ -10,5 +10,5 @@ export const [callStore, setCallStore] = createSignal<CallStore>({
   status: 'idle',
 })
 
-type CallStatus = 'idle' | 'loading' | 'rejected' | 'accepted' | 'peer-offline' | 'timeout'
+type CallStatus = 'idle' | 'loading' | 'rejected' | 'accepted' | 'peer-offline' | 'failed'
 export const [callStatus, setCallStatus] = createSignal<CallStatus>('idle')

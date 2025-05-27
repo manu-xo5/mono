@@ -34,6 +34,7 @@ export async function verifyUserSession() {
 
   authClient.useSession()
   const session = await authClient.getSession()
+
   if (session.error || !session.data) {
     cacheUser = null
     throw redirect({ to: '/login' })

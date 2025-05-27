@@ -8,16 +8,13 @@ import {
   setRoomStore,
 } from '@/message-service/store'
 import { messageSync } from '@/message-service/sync'
-import { getWebSocket } from '@/web-socket'
 import { createFileRoute, Outlet } from '@tanstack/solid-router'
-import { unwrap } from 'solid-js/store'
 
 export const Route = createFileRoute('/_app/home')({
   component: LayoutComponent,
   preload: false,
   staleTime: 30,
   pendingComponent: () => null,
-  beforeLoad: async () => ({ wsState: await getWebSocket() }),
   loader: () => {
     ;(async () => {
       setMessageStore(messageSync.read())
@@ -44,13 +41,11 @@ export const Route = createFileRoute('/_app/home')({
 })
 
 function LayoutComponent() {
-  const context = Route.useRouteContext()
-
   return (
     <PageContainer class="grid grid-cols-[300px_1fr]">
       <Sidebar />
 
-      {context().wsState.ws == null ? null : <Outlet />}
+      <Outlet />
     </PageContainer>
   )
 }

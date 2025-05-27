@@ -6,6 +6,7 @@ import { Stack } from '@/components/ui/stack'
 import { messagesActions } from '@/message-service'
 import { getMessages, messageStore, roomStore } from '@/message-service/store'
 import { pgTimestamp } from '@/utils'
+import { Socket } from '@/web-socket'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createEffect, createSignal } from 'solid-js'
 
@@ -58,9 +59,9 @@ function RouteComponent() {
   let messageDiv!: undefined | HTMLUListElement
   const params = Route.useParams()
   const context = Route.useRouteContext()
-  const { user, wsState } = context()
-  const ws = wsState.ws!
+  const { user } = context()
 
+  const ws = Socket.get()
   const [messageInput, setMessageInput] = createSignal('')
 
   const userId = user.id
@@ -130,6 +131,7 @@ function RouteComponent() {
                 const value = messageInput()
                 //messageInputRef.current?.focus()
                 if (!value) return
+
                 sendMessage({
                   ws,
 

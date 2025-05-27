@@ -1,4 +1,4 @@
-import { pgTimestamp, SECOND } from "../time.utils.ts";
+import { SECOND } from "../time.utils.ts";
 import { action, race, sleep } from "@effection/effection";
 import { Manager } from "./index.ts";
 import { safeJsonParse, tryCatch } from "../utils.ts";
@@ -15,13 +15,34 @@ type TextMsgEvent = {
   };
 };
 
+export type MakeCallRequestEvent = {
+  id: string;
+  type: "make-call-request";
+  to: string;
+  from: string;
+};
+
+export type MakeCallResponseEvent = {
+  type: "make-call-response";
+  to: string;
+  from: string;
+  body: {
+    response: "accepted" | "rejected";
+    peerSignal: unknown;
+  };
+};
+
 type GenericEvent = {
   id: string;
   type: "file" | "call";
   body: object;
 };
 
-type EventType = TextMsgEvent | GenericEvent;
+type EventType =
+  | MakeCallRequestEvent
+  | MakeCallResponseEvent
+  | TextMsgEvent
+  | GenericEvent;
 
 function listenPong(ws: WebSocket) {
   const op = action<MessageEvent>((k) => {
@@ -137,8 +158,30 @@ async function handleTextMessage(
   );
 }
 
-function handleCallRequest(msg: GenericEvent) {
-  void msg;
+function handleCallRequest(
+  m: Manager,
+  _userId: string,
+  event: MakeCallRequestEvent,
+) {
+  // forward
+  const socket = m.clients.get(event.to);
+  //  or offline
+  if (!socket) return;
+
+  socket.send(JSON.stringify(event as MakeCallRequestEvent));
+}
+
+function handleCallResponse(
+  m: Manager,
+  _userId: string,
+  event: MakeCallResponseEvent,
+) {
+  // forward
+  const socket = m.clients.get(event.to);
+  //  or offline
+  if (!socket) return;
+
+  socket.send(JSON.stringify(event));
 }
 
 function handleFileTransferReq(msg: GenericEvent) {
@@ -162,17 +205,19 @@ export function messageHandler(m: Manager, userId: string) {
         handleFileTransferReq(msg);
         break;
 
-      case "call":
-        handleCallRequest(msg);
+      case "make-call-request":
+        handleCallRequest(m, userId, msg);
+        break;
+
+      case "make-call-response":
+        handleCallResponse(m, userId, msg);
         break;
 
       default:
         console.error(
-          `Unknown event type "${
-            String(
-              (msg as Record<string, unknown>)?.type,
-            )
-          }"`,
+          `Unknown event type "${String(
+            (msg as Record<string, unknown>)?.type,
+          )}"`,
         );
     }
   };

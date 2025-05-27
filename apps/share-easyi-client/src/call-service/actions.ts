@@ -1,19 +1,8 @@
-import { sleep } from '@/effection.utils'
 import { untilMessageOf } from '@/web-socket/utils'
-import { race, run } from 'effection'
+import { sleep, race, run } from 'effection'
 import { callStore, setCallStatus, setCallStore } from './store'
-
-type MakeCallRequest = {
-  type: 'make-call-request'
-  to: string
-  from: string
-}
-
-type MakeCallResponse = {
-  type: 'make-call-response'
-  to: string
-  from: string
-}
+import type { MakeCallRequest, MakeCallResponse } from '@/types'
+import { getPeerSignal } from './utils'
 
 // cancel on spam
 export async function makeCall({
@@ -31,11 +20,16 @@ export async function makeCall({
       return
     }
     // send a requets
+    const p = yield* getPeerSignal()
+
     ws.send(
       JSON.stringify({
         type: 'make-call-request',
         to: to,
         from: from,
+        body: {
+          peerSignal: p.signalData,
+        },
       } as MakeCallRequest),
     )
 
@@ -46,10 +40,24 @@ export async function makeCall({
     setCallStatus('loading')
 
     const reply = yield* race([
-      sleep(1000),
+      sleep(10000),
       untilMessageOf<MakeCallResponse>(ws, 'make-call-response'),
     ])
     console.log(reply)
+
+    if (!reply) {
+      return
+    }
+
+    p.peer.signal(reply.body.peerSignal)
+    p.peer.on('connect', () => {
+      console.log('connected')
+    })
+    setCallStore((prev) => ({
+      ...prev,
+      status: 'idle',
+    }))
+    return
 
     setCallStatus('rejected')
     yield* sleep(2000)

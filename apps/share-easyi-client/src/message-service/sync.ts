@@ -1,14 +1,11 @@
 import { appendDistinct } from '@/list.utils'
 import { safeParse } from '@/utils'
-import { fetchRoomMessages, fetchRooms } from './api'
+import { fetchRoomMessages } from './api'
 import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
 import {
-  roomStore,
-  setRoomStore,
   type MessageStore,
-  type RoomId,
+  type RoomId
 } from './store'
-import { messagesActions } from '.'
 
 let syncPromise: Promise<MessageStore> | null = null
 const updateQueue: MessageStore[] = []

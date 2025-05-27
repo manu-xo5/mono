@@ -2,13 +2,14 @@ import { authClient } from '@/auth'
 import { callActions } from '@/call-service'
 import { Button } from '@/components/ui/button'
 import type { AuthUser } from '@/message-service/store'
-import { getWebSocket } from '@/web-socket'
 import { PhoneCallIcon } from 'lucide-solid'
 import { Show } from 'solid-js'
 import { Flexbox } from './ui/flex'
+import { Socket } from '@/web-socket'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
   const authSession = authClient.useSession()
+  const ws = Socket.get()
 
   return (
     <Flexbox class="w-full h-16 px-6 gap-3 border-b">
@@ -40,9 +41,6 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
 
             const me = authSession().data?.user
             if (!me?.id) return
-
-            const ws = (await getWebSocket()).ws
-            if (!ws) return
 
             await callActions.makeCall({ ws, to: otherUser.id, from: me.id })
           }}
