@@ -1,16 +1,16 @@
 import { authClient } from '@/auth'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/message-service/store'
-import { CheckIcon, CircleXIcon, Clock7Icon } from 'lucide-solid'
 import { For } from 'solid-js'
+import { Icons } from './icons'
 
 function SimpleMessageIndicator(props: { message: Message }) {
   return (
     <span class={cn('absolute bottom-[3px] right-1.5')}>
       {props.message.status == null ? (
-        <Clock7Icon size={12} />
+        <Icons.Clock7 size={12} />
       ) : (
-        { ok: <CheckIcon size={12} />, fail: <CircleXIcon /> }[
+        { ok: <Icons.Check size={12} />, fail: <Icons.CircleX /> }[
           props.message.status
         ]
       )}

@@ -2,10 +2,10 @@ import { authClient } from '@/auth'
 import { callActions } from '@/call-service'
 import { Button } from '@/components/ui/button'
 import type { AuthUser } from '@/message-service/store'
-import { PhoneCallIcon } from 'lucide-solid'
 import { Show } from 'solid-js'
 import { Flexbox } from './ui/flex'
 import { Socket } from '@/web-socket'
+import { Icons } from './icons'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
   const authSession = authClient.useSession()
@@ -45,7 +45,7 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
             await callActions.makeCall({ ws, to: otherUser.id, from: me.id })
           }}
         >
-          <PhoneCallIcon />
+          <Icons.PhoneCall />
         </Button>
       </div>
     </Flexbox>

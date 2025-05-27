@@ -1,9 +1,9 @@
 import { setCallStore } from '@/call-service/store'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
-import { PhoneIcon, PhoneMissedIcon } from 'lucide-solid'
 import { CallRipple } from './call-ripples'
 import { Flexbox } from './ui/flex'
+import { Icons } from './icons'
 
 export function CallDialog() {
   return (
@@ -36,7 +36,7 @@ export function CallDialog() {
               }))
             }}
           >
-            <PhoneIcon />
+            <Icons.Phone />
           </Button>
 
           <Button
@@ -50,7 +50,7 @@ export function CallDialog() {
               }))
             }}
           >
-            <PhoneMissedIcon />
+            <Icons.PhoneMissed />
           </Button>
         </Flexbox>
       </Stack>
