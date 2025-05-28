@@ -6,6 +6,8 @@ import { Show } from 'solid-js'
 import { Flexbox } from './ui/flex'
 import { Socket } from '@/web-socket'
 import { Icons } from './icons'
+import { ensure, run, until } from 'effection'
+import Peer from 'simple-peer'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
   const authSession = authClient.useSession()
@@ -42,7 +44,32 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
             const me = authSession().data?.user
             if (!me?.id) return
 
-            await callActions.makeCall({ ws, to: otherUser.id, from: me.id })
+            await run(function* () {
+              const stream = yield* until(
+                navigator.mediaDevices.getUserMedia({
+                  audio: true,
+                }),
+              )
+              console.log("stream: check")
+              const peer = new Peer({
+                initiator: true,
+                trickle: false,
+                stream: stream,
+              })
+              yield* ensure(() => {
+                console.log('ensure')
+                return void peer.end()
+              })
+
+              yield* callActions.makeCall({
+                ws,
+                peer,
+                to: otherUser.id,
+                from: me.id,
+              })
+
+              console.log('never')
+            })
           }}
         >
           <Icons.PhoneCall />

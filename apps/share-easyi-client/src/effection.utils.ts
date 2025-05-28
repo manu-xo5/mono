@@ -1,8 +1,9 @@
-import { action, type Operation } from 'effection'
+import { sleep, type Operation } from 'effection'
 
-export const sleep = (ms: number): Operation<void> =>
-  action<void>((res) => {
-    const id = setTimeout(() => res(), ms)
+export const ETimeoutSymbol = Symbol('EffectionTimeout')
 
-    return () => clearTimeout(id)
-  })
+export function* timeout(ms: number): Operation<typeof ETimeoutSymbol> {
+  yield* sleep(ms)
+
+  return ETimeoutSymbol
+}

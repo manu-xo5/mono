@@ -1,4 +1,4 @@
-import { authClient, signOutUser } from '@/auth'
+import { Auth, authClient } from '@/auth'
 import { useNavigate, useParams, useRouter } from '@tanstack/solid-router'
 import { For } from 'solid-js'
 import { Button } from './ui/button'
@@ -48,7 +48,7 @@ export function Sidebar() {
           class="w-full"
           variant="destructive"
           onClick={async () => {
-            signOutUser()
+            Auth.signOut()
             router.invalidate()
           }}
         >

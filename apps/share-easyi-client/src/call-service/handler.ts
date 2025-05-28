@@ -1,9 +1,9 @@
 import type { AuthSession } from '@/auth'
 import type { MakeCallRequest, MakeCallResponse } from '@/types'
 import { untilMessageOf } from '@/web-socket/utils'
-import { race, sleep } from 'effection'
+import { race, sleep, suspend } from 'effection'
 import { callStore, setCallStatus, setCallStore } from './store'
-import { getPeerSignal } from './utils'
+import { getPeerSignal, peerOnce } from './utils'
 
 let expectCallFrom = ''
 
@@ -27,7 +27,6 @@ function* handleCallFail() {
 }
 
 export function* handleCallRequest({ ws, msg, user }: Args<MakeCallRequest>) {
-  console.log('call handler')
   if (callStore().status == 'on-call') {
     // busy
     console.warn('user already on call')
@@ -41,45 +40,37 @@ export function* handleCallRequest({ ws, msg, user }: Args<MakeCallRequest>) {
   })
 
   // make a peer for call
-  const p = yield* getPeerSignal()
-  console.log("hello2")
+  const p = yield* getPeerSignal(false)
+  let audio: null | HTMLAudioElement = new Audio()
+  p.peer.on('stream', (stream) => {
+    console.log('on stream', stream)
+    if (audio) {
+      audio.srcObject = stream
+      audio.play()
+    }
+  })
+
+  p.peer.on('data', (raw) => console.log(String(raw)))
+  p.peer.on('close', () => (audio = null))
 
   p.peer.signal(msg.body.peerSignal)
 
-  p.peer.on('connect', () => {
-    console.log('CONNECT RECEIVER')
+  p.peer.on('signal', (data) => {
+    ws.send(
+      JSON.stringify({
+        type: 'make-call-response',
+        from: user.id,
+        to: msg.from,
+        body: {
+          response: 'accepted',
+          peerSignal: data,
+        },
+      } as MakeCallResponse),
+    )
   })
 
-  ws.send(
-    JSON.stringify({
-      type: 'make-call-response',
-      from: user.id,
-      to: msg.from,
-      body: {
-        response: 'accepted',
-        peerSignal: p.signalData,
-      },
-    } as MakeCallResponse),
-  )
+  yield* peerOnce(p.peer, 'connect')
+  console.log('connected')
 
-  // wait for connection on peer
-  const call = yield* race([
-    sleep(2000),
-    untilMessageOf<Record<string, string>>(ws, 'call'),
-  ])
-  void call
-  void expectCallFrom
-
-  yield* handleCallFail()
-
-  // if (!call) {
-  //   // webrtc timeout, call failed
-  //   expectCallFrom = msg.from
-  //   setCallStore({
-  //     status: 'on-call',
-  //     id: 'abcbac',
-  //   })
-  // }
-
-  // call.onStream(() => {})
+  yield* suspend()
 }

@@ -1,72 +1,78 @@
-import { untilMessageOf } from '@/web-socket/utils'
-import { sleep, race, run } from 'effection'
-import { callStore, setCallStatus, setCallStore } from './store'
 import type { MakeCallRequest, MakeCallResponse } from '@/types'
-import { getPeerSignal } from './utils'
+import { untilMessageOf } from '@/web-socket/utils'
+import { call, race, run, sleep, suspend, until } from 'effection'
+import type Peer from 'simple-peer'
+import { callStore, setCallStatus, setCallStore } from './store'
+import { peerOnce } from './utils'
+import { ETimeoutSymbol, timeout } from '@/effection.utils'
 
-// cancel on spam
-export async function makeCall({
-  ws,
-  to,
-  from,
-}: {
+type Args = {
   to: string
   from: string
   ws: WebSocket
-}) {
-  await run(function* () {
-    if (callStore().status == 'on-call') {
-      console.error('already on call')
-      return
-    }
-    // send a requets
-    const p = yield* getPeerSignal()
+  peer: Peer.Instance
+}
 
-    ws.send(
-      JSON.stringify({
-        type: 'make-call-request',
-        to: to,
-        from: from,
-        body: {
-          peerSignal: p.signalData,
-        },
-      } as MakeCallRequest),
-    )
+// const _peers = {
+//   call: null,
+// } as { call: null | Peer.Instance } & Record<string, null | Peer.Instance>
 
-    setCallStore((prev) => ({
-      ...prev,
-      status: 'on-call',
-    }))
-    setCallStatus('loading')
+// cancel on spam
+export function* makeCall({ ws, to, from, peer }: Args) {
+  if (callStore().status == 'on-call') {
+    throw Error('already on call')
+  }
+  // send a requets
+  const signalData = yield* peerOnce<Peer.SignalData>(peer, 'signal')
 
-    const reply = yield* race([
-      sleep(10000),
-      untilMessageOf<MakeCallResponse>(ws, 'make-call-response'),
-    ])
-    console.log(reply)
+  ws.send(
+    JSON.stringify({
+      type: 'make-call-request',
+      to: to,
+      from: from,
+      body: {
+        peerSignal: signalData,
+      },
+    } as MakeCallRequest),
+  )
 
-    if (!reply) {
-      return
-    }
+  setCallStore((prev) => ({
+    ...prev,
+    status: 'on-call',
+  }))
+  setCallStatus('loading')
 
-    p.peer.signal(reply.body.peerSignal)
-    p.peer.on('connect', () => {
-      console.log('connected')
-    })
-    setCallStore((prev) => ({
-      ...prev,
-      status: 'idle',
-    }))
-    return
+  const waitResponse = untilMessageOf<MakeCallResponse>(
+    ws,
+    'make-call-response',
+  )
+  const response = yield* race([sleep(10000), waitResponse])
 
+  if (!response) {
     setCallStatus('rejected')
     yield* sleep(2000)
     setCallStore((prev) => ({
       ...prev,
       status: 'idle',
     }))
+    return
+  }
 
-    // acknowledge or timeout
-    // hand over to handleCall
-  })
+  const waitConnect = peerOnce<void>(peer, 'connect')
+  peer.signal(response.body.peerSignal)
+
+  const connected = yield* race([timeout(10000), waitConnect])
+
+  if (connected == ETimeoutSymbol) {
+    setCallStatus('failed')
+    yield* sleep(2000)
+    setCallStore((prev) => ({
+      ...prev,
+      status: 'idle',
+    }))
+    return
+  }
+  console.log('connected')
+
+  yield* suspend()
 }

@@ -2,10 +2,7 @@ import { appendDistinct } from '@/list.utils'
 import { safeParse } from '@/utils'
 import { fetchRoomMessages } from './api'
 import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
-import {
-  type MessageStore,
-  type RoomId
-} from './store'
+import { type MessageStore, type RoomId } from './store'
 
 let syncPromise: Promise<MessageStore> | null = null
 const updateQueue: MessageStore[] = []
@@ -31,12 +28,10 @@ async function write(state: Partial<MessageStore>) {
   }
 
   if (isSyncing()) {
-    console.log('pusing to queue sync in progress')
     updateQueue.push(newState)
     return
   }
 
-  console.log('pusing to storage directly')
   localStorage.setItem(LOCAL_STORAGE_NAME, JSON.stringify(newState))
 }
 
@@ -62,7 +57,6 @@ async function sync(roomIds: RoomId[]): Promise<MessageStore> {
     )
   }
 
-  console.log(updateQueue)
   const newState = updateQueue.reduce(
     (acc, next) => Object.assign(acc, next),
     {} as MessageStore,
@@ -75,8 +69,6 @@ async function sync(roomIds: RoomId[]): Promise<MessageStore> {
       ...messages,
     },
   })
-
-  console.log(newState)
 
   localStorage.setItem(LOCAL_STORAGE_NAME, JSON.stringify(newState))
 

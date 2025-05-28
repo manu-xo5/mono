@@ -6,7 +6,7 @@ import { handleCallRequest } from './handler'
 
 export * as callActions from './actions'
 
-export function callHandler({
+export async function callHandler({
   user,
   socket,
   msg,
@@ -21,8 +21,7 @@ export function callHandler({
 
   switch (parsedData.type) {
     case 'make-call-request':
-      console.log('case', parsedData)
-      run(function* () {
+      await run(function* () {
         yield* handleCallRequest({ user, ws: socket, msg: parsedData })
       })
       break
