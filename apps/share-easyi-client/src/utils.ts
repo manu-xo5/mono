@@ -64,7 +64,6 @@ export function safeParse(value: string) {
 }
 
 export async function stubStream() {
-  const mediaSource = new MediaSource()
   const video = document.createElement('video')
   video.muted = true // mute to allow autoplay without user interaction
   video.playsInline = true

@@ -21,7 +21,7 @@ async function bootstrap() {
   }
 
   const socket = Socket.get()
-  const user = Auth.get()
+  const user = Auth.getUser()
 
   socket.addEventListener('message', (msg) => {
     messageHandler(msg)

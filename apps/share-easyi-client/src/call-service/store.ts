@@ -1,4 +1,3 @@
-import Peer from 'simple-peer'
 import { createSignal } from 'solid-js'
 
 type CallStore = {
@@ -13,6 +12,7 @@ export const [callStore, setCallStore] = createSignal<CallStore>({
 
 export type CallStatus =
   | 'idle'
+  | 'incoming'
   | 'loading'
   | 'rejected'
   | 'accepted'

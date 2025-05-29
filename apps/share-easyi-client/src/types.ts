@@ -13,10 +13,19 @@ export type MakeCallResponse = {
   type: 'make-call-response'
   to: string
   from: string
-  body: {
-    response: 'accepted' | 'rejected'
-    peerSignal: SignalData
-  }
+  body:
+    | {
+        response: 'accepted'
+        peerSignal: SignalData
+      }
+    | {
+        response: 'rejected'
+        peerSignal: null
+      }
+    | {
+        response: 'end'
+        peerSignal: null
+      }
 }
 
 export type MessageDeliveryEvent =

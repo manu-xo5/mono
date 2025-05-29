@@ -1,12 +1,11 @@
 import { ETimeoutSymbol, timeout } from '@/effection.utils'
 import type { MakeCallRequest, MakeCallResponse } from '@/types'
 import { untilMessageOf } from '@/web-socket/utils'
-import { call, race, sleep, until } from 'effection'
+import { race, sleep, until, type Operation } from 'effection'
 import type Peer from 'simple-peer'
 import { CallPeer } from './peer'
 import { callStore, setCallStatus, setCallStore } from './store'
 import { peerOnce } from './utils'
-import { stubStream } from '@/utils'
 
 type Args = {
   to: string
@@ -14,12 +13,46 @@ type Args = {
   ws: WebSocket
 }
 
-export function endCall() {
-  setCallStore({
-    id: '',
-    status: 'idle',
-  })
-  setCallStatus('idle')
+const callActions = {} as {
+  endCall(args: Args): void
+  makeCall(arg: Args): Operation<void>
+}
+
+callActions.endCall = function ({ ws, to, from }) {
+  // if receiving call
+  if (CallPeer.get() == null) {
+    const res: MakeCallResponse = {
+      type: 'make-call-response',
+      from: from,
+      to: to,
+      body: {
+        response: 'rejected',
+        peerSignal: null,
+      },
+    }
+
+    ws.send(JSON.stringify(res))
+  } else {
+    const res: MakeCallResponse = {
+      type: 'make-call-response',
+      from: from,
+      to: to,
+      body: {
+        response: 'end',
+        peerSignal: null,
+      },
+    }
+
+    ws.send(JSON.stringify(res))
+
+    setCallStore({
+      id: '',
+      status: 'idle',
+    })
+    setCallStatus('idle')
+  }
+
+  CallPeer.end()
 }
 
 // const _peers = {
@@ -27,7 +60,7 @@ export function endCall() {
 // } as { call: null | Peer.Instance } & Record<string, null | Peer.Instance>
 
 // cancel on spam
-export function* makeCall({ ws, to, from }: Args) {
+callActions.makeCall = function* ({ ws, to, from }) {
   if (callStore().status == 'on-call') {
     throw Error('already on call')
   }
@@ -39,7 +72,9 @@ export function* makeCall({ ws, to, from }: Args) {
       },
     }),
   )
-  const peer = CallPeer.init(true, stream)
+
+  CallPeer.init(true, stream)
+  const peer = CallPeer.get()
   // send a requets
   const signalData = yield* peerOnce<Peer.SignalData>(peer, 'signal')
 
@@ -66,7 +101,11 @@ export function* makeCall({ ws, to, from }: Args) {
   )
   const response = yield* race([sleep(10000), waitResponse])
 
-  if (!response) {
+  if (
+    !response ||
+    response.body.response == 'rejected' ||
+    response.body.response === 'end'
+  ) {
     setCallStatus('rejected')
     yield* sleep(2000)
     setCallStore((prev) => ({
@@ -95,5 +134,7 @@ export function* makeCall({ ws, to, from }: Args) {
 
   yield* peerOnce(peer, 'close')
 
-  endCall()
+  callActions.endCall({ ws, to: to, from: from })
 }
+
+export { callActions }

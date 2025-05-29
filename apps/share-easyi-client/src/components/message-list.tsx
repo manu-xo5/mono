@@ -1,4 +1,4 @@
-import { authClient } from '@/auth'
+import { Auth } from '@/auth'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/message-service/store'
 import { For } from 'solid-js'
@@ -23,8 +23,8 @@ export function MessageList(props: {
   class?: string
   messages: Message[]
 }) {
-  const authSession = authClient.useSession()
-  const isMyMessage = (msg: Message) => authSession().data?.user.id === msg.from
+  const user = Auth.getUser()
+  const isMyMessage = (msg: Message) => user.id === msg.from
 
   return (
     <ul

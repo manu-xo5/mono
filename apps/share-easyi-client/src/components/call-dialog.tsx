@@ -4,10 +4,12 @@ import { Stack } from '@/components/ui/stack'
 import { CallRipple } from './call-ripples'
 import { Flexbox } from './ui/flex'
 import { Icons } from './icons'
-import { CallPeer } from '@/call-service/peer'
+import { CallPeer, callStream } from '@/call-service/peer'
+import { createEffect, For } from 'solid-js'
 
 const STATUS_TO_TEXT = {
   idle: '',
+  incoming: 'Ringing...',
   loading: 'Calling...',
   rejected: 'Busy',
   accepted: 'On Call',
@@ -17,6 +19,10 @@ const STATUS_TO_TEXT = {
 
 export function CallDialog() {
   const header = () => STATUS_TO_TEXT[callStatus()]
+
+  createEffect(() => {
+    console.log('streams', callStream())
+  })
 
   return (
     <dialog
@@ -34,6 +40,22 @@ export function CallDialog() {
             src="https://lh3.googleusercontent.com/a/ACg8ocKESAosQC7kUMUPSlLmdIUPokPgTBr-tbSAeTkqIFWBcadrw9u6=s96-c"
             referrerPolicy="no-referrer"
           />
+        </div>
+
+        <div class="size-20 bg-black rounded-full border relative">
+          <For each={callStream()}>
+            {(track) => (
+              <video
+                autoplay
+                playsinline
+                muted
+                ref={(node) => {
+                  const stream = new MediaStream([track])
+                  node.srcObject = stream
+                }}
+              />
+            )}
+          </For>
         </div>
 
         <Flexbox class="justify-around w-full mt-auto py-10">

@@ -1,4 +1,4 @@
-import { Auth, authClient } from '@/auth'
+import { Auth } from '@/auth'
 import { useNavigate, useParams, useRouter } from '@tanstack/solid-router'
 import { For } from 'solid-js'
 import { Button } from './ui/button'
@@ -14,7 +14,7 @@ export function Sidebar() {
   const navigate = useNavigate({ from: '/home' })
   const params = useParams({ strict: false })
   const router = useRouter()
-  const authSession = authClient.useSession()
+  const user = Auth.getUser()
   const conversationIds = () => Object.keys(roomStore)
 
   function navigateToRoom(roomId: string) {
@@ -72,7 +72,7 @@ export function Sidebar() {
           <For each={conversationIds()}>
             {(addr) => {
               const isActive = () => params().roomId == addr
-              const currentUser = authSession().data?.user.id
+              const currentUser = user.id
               const room = roomStore[addr]
               const otherUser =
                 currentUser === room.user1 ? room.user2Data : room.user1Data

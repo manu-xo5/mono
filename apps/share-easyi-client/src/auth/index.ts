@@ -6,6 +6,12 @@ export const authClient = createAuthClient({
 })
 
 export type AuthSession = (typeof authClient.$Infer)['Session']
+export const Auth = {
+  init,
+  getSession,
+  getUser,
+  signOut,
+}
 
 let cacheUserSession: null | AuthSession = null
 async function init() {
@@ -43,7 +49,7 @@ function getSession() {
   return cacheUserSession
 }
 
-function get() {
+function getUser() {
   if (!cacheUserSession) {
     throw Error("getUser can't be used before the router")
   }
@@ -54,11 +60,4 @@ function get() {
 async function signOut() {
   cacheUserSession = null
   await authClient.signOut()
-}
-
-export const Auth = {
-  init,
-  getSession,
-  get,
-  signOut,
 }

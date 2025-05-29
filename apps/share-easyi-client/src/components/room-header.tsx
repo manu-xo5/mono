@@ -1,17 +1,15 @@
-import { authClient } from '@/auth'
-import { callActions } from '@/call-service'
+import { Auth } from '@/auth'
+import { callActions } from '@/call-service/actions'
 import { Button } from '@/components/ui/button'
 import type { AuthUser } from '@/message-service/store'
-import { Show } from 'solid-js'
-import { Flexbox } from './ui/flex'
 import { Socket } from '@/web-socket'
+import { run } from 'effection'
+import { Show } from 'solid-js'
 import { Icons } from './icons'
-import { ensure, run, until } from 'effection'
-import Peer from 'simple-peer'
-import { stubStream } from '@/utils'
+import { Flexbox } from './ui/flex'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
-  const authSession = authClient.useSession()
+  const me = Auth.getUser()
   const ws = Socket.get()
 
   return (
@@ -41,9 +39,6 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
           onClick={async () => {
             const otherUser = props.otherUser
             if (!otherUser) return
-
-            const me = authSession().data?.user
-            if (!me?.id) return
 
             await run(function* () {
               yield* callActions.makeCall({

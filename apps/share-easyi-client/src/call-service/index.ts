@@ -4,8 +4,6 @@ import { safeParse } from '@/utils'
 import { run } from 'effection'
 import { handleCallRequest } from './handler'
 
-export * as callActions from './actions'
-
 export async function callHandler({
   user,
   socket,

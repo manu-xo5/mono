@@ -2,11 +2,10 @@ import type { AuthSession } from '@/auth'
 import { ETimeoutSymbol, timeout } from '@/effection.utils'
 import type { MakeCallRequest, MakeCallResponse } from '@/types'
 import { race, sleep, until } from 'effection'
-import type Peer from 'simple-peer'
 import { CallPeer } from './peer'
 import { callStore, setCallStatus, setCallStore } from './store'
 import { getSignalData, peerOnce } from './utils'
-import { endCall } from './actions'
+import { callActions } from './actions'
 
 type Args<T> = {
   user: AuthSession['user']
@@ -14,40 +13,15 @@ type Args<T> = {
   msg: T
 }
 
-function rejectCall({ ws, user, msg }: Args<MakeCallRequest>) {
-  console.warn('user already on call')
-  ws.send(
-    JSON.stringify({
-      type: 'make-call-response',
-      from: user.id,
-      to: msg.from,
-      body: {
-        peerSignal: null as unknown as Peer.SignalData,
-        response: 'rejected',
-      },
-    } as MakeCallResponse),
-  )
-  endCall()
-}
-
 function* processCall({ ws, msg, user }: Args<MakeCallRequest>) {
-  const peer = CallPeer.init()
-  peer.on('stream', (stream) => {
-    console.log('on stream', stream)
-    const video = document.createElement('video')
-    document.body.append(video)
-
-    if (video) {
-      video.srcObject = stream
-      video.play()
-    }
-  })
-
   setCallStore({
     status: 'on-call',
     id: '',
   })
-  setCallStatus('loading')
+  setCallStatus('incoming')
+
+  CallPeer.init(false)
+  const peer = CallPeer.get()
 
   peer.signal(msg.body.peerSignal)
 
@@ -90,19 +64,10 @@ function* processCall({ ws, msg, user }: Args<MakeCallRequest>) {
     status: 'idle',
   })
 }
-// let audio: null | HTMLAudioElement = new Audio()
-// peer.on('stream', (stream) => {
-//   console.log('on stream', stream)
-//   if (audio) {
-//     audio.srcObject = stream
-//     audio.play()
-//   }
-// })
-// peer.on('close', () => (audio = null))
 
 export function* handleCallRequest({ ws, msg, user }: Args<MakeCallRequest>) {
   if (callStore().status == 'on-call') {
-    rejectCall({ ws, msg, user })
+    callActions.endCall({ ws, to: msg.from, from: user.id })
     return
   }
 
