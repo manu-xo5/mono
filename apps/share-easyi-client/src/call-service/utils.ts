@@ -1,13 +1,4 @@
-import {
-  action,
-  call,
-  createSignal,
-  each,
-  on,
-  spawn,
-  suspend,
-  type Operation,
-} from 'effection'
+import { action, type Operation } from 'effection'
 import Peer from 'simple-peer'
 
 type Res<T> = T extends false
@@ -17,7 +8,6 @@ type Res<T> = T extends false
 export const getPeerSignal = <T extends boolean>(initiator: T) => {
   return action<Res<T>>((res) => {
     const peer = new Peer({ initiator, trickle: false })
-    peer.on('close', () => console.log('connection closed'))
 
     if (!initiator) {
       res({
@@ -55,4 +45,14 @@ export const peerOnce = <T>(
     peer.on(eventName, handler)
     return () => peer.off(eventName, handler)
   })
+}
+
+export async function getSignalData(peer: Peer.Instance) {
+  const { promise, resolve } = Promise.withResolvers<Peer.SignalData>()
+
+  peer.on('signal', (data) => {
+    resolve(data)
+  })
+
+  return await promise
 }

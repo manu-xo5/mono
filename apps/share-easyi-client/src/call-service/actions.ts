@@ -1,16 +1,25 @@
+import { ETimeoutSymbol, timeout } from '@/effection.utils'
 import type { MakeCallRequest, MakeCallResponse } from '@/types'
 import { untilMessageOf } from '@/web-socket/utils'
-import { call, race, run, sleep, suspend, until } from 'effection'
+import { call, race, sleep, until } from 'effection'
 import type Peer from 'simple-peer'
+import { CallPeer } from './peer'
 import { callStore, setCallStatus, setCallStore } from './store'
 import { peerOnce } from './utils'
-import { ETimeoutSymbol, timeout } from '@/effection.utils'
+import { stubStream } from '@/utils'
 
 type Args = {
   to: string
   from: string
   ws: WebSocket
-  peer: Peer.Instance
+}
+
+export function endCall() {
+  setCallStore({
+    id: '',
+    status: 'idle',
+  })
+  setCallStatus('idle')
 }
 
 // const _peers = {
@@ -18,23 +27,32 @@ type Args = {
 // } as { call: null | Peer.Instance } & Record<string, null | Peer.Instance>
 
 // cancel on spam
-export function* makeCall({ ws, to, from, peer }: Args) {
+export function* makeCall({ ws, to, from }: Args) {
   if (callStore().status == 'on-call') {
     throw Error('already on call')
   }
+
+  const stream = yield* until(
+    navigator.mediaDevices.getDisplayMedia({
+      video: {
+        displaySurface: 'browser',
+      },
+    }),
+  )
+  const peer = CallPeer.init(true, stream)
   // send a requets
   const signalData = yield* peerOnce<Peer.SignalData>(peer, 'signal')
 
-  ws.send(
-    JSON.stringify({
-      type: 'make-call-request',
-      to: to,
-      from: from,
-      body: {
-        peerSignal: signalData,
-      },
-    } as MakeCallRequest),
-  )
+  const localSignal = JSON.stringify({
+    type: 'make-call-request',
+    to: to,
+    from: from,
+    body: {
+      peerSignal: signalData,
+    },
+  } as MakeCallRequest)
+
+  ws.send(localSignal)
 
   setCallStore((prev) => ({
     ...prev,
@@ -72,7 +90,10 @@ export function* makeCall({ ws, to, from, peer }: Args) {
     }))
     return
   }
-  console.log('connected')
 
-  yield* suspend()
+  setCallStatus('accepted')
+
+  yield* peerOnce(peer, 'close')
+
+  endCall()
 }

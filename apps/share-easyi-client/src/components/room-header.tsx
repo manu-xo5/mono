@@ -8,6 +8,7 @@ import { Socket } from '@/web-socket'
 import { Icons } from './icons'
 import { ensure, run, until } from 'effection'
 import Peer from 'simple-peer'
+import { stubStream } from '@/utils'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
   const authSession = authClient.useSession()
@@ -45,30 +46,11 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
             if (!me?.id) return
 
             await run(function* () {
-              const stream = yield* until(
-                navigator.mediaDevices.getUserMedia({
-                  audio: true,
-                }),
-              )
-              console.log("stream: check")
-              const peer = new Peer({
-                initiator: true,
-                trickle: false,
-                stream: stream,
-              })
-              yield* ensure(() => {
-                console.log('ensure')
-                return void peer.end()
-              })
-
               yield* callActions.makeCall({
                 ws,
-                peer,
                 to: otherUser.id,
                 from: me.id,
               })
-
-              console.log('never')
             })
           }}
         >

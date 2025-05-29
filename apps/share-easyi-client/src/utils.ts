@@ -63,3 +63,39 @@ export function safeParse(value: string) {
   }
 }
 
+export async function stubStream() {
+  const mediaSource = new MediaSource()
+  const video = document.createElement('video')
+  video.muted = true // mute to allow autoplay without user interaction
+  video.playsInline = true
+  video.style.display = 'none'
+  video.src = '/vod1.mp4'
+  video.load()
+
+  try {
+    await new Promise((res) => {
+      video.onloadedmetadata = () => res(0)
+    })
+    console.log('onloadedmetadata ')
+    await video.play()
+    console.log('play ')
+    let localStream: MediaStream | null = null
+
+    // 1. Capture stream from the source video element
+    if ('captureStream' in video && typeof video.captureStream === 'function') {
+      localStream = video.captureStream()
+    } else if (
+      'mozCaptureStream' in video &&
+      typeof video.mozCaptureStream === 'function'
+    ) {
+      localStream = video.mozCaptureStream() // Firefox
+    } else {
+      console.error('captureStream API not supported.')
+    }
+
+    return localStream
+  } catch (err) {
+    console.error(err)
+    return null
+  }
+}

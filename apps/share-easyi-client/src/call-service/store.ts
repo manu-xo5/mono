@@ -3,7 +3,7 @@ import { createSignal } from 'solid-js'
 
 type CallStore = {
   id: string
-  status: 'idle' | 'on-call'
+  status: 'idle' | 'on-call' | 'ending'
 }
 
 export const [callStore, setCallStore] = createSignal<CallStore>({
@@ -11,7 +11,7 @@ export const [callStore, setCallStore] = createSignal<CallStore>({
   status: 'idle',
 })
 
-type CallStatus =
+export type CallStatus =
   | 'idle'
   | 'loading'
   | 'rejected'

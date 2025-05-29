@@ -21,7 +21,7 @@ export async function callHandler({
 
   switch (parsedData.type) {
     case 'make-call-request':
-      await run(function* () {
+      run(function* () {
         yield* handleCallRequest({ user, ws: socket, msg: parsedData })
       })
       break

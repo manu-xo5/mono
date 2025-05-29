@@ -1,11 +1,12 @@
 import type { AuthSession } from '@/auth'
+import { ETimeoutSymbol, timeout } from '@/effection.utils'
 import type { MakeCallRequest, MakeCallResponse } from '@/types'
-import { untilMessageOf } from '@/web-socket/utils'
-import { race, sleep, suspend } from 'effection'
+import { race, sleep, until } from 'effection'
+import type Peer from 'simple-peer'
+import { CallPeer } from './peer'
 import { callStore, setCallStatus, setCallStore } from './store'
-import { getPeerSignal, peerOnce } from './utils'
-
-let expectCallFrom = ''
+import { getSignalData, peerOnce } from './utils'
+import { endCall } from './actions'
 
 type Args<T> = {
   user: AuthSession['user']
@@ -13,64 +14,97 @@ type Args<T> = {
   msg: T
 }
 
-function* handleCallFail() {
-  console.error('call failed')
-  setCallStore({
-    status: 'idle',
-    id: '',
-  })
-  setCallStatus('failed')
-
-  yield* sleep(1000)
-
-  setCallStatus('idle')
+function rejectCall({ ws, user, msg }: Args<MakeCallRequest>) {
+  console.warn('user already on call')
+  ws.send(
+    JSON.stringify({
+      type: 'make-call-response',
+      from: user.id,
+      to: msg.from,
+      body: {
+        peerSignal: null as unknown as Peer.SignalData,
+        response: 'rejected',
+      },
+    } as MakeCallResponse),
+  )
+  endCall()
 }
 
-export function* handleCallRequest({ ws, msg, user }: Args<MakeCallRequest>) {
-  if (callStore().status == 'on-call') {
-    // busy
-    console.warn('user already on call')
-    return
-  }
+function* processCall({ ws, msg, user }: Args<MakeCallRequest>) {
+  const peer = CallPeer.init()
+  peer.on('stream', (stream) => {
+    console.log('on stream', stream)
+    const video = document.createElement('video')
+    document.body.append(video)
 
-  expectCallFrom = msg.from
+    if (video) {
+      video.srcObject = stream
+      video.play()
+    }
+  })
+
   setCallStore({
     status: 'on-call',
     id: '',
   })
+  setCallStatus('loading')
 
-  // make a peer for call
-  const p = yield* getPeerSignal(false)
-  let audio: null | HTMLAudioElement = new Audio()
-  p.peer.on('stream', (stream) => {
-    console.log('on stream', stream)
-    if (audio) {
-      audio.srcObject = stream
-      audio.play()
-    }
-  })
+  peer.signal(msg.body.peerSignal)
 
-  p.peer.on('data', (raw) => console.log(String(raw)))
-  p.peer.on('close', () => (audio = null))
+  const signalData = yield* until(getSignalData(peer))
 
-  p.peer.signal(msg.body.peerSignal)
+  ws.send(
+    JSON.stringify({
+      type: 'make-call-response',
+      from: user.id,
+      to: msg.from,
+      body: {
+        response: 'accepted',
+        peerSignal: signalData,
+      },
+    } as MakeCallResponse),
+  )
 
-  p.peer.on('signal', (data) => {
-    ws.send(
-      JSON.stringify({
-        type: 'make-call-response',
-        from: user.id,
-        to: msg.from,
-        body: {
-          response: 'accepted',
-          peerSignal: data,
-        },
-      } as MakeCallResponse),
-    )
-  })
+  const connected = yield* race([
+    peerOnce<void>(peer, 'connect'),
+    timeout(2000),
+  ])
+  if (connected === ETimeoutSymbol) {
+    return
+  }
 
-  yield* peerOnce(p.peer, 'connect')
+  setCallStatus('accepted')
   console.log('connected')
 
-  yield* suspend()
+  yield* race([peerOnce(peer, 'close'), peerOnce(peer, 'error')])
+  console.log('ended')
+
+  setCallStore({
+    id: '',
+    status: 'ending',
+  })
+
+  yield* sleep(2000)
+  setCallStore({
+    id: '',
+    status: 'idle',
+  })
+}
+// let audio: null | HTMLAudioElement = new Audio()
+// peer.on('stream', (stream) => {
+//   console.log('on stream', stream)
+//   if (audio) {
+//     audio.srcObject = stream
+//     audio.play()
+//   }
+// })
+// peer.on('close', () => (audio = null))
+
+export function* handleCallRequest({ ws, msg, user }: Args<MakeCallRequest>) {
+  if (callStore().status == 'on-call') {
+    rejectCall({ ws, msg, user })
+    return
+  }
+
+  yield* processCall({ ws, msg, user })
 }
