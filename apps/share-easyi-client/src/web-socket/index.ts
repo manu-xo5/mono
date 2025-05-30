@@ -1,3 +1,5 @@
+import { EEmit } from '@/event-bus/emitter'
+
 let cachedSocket: WebSocket | null = null
 
 async function init() {
@@ -9,7 +11,7 @@ async function init() {
   const { promise, resolve } = Promise.withResolvers<boolean>()
 
   socket.addEventListener('open', () => resolve(true))
-
+  socket.addEventListener('message', (ev) => EEmit("ws:message", ev.data))
   socket.addEventListener('error', () => resolve(false))
   socket.addEventListener('close', () => resolve(false))
   setTimeout(() => {

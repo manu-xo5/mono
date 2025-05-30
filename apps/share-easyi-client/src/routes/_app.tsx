@@ -1,7 +1,6 @@
 import { Auth } from '@/auth'
 import { callHandler } from '@/call-service'
 import { PageLoader } from '@/components/page-loader'
-import { messageHandler } from '@/message-service'
 import { Socket } from '@/web-socket'
 import { createFileRoute, Outlet, redirect } from '@tanstack/solid-router'
 
@@ -24,7 +23,6 @@ async function bootstrap() {
   const user = Auth.getUser()
 
   socket.addEventListener('message', (msg) => {
-    messageHandler(msg)
     callHandler({ user, socket, msg })
   })
 

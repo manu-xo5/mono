@@ -66,6 +66,12 @@ export type MessageReceiveEvent = {
   }
 }
 
+export type MessageSent = {
+  body: string
+  roomId: string
+  toUser: string
+}
+
 export type Event =
   | MessageDeliveryEvent
   | MessageReceiveEvent

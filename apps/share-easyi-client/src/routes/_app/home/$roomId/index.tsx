@@ -1,11 +1,9 @@
-import type { AuthSession } from '@/auth'
 import { MessageList } from '@/components/message-list'
 import { RoomHeader } from '@/components/room-header'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
-import { messagesActions } from '@/message-service'
+import { EEmit } from '@/event-bus/emitter'
 import { getMessages, messageStore, roomStore } from '@/message-service/store'
-import { pgTimestamp } from '@/utils'
 import { Socket } from '@/web-socket'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createEffect, createSignal } from 'solid-js'
@@ -13,47 +11,6 @@ import { createEffect, createSignal } from 'solid-js'
 export const Route = createFileRoute('/_app/home/$roomId/')({
   component: RouteComponent,
 })
-
-function sendMessage({
-  user,
-  ws,
-  body,
-  roomId,
-  toUserId,
-}: {
-  user: AuthSession['user']
-  ws: WebSocket
-  body: string
-  roomId: string
-  toUserId: string
-}) {
-  const msg = messagesActions.newMessage(roomId, {
-    status: null,
-    type: 'text',
-    text: body,
-    updatedAt: pgTimestamp(new Date()),
-    from: user.id,
-    to: toUserId,
-    roomId: roomId,
-  })
-
-  if (!msg) {
-    // maybe failed to generate id
-    return
-  }
-
-  ws.send(
-    JSON.stringify({
-      id: msg.id,
-      type: msg.type,
-      body: {
-        to: toUserId,
-        from: user.id,
-        text: msg.text,
-      },
-    }),
-  )
-}
 
 function RouteComponent() {
   let messageDiv!: undefined | HTMLUListElement
@@ -86,6 +43,15 @@ function RouteComponent() {
     messageDiv?.scrollTo({ top: 9999, behavior: 'instant' })
   })
 
+  function scrollToBottom() {
+    window.requestIdleCallback(
+      () => {
+        messageDiv?.scrollTo({ top: 9999, behavior: 'smooth' })
+      },
+      { timeout: 500 },
+    )
+  }
+
   return (
     <Stack class="relative min-h-0">
       <RoomHeader otherUser={otherUserData()} />
@@ -112,15 +78,14 @@ function RouteComponent() {
               //messageInputRef.current?.focus()
               if (!value) return
 
-              ev.currentTarget.value = ''
-              sendMessage({
-                ws,
-
+              setMessageInput('')
+              EEmit('message:send', {
                 body: value,
-                user: user,
+                toUser: otherUserId(),
                 roomId: params().roomId,
-                toUserId: otherUserId(),
               })
+
+              scrollToBottom()
             }}
           />
 
@@ -131,22 +96,15 @@ function RouteComponent() {
                 const value = messageInput()
                 //messageInputRef.current?.focus()
                 if (!value) return
+                setMessageInput('')
 
-                sendMessage({
-                  ws,
-
+                EEmit('message:send', {
                   body: value,
-                  user: user,
+                  toUser: otherUserId(),
                   roomId: params().roomId,
-                  toUserId: otherUserId(),
                 })
 
-                window.requestIdleCallback(
-                  () => {
-                    messageDiv?.scrollTo({ top: 9999, behavior: 'smooth' })
-                  },
-                  { timeout: 500 },
-                )
+                scrollToBottom()
               }}
             >
               Send
