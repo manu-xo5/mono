@@ -32,6 +32,13 @@ export type MakeCallResponseEvent = {
   };
 };
 
+export type CallMessage = {
+  type: "call-message";
+  from: string;
+  to: string;
+  body: Record<string, unknown>;
+};
+
 type GenericEvent = {
   id: string;
   type: "file" | "call";
@@ -42,7 +49,8 @@ type EventType =
   | MakeCallRequestEvent
   | MakeCallResponseEvent
   | TextMsgEvent
-  | GenericEvent;
+  | GenericEvent
+  | CallMessage;
 
 function listenPong(ws: WebSocket) {
   const op = action<MessageEvent>((k) => {
@@ -184,6 +192,18 @@ function handleCallResponse(
   socket.send(JSON.stringify(event));
 }
 
+function handleCallMessage(
+  m: Manager,
+  _userId: string,
+  event: MakeCallResponseEvent,
+) {
+  const socket = m.clients.get(event.to);
+  //  or offline
+  if (!socket) return;
+
+  socket.send(JSON.stringify(event));
+}
+
 function handleFileTransferReq(msg: GenericEvent) {
   void msg;
 }
@@ -211,6 +231,9 @@ export function messageHandler(m: Manager, userId: string) {
 
       case "make-call-response":
         handleCallResponse(m, userId, msg);
+        break;
+      case "call-message":
+        handleCallMessage(m, userId, msg);
         break;
 
       default:
