@@ -1,10 +1,10 @@
+import { Auth } from '@/auth'
 import { MessageList } from '@/components/message-list'
 import { RoomHeader } from '@/components/room-header'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
 import { EEmit } from '@/event-bus/emitter'
 import { getMessages, messageStore, roomStore } from '@/message-service/store'
-import { Socket } from '@/web-socket'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createEffect, createSignal } from 'solid-js'
 
@@ -15,10 +15,8 @@ export const Route = createFileRoute('/_app/home/$roomId/')({
 function RouteComponent() {
   let messageDiv!: undefined | HTMLUListElement
   const params = Route.useParams()
-  const context = Route.useRouteContext()
-  const { user } = context()
+  const user = Auth.getUser()
 
-  const ws = Socket.get()
   const [messageInput, setMessageInput] = createSignal('')
 
   const userId = user.id
@@ -94,7 +92,6 @@ function RouteComponent() {
               size="sm"
               onClick={() => {
                 const value = messageInput()
-                //messageInputRef.current?.focus()
                 if (!value) return
                 setMessageInput('')
 

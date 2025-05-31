@@ -20,7 +20,7 @@ export async function callHandler({
   switch (parsedData.type) {
     case 'make-call-request':
       run(function* () {
-        yield* handleCallRequest({ user, ws: socket, msg: parsedData })
+        yield* handleCallRequest({ me: user, ws: socket, msg: parsedData })
       })
       break
   }

@@ -5,7 +5,9 @@ import { CallRipple } from './call-ripples'
 import { Flexbox } from './ui/flex'
 import { Icons } from './icons'
 import { CallPeer, callStream } from '@/call-service/peer'
-import { createEffect, For } from 'solid-js'
+import { createEffect, For, Show } from 'solid-js'
+import { EEmit } from '@/event-bus/emitter'
+import { cn } from '@/utils'
 
 const STATUS_TO_TEXT = {
   idle: '',
@@ -33,7 +35,9 @@ export function CallDialog() {
         <p class="text-xl xanimate-bounce animate-pulse">{header()}</p>
 
         <div class="size-20 bg-black rounded-full border relative">
-          <CallRipple />
+          <Show when={callStatus() === 'incoming'}>
+            <CallRipple />
+          </Show>
 
           <img
             class="rounded-full z-20 absolute"
@@ -58,32 +62,28 @@ export function CallDialog() {
           </For>
         </div>
 
-        <Flexbox class="justify-around w-full mt-auto py-10">
-          <Button
-            variant="default"
-            size="icon"
-            class="rounded-full"
-            onClick={() => {
-              setCallStore((prev) => ({
-                ...prev,
-                status: 'idle',
-              }))
-            }}
-          >
-            <Icons.Phone />
-          </Button>
+        <Flexbox class="justify-center w-full mt-auto py-10">
+          <Show when={callStatus() === 'incoming'}>
+            <Button
+              variant="default"
+              size="icon"
+              class="rounded-full -translate-x-12"
+              onClick={() => EEmit('call:accept')}
+            >
+              <Icons.Phone />
+            </Button>
+          </Show>
 
           <Button
             variant="destructive"
             size="icon"
-            class="rounded-full -scale-x-100"
-            onClick={() => {
-              CallPeer.end()
-              setCallStore((prev) => ({
-                ...prev,
-                status: 'idle',
-              }))
-            }}
+            class={cn(
+              'rounded-full -scale-x-100 transition-all ease-in',
+              callStatus() === 'incoming'
+                ? 'rotate-0 translate-x-12'
+                : 'rotate-40 translate-x-0',
+            )}
+            onClick={() => EEmit('call:end')}
           >
             <Icons.PhoneMissed />
           </Button>

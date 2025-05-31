@@ -8,10 +8,6 @@ import type {
 import { pgTimestamp } from '@/utils'
 import { Socket } from '@/web-socket'
 
-export function handler() {
-  console.log('pong')
-}
-
 export function handleNewMessage(msg: MessageReceiveEvent) {
   const body = msg.body
 

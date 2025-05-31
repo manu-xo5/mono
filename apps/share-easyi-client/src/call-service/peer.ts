@@ -1,5 +1,5 @@
-import { createSignal } from 'solid-js'
 import Peer from 'simple-peer'
+import { createSignal } from 'solid-js'
 
 interface IOtherPeer {
   signalData: Peer.SignalData
@@ -10,14 +10,21 @@ interface IOtherPeer {
 interface ICallPeer {
   get(): Peer.Instance
   init(initiator?: boolean, stream?: MediaStream): boolean
-  end(): void
-  other: IOtherPeer
+  destory(): void
+  _get(): Peer.Instance | null
+  getOther: () => IOtherPeer | null
+  setOther: (other: IOtherPeer | null) => void
 }
 
 export const [callStream, setCallStream] = createSignal<MediaStreamTrack[]>([])
 let peer: Peer.Instance | null = null
+let otherPeer: IOtherPeer | null
 
 const CallPeer = {} as ICallPeer
+CallPeer._get = function () {
+  console.error('Remove CallPeer._get() before production')
+  return peer
+}
 
 CallPeer.init = function (initiator = false, stream) {
   const p = new Peer({
@@ -38,6 +45,7 @@ CallPeer.init = function (initiator = false, stream) {
 
   setCallStream([])
   p.on('track', (track) => {
+    console.log('track')
     track.addEventListener('ended', () =>
       setCallStream((prev) => prev.filter((t) => t != track)),
     )
@@ -61,11 +69,18 @@ CallPeer.get = function () {
   return peer
 }
 
-CallPeer.end = function () {
+CallPeer.destory = function () {
   if (!peer) return
 
   peer.destroy()
   peer = null
+}
+
+CallPeer.getOther = function () {
+  return otherPeer
+}
+CallPeer.setOther = function (other) {
+  otherPeer = other
 }
 
 export { CallPeer }

@@ -9,6 +9,11 @@ export type MakeCallRequest = {
   }
 }
 
+export type CallRequest = {
+  to: string
+}
+
+
 export type MakeCallResponse = {
   type: 'make-call-response'
   to: string

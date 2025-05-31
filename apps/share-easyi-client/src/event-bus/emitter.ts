@@ -3,19 +3,38 @@ import {
   handleMessageDelivery,
   handleMessageSend,
   handleNewMessage,
-  handler,
 } from './listener'
-import type { Event, MessageDeliveryEvent, MessageReceiveEvent, MessageSent } from '@/types'
+import type {
+  CallRequest,
+  Event,
+  MakeCallResponse,
+  MessageDeliveryEvent,
+  MessageReceiveEvent,
+  MessageSent,
+} from '@/types'
 import { safeParse } from '@/utils'
+import {
+  handleCallAccept,
+  handleCallEnd,
+  handleMakeCall,
+} from '@/call-service/handler'
+import { run } from 'effection'
+import { Socket } from '@/web-socket'
+import { Auth } from '@/auth'
+import { CallPeer } from '@/call-service/peer'
+import { setCallStore } from '@/call-service/store'
 
 interface EventMap {
-  ping: () => void
-
   'ws:message': (msg: MessageEvent<any>['data']) => void
 
   'message:receive': (msg: MessageReceiveEvent) => void
   'message:delivered': (msg: MessageDeliveryEvent) => void
   'message:send': (data: MessageSent) => void
+
+  // 'call:receive': (msg: MakeCallRequest) => void
+  'call:request': (arg: CallRequest) => void
+  'call:accept': () => void
+  'call:end': () => void
 }
 
 const EventBus = createNanoEvents<EventMap>()
@@ -25,11 +44,35 @@ const EEmit = <K extends keyof EventMap>(
 ) => {
   EventBus.emit(event, ...args)
 }
-EventBus.on('ping', handler)
 
 EventBus.on('message:receive', handleNewMessage)
 EventBus.on('message:delivered', handleMessageDelivery)
 EventBus.on('message:send', handleMessageSend)
+
+EventBus.on('call:accept', () => {
+  run(function* () {
+    console.log('call accepted')
+    yield* handleCallAccept({
+      ws: Socket.get(),
+      me: Auth.getUser(),
+    })
+  })
+})
+
+EventBus.on('call:end', () =>
+  handleCallEnd({ ws: Socket.get(), me: Auth.getUser() }),
+)
+
+EventBus.on('call:request', (arg) => {
+  run(function* () {
+    console.log('calling')
+    yield* handleMakeCall({
+      ...arg,
+      from: Auth.getUser().id,
+      ws: Socket.get(),
+    })
+  })
+})
 
 EventBus.on('ws:message', (msg) => {
   const [data, ok] = safeParse(msg)

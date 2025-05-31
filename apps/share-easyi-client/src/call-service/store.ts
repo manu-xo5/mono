@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js'
+import { createEffect, createSignal } from 'solid-js'
 
 type CallStore = {
   id: string
@@ -9,6 +9,8 @@ export const [callStore, setCallStore] = createSignal<CallStore>({
   id: '',
   status: 'idle',
 })
+
+createEffect(() => console.log("status", callStore().status))
 
 export type CallStatus =
   | 'idle'

@@ -1,3 +1,4 @@
+import { Auth } from '@/auth'
 import { createFileRoute } from '@tanstack/solid-router'
 
 export const Route = createFileRoute('/_app/home/')({
@@ -5,8 +6,7 @@ export const Route = createFileRoute('/_app/home/')({
 })
 
 function RouteComponent() {
-  const context = Route.useRouteContext()
-  const { user } = context()
+  const user = Auth.getUser()
 
   return (
     <div class="flex flex-col justify-center items-center text-muted-foreground">

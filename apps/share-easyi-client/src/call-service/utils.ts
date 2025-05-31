@@ -1,4 +1,12 @@
-import { action, type Operation } from 'effection'
+import { timeout, ETimeoutSymbol } from '@/effection.utils'
+import {
+  action,
+  race,
+  sleep,
+  suspend,
+  withResolvers,
+  type Operation,
+} from 'effection'
 import Peer from 'simple-peer'
 
 type Res<T> = T extends false
@@ -33,18 +41,26 @@ export const getPeerSignal = <T extends boolean>(initiator: T) => {
   })
 }
 
-export const peerOnce = <T>(
+export function* peerOnce<T>(
   peer: Peer.Instance,
   eventName: string,
-): Operation<T> => {
-  return action<T>((res) => {
-    const handler = (tar: T) => {
-      res(tar)
-    }
+  timeoutMs?: number,
+) {
+  const { operation, resolve } = withResolvers<T>()
+  const timeoutOp = timeoutMs
+    ? timeout(timeoutMs)
+    : (suspend() as Operation<typeof ETimeoutSymbol>)
 
-    peer.on(eventName, handler)
-    return () => peer.off(eventName, handler)
-  })
+  const handler = (tar: T) => {
+    resolve(tar)
+  }
+
+  peer.on(eventName, handler)
+  try {
+    return yield* race([operation, timeoutOp])
+  } finally {
+    peer.off(eventName, handler)
+  }
 }
 
 export async function getSignalData(peer: Peer.Instance) {
