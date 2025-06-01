@@ -23,7 +23,6 @@ interface EventMap {
 
   // 'call:receive': (msg: MakeCallRequest) => void
   'call:request': (arg: CallRequest) => void
-  'call:accept': () => void
 }
 
 const EventBus = createNanoEvents<EventMap>()
@@ -38,12 +37,7 @@ EventBus.on('message:receive', handleNewMessage)
 EventBus.on('message:delivered', handleMessageDelivery)
 EventBus.on('message:send', handleMessageSend)
 
-EventBus.on('call:accept', () => {
-  console.log('call accepted')
-  throw new Error('remove event bus')
-})
-
-EventBus.on('call:request', (arg) => {
+EventBus.on('call:request', () => {
   run(function* () {
     console.log('calling')
     throw new Error('remove event bus')

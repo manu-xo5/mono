@@ -1,11 +1,8 @@
-import { Auth } from '@/auth'
 import { messagesActions } from '@/message-service'
 import type {
   MessageDeliveryEvent,
   MessageReceiveEvent,
-  MessageSent,
 } from '@/types'
-import { pgTimestamp } from '@/utils'
 
 export function handleNewMessage(msg: MessageReceiveEvent) {
   const body = msg.body
@@ -32,29 +29,29 @@ export function handleMessageDelivery(msg: MessageDeliveryEvent) {
   }
 }
 
-export function handleMessageSend({ body, roomId, toUser }: MessageSent) {
-  throw new Error("remove event bus")
-  const user = Auth.getUser()
-
-  const msg = messagesActions.newMessage(roomId, {
-    status: null,
-    type: 'text',
-    text: body,
-    updatedAt: pgTimestamp(new Date()),
-    from: user.id,
-    to: toUser,
-    roomId: roomId,
-  })
-
-  ws.send(
-    JSON.stringify({
-      id: msg.id,
-      type: msg.type,
-      body: {
-        to: toUser,
-        from: user.id,
-        text: msg.text,
-      },
-    }),
-  )
+export function handleMessageSend(/*{ body, roomId, toUser }: MessageSent*/) {
+  throw new Error('remove event bus')
+  // const user = Auth.getUser()
+  //
+  // const msg = messagesActions.newMessage(roomId, {
+  //   status: null,
+  //   type: 'text',
+  //   text: body,
+  //   updatedAt: pgTimestamp(new Date()),
+  //   from: user.id,
+  //   to: toUser,
+  //   roomId: roomId,
+  // })
+  //
+  // ws.send(
+  //   JSON.stringify({
+  //     id: msg.id,
+  //     type: msg.type,
+  //     body: {
+  //       to: toUser,
+  //       from: user.id,
+  //       text: msg.text,
+  //     },
+  //   }),
+  // )
 }

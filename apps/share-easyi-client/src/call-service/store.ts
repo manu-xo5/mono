@@ -3,7 +3,6 @@ import type Peer from 'simple-peer'
 import type {
   CallMessage,
   Event,
-  MakeCallRequest,
   MakeCallResponse,
 } from '@/types'
 import {
@@ -101,10 +100,6 @@ export class CallApi {
 
   dispatch(action: CallDispatch) {
     switch (action.type) {
-      case 'make-call-request':
-        this.handleIncoming(action)
-        break
-
       case CallEvent.Accept:
         const accept = this.accept.bind(this)
         run(function* () {

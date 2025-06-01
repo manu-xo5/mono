@@ -1,23 +1,71 @@
 import { Auth } from '@/auth'
-import { ETimeoutSymbol } from '@/effection.utils'
+import { ETimeoutSymbol, timeout } from '@/effection.utils'
 import { OtherUser } from '@/other-user'
 import { Peer } from '@/service/peer'
 import { Socket } from '@/service/web-socket'
-import type { MakeCallRequest, MakeCallResponse } from '@/types'
+import type { CallMessage, MakeCallRequest, MakeCallResponse } from '@/types'
 import { untilMessageOf } from '@/web-socket/utils'
 import { race, run, sleep, suspend, until } from 'effection'
 import type TPeer from 'simple-peer'
 import { callStore, setCallStatus, setCallStore } from './store'
 import { getSignalData, peerOnce } from './utils'
 
+function reset() {
+  setCallStatus('idle')
+  setCallStore({
+    id: '',
+    status: 'idle',
+  })
+
+  setCallStore({
+    id: '',
+    status: 'idle',
+  })
+  console.log('done')
+}
+
 function accept() {
+  const meUser = Auth.getUser()
+  const ws = Socket.get()
   const peer = Peer.create()
   const other = OtherUser.signal()
-  if (!other) {
-    return
+
+  function* process() {
+    if (!other) {
+      return
+    }
+
+    // start signal to init signal data
+    peer.signal(other.lastSignalData)
+    const CALL_RESPONSE = JSON.stringify({
+      type: 'call-message',
+      from: meUser.id,
+      to: other.userId,
+      body: {
+        response: 'accepted',
+        peerSignal: yield* until(getSignalData(peer)),
+      },
+    } as CallMessage)
+
+    // send local signaldata to remote
+    ws.send(CALL_RESPONSE)
+
+    const waitConnect = peerOnce<void>(peer, 'connect')
+    const connected = yield* race([waitConnect, timeout(2000)])
+
+    if (connected === ETimeoutSymbol) {
+      return
+    }
+
+    yield* suspend()
   }
 
-  peer.signal(other.lastSignalData)
+  run(function* () {
+    yield* race([process(), peerOnce(peer, 'close'), peerOnce(peer, 'end')])
+
+    reset()
+    console.log('done')
+  })
 }
 
 export const callActions = {
@@ -132,16 +180,7 @@ export const callActions = {
 
       setCallStatus('failed')
       yield* sleep(2000)
-      setCallStatus('idle')
-      setCallStore({
-        id: '',
-        status: 'idle',
-      })
-
-      setCallStore({
-        id: '',
-        status: 'idle',
-      })
+      reset()
       console.log('done')
     })
   },
