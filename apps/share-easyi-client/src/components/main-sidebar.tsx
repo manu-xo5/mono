@@ -9,6 +9,9 @@ import { setCallStore } from '@/call-service/store'
 import { roomStore } from '@/message-service/store'
 import { cn } from '@/utils'
 import { Flexbox } from './ui/flex'
+import { Avatar } from './ui/avatar'
+import { Copy } from 'lucide-solid'
+import { Icons } from './icons'
 
 export function Sidebar() {
   const navigate = useNavigate({ from: '/home' })
@@ -113,6 +116,30 @@ export function Sidebar() {
           </For>
         </ul>
       </Stack>
+
+      <div class="w-full">
+        <Button class="w-full " variant="secondary">
+          <Avatar src={Auth.getUser().image!} />
+          <Stack>
+            <p class="text-base">{Auth.getUser().name}</p>
+
+            <p class="text-m">
+              {Auth.getUser().id.substring(0, 10)}...
+              <button
+                class="ml-3"
+                onClick={(ev) => {
+                  ev.preventDefault()
+                  ev.stopPropagation()
+
+                  navigator.clipboard.writeText(Auth.getUser().id)
+                }}
+              >
+                <Icons.Copy class="!size-3" />
+              </button>
+            </p>
+          </Stack>
+        </Button>
+      </div>
     </Stack>
   )
 }

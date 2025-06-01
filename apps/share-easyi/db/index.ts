@@ -1,21 +1,20 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon, neonConfig } from "@neondatabase/serverless";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import { messageTable, roomRelations, roomTable } from "./schema/message.ts";
 
-if (Deno.env.get("NODE_ENV") === "development") {
-  neonConfig.fetchEndpoint = (host) => {
-    console.log(`[DEV] neonConfig.fetchEndpoint called for host: ${host}`);
-    return "http://localhost:4444/sql";
-  };
-}
-
-const sql = neon(Deno.env.get("DATABASE_URL")!);
-
-export const db = drizzle({
-  client: sql,
-  schema: {
-    messageTable,
-    roomTable,
-    roomRelations,
-  },
-});
+const isDev = Deno.env.get("NODE_ENV") === "development";
+export const db = isDev
+  ? drizzlePg(Deno.env.get("DATABASE_URL")!, {
+      schema: {
+        messageTable,
+        roomTable,
+        roomRelations,
+      },
+    })
+  : drizzleNeon(Deno.env.get("DATABASE_URL")!, {
+      schema: {
+        messageTable,
+        roomTable,
+        roomRelations,
+      },
+    });
