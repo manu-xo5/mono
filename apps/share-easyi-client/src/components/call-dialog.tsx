@@ -1,13 +1,14 @@
-import { callStatus, setCallStore, type CallStatus } from '@/call-service/store'
+import { CallEvent } from '@/call-service/consts'
+import { callStream } from '@/call-service/peer'
+import { CallApi, callStatus, type CallStatus } from '@/call-service/store'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
-import { CallRipple } from './call-ripples'
-import { Flexbox } from './ui/flex'
-import { Icons } from './icons'
-import { CallPeer, callStream } from '@/call-service/peer'
-import { createEffect, For, Show } from 'solid-js'
 import { EEmit } from '@/event-bus/emitter'
 import { cn } from '@/utils'
+import { createEffect, For, Show } from 'solid-js'
+import { CallRipple } from './call-ripples'
+import { Icons } from './icons'
+import { Flexbox } from './ui/flex'
 
 const STATUS_TO_TEXT = {
   idle: '',
@@ -20,7 +21,8 @@ const STATUS_TO_TEXT = {
 } satisfies Record<CallStatus, string>
 
 export function CallDialog() {
-  const header = () => STATUS_TO_TEXT[callStatus()]
+  const callApi = CallApi.getInstance()
+  const header = () => STATUS_TO_TEXT[callApi.status()]
 
   createEffect(() => {
     console.log('streams', callStream())
@@ -28,7 +30,7 @@ export function CallDialog() {
 
   return (
     <dialog
-      open={true}
+      open={callApi.store().status === "on-call"}
       class="absolute left-1/2 top-1/2 -translate-1/2 z-10 bg-secondary text-secondary-foreground rounded-xl h-96 w-72 border shadow-xl"
     >
       <Stack class="items-center p-4 gap-6 h-full">
@@ -83,7 +85,9 @@ export function CallDialog() {
                 ? 'rotate-0 translate-x-12'
                 : 'rotate-40 translate-x-0',
             )}
-            onClick={() => EEmit('call:end')}
+            onClick={() => {
+              callApi.dispatch({ type: CallEvent.End })
+            }}
           >
             <Icons.PhoneMissed />
           </Button>

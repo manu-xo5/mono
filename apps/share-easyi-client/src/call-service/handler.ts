@@ -1,39 +1,12 @@
 import type { AuthSession } from '@/auth'
 import { ETimeoutSymbol, timeout } from '@/effection.utils'
 import type { MakeCallRequest, MakeCallResponse } from '@/types'
-import { stubStream } from '@/utils'
 import { untilMessageOf } from '@/web-socket/utils'
-import { race, sleep, suspend, until } from 'effection'
-import { callActions } from './actions'
+import { race, suspend, until } from 'effection'
+import type Peer from 'simple-peer'
 import { CallPeer } from './peer'
 import { callStore, setCallStatus, setCallStore } from './store'
 import { getSignalData, peerOnce } from './utils'
-
-type Args<T> = {
-  me: AuthSession['user']
-  ws: WebSocket
-  msg: T
-}
-
-export function* handleCallRequest({ ws, msg, me }: Args<MakeCallRequest>) {
-  console.log('handlecall', callStore().status)
-  if (callStore().status == 'on-call') {
-    callActions.endCall({ ws, to: msg.from, from: me.id })
-    return
-  }
-
-  CallPeer.setOther({
-    signalData: msg.body.peerSignal,
-    userId: msg.from,
-    displayName: '<unknown>',
-  })
-
-  setCallStore({
-    status: 'on-call',
-    id: '',
-  })
-  setCallStatus('incoming')
-}
 
 export function* handleCallAccept({
   ws,
@@ -96,35 +69,6 @@ type _Args = {
   ws: WebSocket
 }
 
-export function handleCallEnd({
-  ws,
-  me,
-}: {
-  ws: WebSocket
-  me: AuthSession['user']
-}) {
-  console.log('call accepted')
-  const otherPeer = CallPeer.getOther()
-  if (!otherPeer) return
-
-  const res = JSON.stringify({
-    type: 'make-call-response',
-    from: me.id,
-    to: otherPeer.userId,
-    body: {
-      response: 'end',
-      peerSignal: null,
-    },
-  } as MakeCallResponse)
-  ws.send(res)
-  CallPeer.destory()
-
-  setCallStore({
-    id: '',
-    status: 'idle',
-  })
-}
-
 export function* handleMakeCall({ ws, to, from }: _Args) {
   if (callStore().status == 'on-call') {
     throw Error('already on call')
@@ -140,6 +84,12 @@ export function* handleMakeCall({ ws, to, from }: _Args) {
   const peer = CallPeer.get()
   peer.on('signal', (data) => {
     console.log('localSignal', data)
+  })
+
+  CallPeer.setOther({
+    userId: to,
+    displayName: '<unknown>',
+    signalData: null as unknown as Peer.SignalData,
   })
 
   function* processCall() {
@@ -173,6 +123,11 @@ export function* handleMakeCall({ ws, to, from }: _Args) {
         return
       }
 
+      CallPeer.setOther({
+        userId: to,
+        displayName: '<unknown>',
+        signalData: null as unknown as Peer.SignalData,
+      })
       peer.signal(res.body.peerSignal)
       const connect = yield* peerOnce<void>(peer, 'connect', 10000)
 

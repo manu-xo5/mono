@@ -13,6 +13,12 @@ export type CallRequest = {
   to: string
 }
 
+export type CallMessage = {
+  type: 'call-message'
+  from: string
+  to: string
+  body: Record<string, unknown>
+}
 
 export type MakeCallResponse = {
   type: 'make-call-response'
@@ -82,3 +88,4 @@ export type Event =
   | MessageReceiveEvent
   | MakeCallRequest
   | MakeCallResponse
+  | CallMessage

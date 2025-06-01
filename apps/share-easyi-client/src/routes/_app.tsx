@@ -1,11 +1,12 @@
 import { Auth } from '@/auth'
-import { callHandler } from '@/call-service'
+import { CallApi } from '@/call-service/store'
 import { PageLoader } from '@/components/page-loader'
-import { Socket } from '@/web-socket'
+import { Socket, Socketx } from '@/web-socket'
 import { createFileRoute, Outlet, redirect } from '@tanstack/solid-router'
+import { CallDialog } from '@/components/call-dialog'
 
 async function bootstrap() {
-  const [authOk, socketOk] = await Promise.all([Auth.init(), Socket.init()])
+  const [authOk, socketOk] = await Promise.all([Auth.init(), Socketx.init()])
 
   if (!authOk) {
     throw redirect({
@@ -22,15 +23,21 @@ async function bootstrap() {
   const socket = Socket.get()
   const user = Auth.getUser()
 
-  socket.addEventListener('message', (msg) => {
-    callHandler({ user, socket, msg })
+  CallApi.init({
+    ws: socket,
+    meUser: user,
   })
 
   return { user, socket }
 }
 
 export const Route = createFileRoute('/_app')({
-  component: Outlet,
+  component: () => (
+    <>
+      <CallDialog />
+      <Outlet />
+    </>
+  ),
   pendingMinMs: 1000,
   beforeLoad: bootstrap,
   pendingComponent: PageLoader,

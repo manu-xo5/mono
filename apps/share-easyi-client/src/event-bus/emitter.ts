@@ -1,28 +1,21 @@
+import { Auth } from '@/auth'
+import { handleCallAccept, handleMakeCall } from '@/call-service/handler'
+import type {
+  CallRequest,
+  Event,
+  MessageDeliveryEvent,
+  MessageReceiveEvent,
+  MessageSent,
+} from '@/types'
+import { safeParse } from '@/utils'
+import { Socket } from '@/web-socket'
+import { run } from 'effection'
 import { createNanoEvents } from 'nanoevents'
 import {
   handleMessageDelivery,
   handleMessageSend,
   handleNewMessage,
 } from './listener'
-import type {
-  CallRequest,
-  Event,
-  MakeCallResponse,
-  MessageDeliveryEvent,
-  MessageReceiveEvent,
-  MessageSent,
-} from '@/types'
-import { safeParse } from '@/utils'
-import {
-  handleCallAccept,
-  handleCallEnd,
-  handleMakeCall,
-} from '@/call-service/handler'
-import { run } from 'effection'
-import { Socket } from '@/web-socket'
-import { Auth } from '@/auth'
-import { CallPeer } from '@/call-service/peer'
-import { setCallStore } from '@/call-service/store'
 
 interface EventMap {
   'ws:message': (msg: MessageEvent<any>['data']) => void
@@ -34,7 +27,6 @@ interface EventMap {
   // 'call:receive': (msg: MakeCallRequest) => void
   'call:request': (arg: CallRequest) => void
   'call:accept': () => void
-  'call:end': () => void
 }
 
 const EventBus = createNanoEvents<EventMap>()
@@ -58,10 +50,6 @@ EventBus.on('call:accept', () => {
     })
   })
 })
-
-EventBus.on('call:end', () =>
-  handleCallEnd({ ws: Socket.get(), me: Auth.getUser() }),
-)
 
 EventBus.on('call:request', (arg) => {
   run(function* () {
