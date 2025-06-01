@@ -1,5 +1,11 @@
+import { CallApi } from '@/call-service'
+
 let cachedSocket: WebSocket | null = null
 let promiseSocket: Promise<WebSocket> | null = null
+
+const Dependent: {
+  wsMiddleware: (ws: WebSocket) => void
+}[] = [CallApi]
 
 export const Socket = {
   async init() {
@@ -26,6 +32,7 @@ export const Socket = {
 
       await promiseSocket
       cachedSocket = socket
+      Dependent.forEach((i) => i.wsMiddleware(socket))
 
       return true
     } catch {
@@ -35,7 +42,7 @@ export const Socket = {
     }
   },
 
-  getInstance() {
+  get() {
     if (!cachedSocket) {
       throw new Error('Cannot use Socketx.getInstance before Socketx.init')
     }

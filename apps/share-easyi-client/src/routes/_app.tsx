@@ -20,7 +20,7 @@ async function bootstrap() {
     })
   }
 
-  const socket = Socket.getInstance()
+  const socket = Socket.get()
   const user = Auth.getUser()
 
   CallApi.init({

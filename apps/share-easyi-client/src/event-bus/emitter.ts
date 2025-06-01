@@ -39,10 +39,8 @@ EventBus.on('message:delivered', handleMessageDelivery)
 EventBus.on('message:send', handleMessageSend)
 
 EventBus.on('call:accept', () => {
-  run(function* () {
-    console.log('call accepted')
-    throw new Error('remove event bus')
-  })
+  console.log('call accepted')
+  throw new Error('remove event bus')
 })
 
 EventBus.on('call:request', (arg) => {

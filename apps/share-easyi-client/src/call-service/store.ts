@@ -13,11 +13,7 @@ import {
   type Setter,
 } from 'solid-js'
 import { safeParse } from '@/utils'
-import {
-  CallEvent,
-  type CallDispatch,
-  type CallDispatchEnd,
-} from './consts'
+import { CallEvent, type CallDispatch, type CallDispatchEnd } from './consts'
 import { timeout, ETimeoutSymbol } from '@/effection.utils'
 import { until, race, run } from 'effection'
 import { CallPeer } from './peer'
@@ -25,15 +21,8 @@ import { getSignalData, peerOnce } from './utils'
 
 type CallStore = {
   id: string
-  status: 'idle' | 'on-call' | 'ending'
+  status: 'idle' | 'on-call'
 }
-
-export const [callStore, setCallStore] = createSignal<CallStore>({
-  id: '',
-  status: 'idle',
-})
-
-createEffect(() => console.log('status', callStore().status))
 
 export type CallStatus =
   | 'idle'
@@ -44,14 +33,19 @@ export type CallStatus =
   | 'peer-offline'
   | 'failed'
 
-export const [callStatus, setCallStatus] = createSignal<CallStatus>('idle')
-
 type OtherPeer = {
   userId: string
   displayName: string
   initialSignalData: Peer.SignalData
 }
 
+export const [callStore, setCallStore] = createSignal<CallStore>({
+  id: '',
+  status: 'idle',
+})
+
+export const [callStatus, setCallStatus] = createSignal<CallStatus>('idle')
+createEffect(() => console.log('status', callStore().status))
 export class CallApi {
   private static instance: CallApi | null = null
   private ws: WebSocket
@@ -175,34 +169,6 @@ export class CallApi {
       id: '',
       status: 'idle',
     })
-  }
-
-  handleIncoming(msg: MakeCallRequest) {
-    console.log('call incoming... from', msg.from)
-    console.log('call status', this.store().status)
-
-    if (this.store().status == 'on-call') {
-      this.dispatch({
-        type: CallEvent.Reject,
-        payload: {
-          otherUserId: msg.from,
-        },
-      })
-      return
-    }
-
-    this.setOtherPeer({
-      initialSignalData: msg.body.peerSignal,
-      userId: msg.from,
-      displayName: '<unknown>',
-    })
-
-    this.setStore({
-      id: '',
-      status: 'on-call',
-    })
-
-    this.setStatus('incoming')
   }
 
   rejectCall({ payload }: CallDispatchEnd) {

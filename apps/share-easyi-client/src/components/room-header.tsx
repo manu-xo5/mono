@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button'
-import { EEmit } from '@/event-bus/emitter'
 import type { AuthUser } from '@/message-service/store'
 import { Show } from 'solid-js'
 import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
+import { CallApi } from '@/call-service'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
   return (
@@ -34,7 +34,7 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
             const otherUser = props.otherUser
             if (!otherUser) return
 
-            EEmit('call:request', { to: otherUser.id })
+            CallApi.actions.make({ to: otherUser.id })
           }}
         >
           <Icons.PhoneCall />

@@ -49,7 +49,7 @@ export function pgTimestamp(date: Date): string {
   return date.toISOString().replace('T', ' ').replace('Z', '').slice(0, 19)
 }
 
-export function safeParse(value: string) {
+export function safeParse<T = {}>(value: string) {
   try {
     const json = JSON.parse(value)
 
@@ -57,7 +57,7 @@ export function safeParse(value: string) {
       return [null, false] as [data: null, ok: false]
     }
 
-    return [json, true] as [data: {}, ok: true]
+    return [json, true] as [data: T, ok: true]
   } catch {
     return [null, false] as [data: null, ok: false]
   }

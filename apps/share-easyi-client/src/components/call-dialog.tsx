@@ -1,6 +1,6 @@
-import { CallEvent } from '@/call-service/consts'
 import { callStream } from '@/call-service/peer'
-import { CallApi, callStatus, type CallStatus } from '@/call-service/store'
+import { callStatus, type CallStatus } from '@/call-service/store'
+import { CallApi } from '@/call-service'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
 import { EEmit } from '@/event-bus/emitter'
@@ -21,8 +21,7 @@ const STATUS_TO_TEXT = {
 } satisfies Record<CallStatus, string>
 
 export function CallDialog() {
-  const callApi = CallApi.getInstance()
-  const header = () => STATUS_TO_TEXT[callApi.status()]
+  const header = () => STATUS_TO_TEXT[CallApi.status()]
 
   createEffect(() => {
     console.log('streams', callStream())
@@ -30,7 +29,7 @@ export function CallDialog() {
 
   return (
     <dialog
-      open={callApi.store().status === "on-call"}
+      open={CallApi.store().status === 'on-call'}
       class="absolute left-1/2 top-1/2 -translate-1/2 z-10 bg-secondary text-secondary-foreground rounded-xl h-96 w-72 border shadow-xl"
     >
       <Stack class="items-center p-4 gap-6 h-full">
@@ -70,7 +69,9 @@ export function CallDialog() {
               variant="default"
               size="icon"
               class="rounded-full -translate-x-12"
-              onClick={() => EEmit('call:accept')}
+              onClick={() => {
+                CallApi.actions.accept()
+              }}
             >
               <Icons.Phone />
             </Button>
@@ -86,7 +87,8 @@ export function CallDialog() {
                 : 'rotate-40 translate-x-0',
             )}
             onClick={() => {
-              callApi.dispatch({ type: CallEvent.End })
+              throw Error('todo not implemented')
+              // CallApi.actions.({ type: CallEvent.End })
             }}
           >
             <Icons.PhoneMissed />
