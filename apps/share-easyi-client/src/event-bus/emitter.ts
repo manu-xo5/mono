@@ -1,5 +1,3 @@
-import { Auth } from '@/auth'
-import { handleCallAccept, handleMakeCall } from '@/call-service/handler'
 import type {
   CallRequest,
   Event,
@@ -8,7 +6,6 @@ import type {
   MessageSent,
 } from '@/types'
 import { safeParse } from '@/utils'
-import { Socket } from '@/web-socket'
 import { run } from 'effection'
 import { createNanoEvents } from 'nanoevents'
 import {
@@ -44,21 +41,14 @@ EventBus.on('message:send', handleMessageSend)
 EventBus.on('call:accept', () => {
   run(function* () {
     console.log('call accepted')
-    yield* handleCallAccept({
-      ws: Socket.get(),
-      me: Auth.getUser(),
-    })
+    throw new Error('remove event bus')
   })
 })
 
 EventBus.on('call:request', (arg) => {
   run(function* () {
     console.log('calling')
-    yield* handleMakeCall({
-      ...arg,
-      from: Auth.getUser().id,
-      ws: Socket.get(),
-    })
+    throw new Error('remove event bus')
   })
 })
 

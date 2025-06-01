@@ -2,7 +2,6 @@ import { timeout, ETimeoutSymbol } from '@/effection.utils'
 import {
   action,
   race,
-  sleep,
   suspend,
   withResolvers,
   type Operation,

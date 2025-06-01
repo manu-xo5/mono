@@ -6,7 +6,6 @@ import type {
   MessageSent,
 } from '@/types'
 import { pgTimestamp } from '@/utils'
-import { Socket } from '@/web-socket'
 
 export function handleNewMessage(msg: MessageReceiveEvent) {
   const body = msg.body
@@ -34,7 +33,7 @@ export function handleMessageDelivery(msg: MessageDeliveryEvent) {
 }
 
 export function handleMessageSend({ body, roomId, toUser }: MessageSent) {
-  const ws = Socket.get()
+  throw new Error("remove event bus")
   const user = Auth.getUser()
 
   const msg = messagesActions.newMessage(roomId, {

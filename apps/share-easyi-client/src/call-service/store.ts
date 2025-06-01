@@ -17,7 +17,6 @@ import {
   CallEvent,
   type CallDispatch,
   type CallDispatchEnd,
-  type CallDispatchMake as CallDispatchAccept,
 } from './consts'
 import { timeout, ETimeoutSymbol } from '@/effection.utils'
 import { until, race, run } from 'effection'

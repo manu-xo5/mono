@@ -10,7 +10,6 @@ import { roomStore } from '@/message-service/store'
 import { cn } from '@/utils'
 import { Flexbox } from './ui/flex'
 import { Avatar } from './ui/avatar'
-import { Copy } from 'lucide-solid'
 import { Icons } from './icons'
 
 export function Sidebar() {
@@ -33,8 +32,8 @@ export function Sidebar() {
   }
 
   return (
-    <Stack class="bg-[url(/bg1.webp)]">
-      <Flexbox class="h-16 w-full border-b border-r backdrop-blur-md p-3">
+    <Stack class="bg-[url(/bg1.webp)] border-r">
+      <Flexbox class="h-16 w-full border-b backdrop-blur-md p-3">
         <Input
           placeholder="User Id"
           onKeyDown={(ev) => {
@@ -46,7 +45,7 @@ export function Sidebar() {
         />
       </Flexbox>
 
-      <Stack class="backdrop-blur-md flex-1 min-h-0 border-r p-3 gap-3">
+      <Stack class="backdrop-blur-md flex-1 min-h-0 p-3 gap-3">
         <Button
           class="w-full"
           variant="destructive"
@@ -117,7 +116,7 @@ export function Sidebar() {
         </ul>
       </Stack>
 
-      <div class="w-full">
+      <div class="w-full p-3">
         <Button class="w-full " variant="secondary">
           <Avatar src={Auth.getUser().image!} />
           <Stack>
