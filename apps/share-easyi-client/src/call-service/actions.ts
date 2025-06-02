@@ -40,7 +40,7 @@ export const callActions = {
     }
 
     OtherUser.setSignal({
-      lastSignalData: msg.body.peerSignal,
+      lastSignalData: null as unknown as TPeer.SignalData,
       userId: msg.from,
       displayName: '<unknown>',
     })
@@ -55,81 +55,77 @@ export const callActions = {
 
   make({ to }: { to: string }) {
     run(function* () {
-      const ws = Socket.get()
-      const peer = Peer.create({ initiator: true })
-      const meUser = Auth.getUser()
-
       if (callStore().status == 'on-call') {
         throw Error('already on call')
       }
 
-      setCallStore({
-        id: '',
-        status: 'on-call',
-      })
-      setCallStatus('loading')
+      const ws = Socket.get()
+      const meUser = Auth.getUser()
+
       OtherUser.setSignal({
         userId: to,
         displayName: '<unknown>',
         lastSignalData: null as unknown as TPeer.SignalData,
       })
 
-      // Send signal
-      ws.send(
-        JSON.stringify({
-          type: 'make-call-request',
-          to: to,
-          from: meUser.id,
-          body: {
-            peerSignal: yield* until(getSignalData(peer)),
-          },
-        } as MakeCallRequest),
-      )
+      function* getResponse() {
+        setCallStore({
+          id: '',
+          status: 'on-call',
+        })
+        setCallStatus('loading')
 
-      // EXTRA
-      peer.on('signal', async (data) => {
-        console.log('localSignal', data)
-        await new Promise((res) => setTimeout(res, 1000))
-        const signalMsg: CallMessage = {
-          type: 'call-message',
-          to: to,
-          from: meUser.id,
-          body: {
-            type: 'signal',
-            peerSignal: data,
-          },
-        }
+        ws.send(
+          JSON.stringify({
+            type: 'make-call-request',
+            to: to,
+            from: meUser.id,
+            body: {},
+          } as MakeCallRequest),
+        )
 
-        ws.send(JSON.stringify(signalMsg))
-      })
-
-      function* processCall() {
         const res = yield* untilMessageOf<CallMessage>(
           ws,
           'call-message',
           10000,
         )
+
         // exit if rejected / timeout
-        if (res === ETimeoutSymbol || res.body.response !== 'accepted') {
-          // audio.play()
-          console.log('timedout')
-          return
-        }
-        const resBody = res.body as {
-          response: string
-          peerSignal: TPeer.SignalData
-        }
-        // change global state
-        OtherUser.setSignal({
-          userId: to,
-          displayName: '<unknown>',
-          lastSignalData: resBody.peerSignal,
+        if (res === ETimeoutSymbol) return false
+        if (res.body.response !== 'accepted') return false
+
+        return true
+      }
+
+      function* processCall(peer: TPeer.Instance) {
+        ws.addEventListener('message', (ev) => {
+          const [parsed, ok] = safeParse<any>(ev.data)
+          if (!ok) return
+
+          if (parsed.type !== 'call-message') return
+          if (!parsed.body) return
+          if (parsed.body.type !== 'signal') return
+
+          peer.signal(parsed.body.peerSignal)
+        })
+        // EXTRA
+        peer.on('signal', async (data) => {
+          console.log('localSignal', data)
+          const signalMsg: CallMessage = {
+            type: 'call-message',
+            to: to,
+            from: meUser.id,
+            body: {
+              type: 'signal',
+              peerSignal: data,
+            },
+          }
+
+          ws.send(JSON.stringify(signalMsg))
         })
 
         // set remote description
-        const connectedOp = peerOnce<void>(peer, 'connect', 2000)
-        peer.signal(resBody.peerSignal)
-        const connected = yield* connectedOp
+        const connected = yield* peerOnce<void>(peer, 'connect', 2000)
         console.log('connect', connected)
 
         if (connected == ETimeoutSymbol) {
@@ -141,20 +137,31 @@ export const callActions = {
         yield* suspend()
       }
 
-      yield* race([
-        peerOnce(peer, 'close'),
-        peerOnce(peer, 'end'),
-        peerOnce(peer, 'error'),
+      try {
+        const accepted = yield* getResponse()
+        if (!accepted) {
+          setCallStatus('disconnecting')
+          yield* sleep(2000)
+          reset()
+          return
+        }
 
-        processCall(),
-      ])
+        const peer = Peer.create({ initiator: true })
+        yield* race([
+          processCall(peer),
 
-      setCallStatus('disconnecting')
-      yield* sleep(2000)
-      reset()
+          peerOnce(peer, 'close'),
+          peerOnce(peer, 'end'),
+          peerOnce(peer, 'error'),
+        ])
 
-      Peer.destory()
-      console.log('done')
+        setCallStatus('disconnecting')
+        yield* sleep(2000)
+        reset()
+      } finally {
+        Peer.destory()
+        console.log('done')
+      }
     })
   },
 
@@ -169,33 +176,55 @@ export const callActions = {
     const ws = Socket.get()
     const peer = Peer.create()
     const other = OtherUser.signal()
+    console.log('accept')
+    if (!other) return
 
     peer.on('stream', (stream) => {
       setCallStream((prev) => prev.concat(stream))
     })
     peer.on('error', (e) => console.log('peer.on(error)', e))
 
-    setCallStatus('loading')
-    function* process() {
-      if (!other) {
-        return
-      }
+    peer.on('signal', (data) => {
+      console.log({ other })
+      if (!other) return
 
-      // start signal to init signal data
-      peer.signal(other.lastSignalData)
       const CALL_RESPONSE = JSON.stringify({
         type: 'call-message',
         from: meUser.id,
         to: other.userId,
         body: {
-          response: 'accepted',
-          peerSignal: yield* until(getSignalData(peer)),
+          type: 'signal',
+          peerSignal: data,
         },
       } as CallMessage)
 
       // send local signaldata to remote
       ws.send(CALL_RESPONSE)
+    })
 
+    ws.addEventListener('message', (ev) => {
+      const [parsed, ok] = safeParse<any>(ev.data)
+      if (!ok) return
+
+      if (parsed.type !== 'call-message') return
+
+      peer.signal(parsed.body.peerSignal)
+    })
+
+    // send local signaldata to remote
+    ws.send(
+      JSON.stringify({
+        type: 'call-message',
+        from: meUser.id,
+        to: other.userId,
+        body: {
+          response: 'accepted',
+        },
+      }),
+    )
+
+    setCallStatus('loading')
+    function* process() {
       const connected = yield* peerOnce<void>(peer, 'connect', 2000)
       console.log('connected', connected)
 
@@ -205,15 +234,6 @@ export const callActions = {
 
       // Successfully Connected
       setCallStatus('accepted')
-
-      ws.addEventListener('message', (ev) => {
-        const [parsed, ok] = safeParse<any>(ev.data)
-        if (!ok) return
-
-        if (parsed.type !== 'call-message') return
-
-        peer.signal(parsed.body.peerSignal)
-      })
 
       yield* suspend()
     }

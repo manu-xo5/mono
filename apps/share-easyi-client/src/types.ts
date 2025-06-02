@@ -4,9 +4,7 @@ export type MakeCallRequest = {
   type: 'make-call-request'
   to: string
   from: string
-  body: {
-    peerSignal: SignalData
-  }
+  body: {}
 }
 
 export type CallRequest = {

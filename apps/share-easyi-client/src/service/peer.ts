@@ -11,7 +11,6 @@ export const Peer = {
     }
 
     peer = new SimplePeer({
-      trickle: false,
       ...opts,
     })
     return peer
