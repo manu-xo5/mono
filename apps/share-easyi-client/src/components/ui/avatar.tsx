@@ -7,10 +7,10 @@ type Props = {
 
 export function Avatar(props: Props) {
   return (
-    <div class='size-10'>
+    <div class={cn('size-10', props.class)}>
       <img
         loading="eager"
-        class={cn('size-full border rounded-full', props.class)}
+        class="size-full border rounded-full"
         src={props.src}
         referrerPolicy="no-referrer"
       />

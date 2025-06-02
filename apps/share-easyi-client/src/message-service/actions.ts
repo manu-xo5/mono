@@ -1,11 +1,12 @@
-import type { MessageId, Message, RoomId } from './store'
-import { messageStore, setMessageStore } from './store'
 import { nanoid } from 'nanoid'
+import { messageStore, setMessageStore } from './store'
+import type { Message, MessageId, RoomId } from './store'
+import type { MessageReceiveEvent } from '@/types'
 
 export function appendMessageIds__(
   roomId: RoomId,
-  ...messageId: MessageId[]
-): MessageId[] {
+  ...messageId: Array<MessageId>
+): Array<MessageId> {
   const room = messageStore.rooms[roomId]
 
   if (!room) {
@@ -17,7 +18,7 @@ export function appendMessageIds__(
   return room.concat(uniqueIds)
 }
 
-export function addToStorage(value: Message[]) {
+export function addToStorage(value: Array<Message>) {
   const messages: Record<string, Message> = {}
 
   for (const message of value) {
@@ -50,11 +51,11 @@ export function newMessage(roomId: RoomId, msg: Omit<Message, 'id'>) {
   return message
 }
 
-export function upsertRoomIds(roomIds: RoomId[]) {
+export function upsertRoomIds(roomIds: Array<RoomId>) {
   const existingRoomIds = Object.keys(messageStore.rooms)
   const uniqueRoomIds = roomIds.filter((id) => !existingRoomIds.includes(id))
 
-  const roomsRecord = Object.fromEntries<MessageId[]>(
+  const roomsRecord = Object.fromEntries<Array<MessageId>>(
     uniqueRoomIds.map((id) => [id, []]),
   )
 
@@ -63,7 +64,7 @@ export function upsertRoomIds(roomIds: RoomId[]) {
 
 export function appendMessageIds(
   roomId: RoomId,
-  messageIds: MessageId[],
+  messageIds: Array<MessageId>,
   start?: number,
 ) {
   const existingMessageIds = messageStore.rooms[roomId]
@@ -82,4 +83,23 @@ export function appendMessageIds(
   } else {
     setMessageStore('rooms', roomId, (prev) => prev.concat(uniqueIds))
   }
+}
+
+export function handleNewMessage(msg: MessageReceiveEvent) {
+  const body = msg.body
+
+  addToStorage([
+    {
+      id: body.id,
+      type: body.type,
+      text: body.body,
+      status: 'ok',
+      from: body.from,
+      to: body.to,
+      roomId: msg.roomId,
+      updatedAt: body.updatedAt,
+    },
+  ])
+
+  appendMessageIds(msg.roomId, [body.id])
 }

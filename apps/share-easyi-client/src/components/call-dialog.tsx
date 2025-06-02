@@ -1,31 +1,95 @@
-import { callStream } from '@/call-service/peer'
+import { callStream } from '@/call-service/store'
 import { callStatus, type CallStatus } from '@/call-service/store'
 import { CallApi } from '@/call-service'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
 import { cn } from '@/utils'
-import { createEffect, For, Show } from 'solid-js'
+import { createEffect, For, Show, type Accessor } from 'solid-js'
 import { CallRipple } from './call-ripples'
 import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
+import { callActions } from '@/call-service/actions'
 
 const STATUS_TO_TEXT = {
   idle: '',
   incoming: 'Ringing...',
   loading: 'Connecting...',
-  disconnecting: "Call Ended",
+  disconnecting: 'Call Ended',
   rejected: 'Busy',
   accepted: 'On Call',
   'peer-offline': 'Offline',
   failed: 'Call Failed',
 } satisfies Record<CallStatus, string>
 
-export function CallDialog() {
-  const header = () => STATUS_TO_TEXT[CallApi.status()]
+// const stream = new MediaStream()
+// stream.addEventListener('addtrack', () => {
+//   console.log('global: track added')
+// })
+//
+// createEffect(() => {
+//   const exisiting = stream.getTracks().map((track) => track.id)
+//   const newTracks = callStream()
+//     .flatMap((s) => s.getTracks())
+//     .filter((track) => !exisiting.includes(track.id))
+//
+//   newTracks.forEach((track) => {
+//     console.log('global: track added')
+//     stream.addTrack(track)
+//   })
+// })
+
+function modal(
+  node: HTMLVideoElement,
+  _accessor: () => Accessor<Array<MediaStream>>,
+) {
+  const accessor = _accessor()
+  node.onerror = (e) => {
+    console.error('Video element error:', e)
+  }
+
+  node.autoplay = true
+  node.playsInline = true
+  node.muted = false // Assuming this is for a remote stream
 
   createEffect(() => {
-    console.log('streams', callStream())
+    const streams = accessor() // Read the signal/accessor
+
+    if (streams.length === 0 || !streams[0]) {
+      if (node.srcObject) {
+        node.srcObject = null
+      }
+      node.pause()
+      console.log('No stream available, video paused.')
+      return
+    }
+
+    const currentStream = streams[0] // This is the crucial part
+
+    if (node.srcObject !== currentStream) {
+      console.log('New stream detected, setting srcObject:', currentStream)
+      node.srcObject = currentStream
+    } else {
+      console.log('Stream is the same, srcObject not updated.')
+    }
+
+    node
+      .play()
+      .then(() => {
+        console.log('Video started playing successfully!')
+      })
+      .catch((error) => {
+        console.error('Video play() failed:', error)
+        if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
+          console.warn(
+            'Autoplay blocked or interrupted. User interaction may be required.',
+          )
+        }
+      })
   })
+}
+
+export function CallDialog() {
+  const header = () => STATUS_TO_TEXT[CallApi.status()]
 
   return (
     <dialog
@@ -48,19 +112,7 @@ export function CallDialog() {
         </div>
 
         <div class="size-20 bg-black rounded-full border relative">
-          <For each={callStream()}>
-            {(track) => (
-              <video
-                autoplay
-                playsinline
-                muted
-                ref={(node) => {
-                  const stream = new MediaStream([track])
-                  node.srcObject = stream
-                }}
-              />
-            )}
-          </For>
+          <video use:modal={callStream} playsinline autoplay muted />
         </div>
 
         <Flexbox class="justify-center w-full mt-auto py-10">
@@ -74,6 +126,29 @@ export function CallDialog() {
               }}
             >
               <Icons.Phone />
+            </Button>
+          </Show>
+
+          <Show when={callStatus() === 'accepted'}>
+            <Button
+              variant="destructive"
+              size="icon"
+              class={cn(
+                'rounded-full -scale-x-100 transition-all ease-in',
+                callStatus() === 'incoming'
+                  ? 'rotate-0 translate-x-12'
+                  : 'rotate-40 translate-x-0',
+              )}
+              onClick={async () => {
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                  video: true,
+                })
+
+                callActions.addStream(stream)
+                // CallApi.actions.({ type: CallEvent.End })
+              }}
+            >
+              <Icons.ScreenShare />
             </Button>
           </Show>
 

@@ -1,5 +1,4 @@
 import Peer from 'simple-peer'
-import { createSignal } from 'solid-js'
 
 interface IOtherPeer {
   signalData: Peer.SignalData
@@ -16,7 +15,6 @@ interface ICallPeer {
   setOther: (other: IOtherPeer | null) => void
 }
 
-export const [callStream, setCallStream] = createSignal<MediaStreamTrack[]>([])
 let peer: Peer.Instance | null = null
 let otherPeer: IOtherPeer | null
 

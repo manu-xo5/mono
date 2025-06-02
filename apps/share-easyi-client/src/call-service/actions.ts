@@ -1,14 +1,21 @@
+import { race, run, sleep, suspend, until } from 'effection'
+import {
+  callStore,
+  callStream,
+  setCallStatus,
+  setCallStore,
+  setCallStream,
+} from './store'
+import { getSignalData, peerOnce } from './utils'
+import type { CallMessage, MakeCallRequest } from '@/types'
+import type TPeer from 'simple-peer'
 import { Auth } from '@/auth'
 import { ETimeoutSymbol } from '@/effection.utils'
 import { OtherUser } from '@/other-user'
 import { Peer } from '@/service/peer'
 import { Socket } from '@/service/web-socket'
-import type { CallMessage, MakeCallRequest } from '@/types'
 import { untilMessageOf } from '@/web-socket/utils'
-import { race, run, sleep, suspend, until } from 'effection'
-import type TPeer from 'simple-peer'
-import { callStore, setCallStatus, setCallStore } from './store'
-import { getSignalData, peerOnce } from './utils'
+import { safeParse } from '@/utils'
 
 function reset() {
   setCallStatus('idle')
@@ -27,7 +34,6 @@ function reset() {
 export const callActions = {
   handleIncoming(msg: MakeCallRequest) {
     console.log('call incoming... from', msg.from)
-    console.log('call status', callStore().status)
 
     if (callStore().status == 'on-call') {
       throw Error('todo handle incoming call when ')
@@ -49,7 +55,6 @@ export const callActions = {
 
   make({ to }: { to: string }) {
     run(function* () {
-      console.log('to')
       const ws = Socket.get()
       const peer = Peer.create({ initiator: true })
       const meUser = Auth.getUser()
@@ -69,14 +74,6 @@ export const callActions = {
         lastSignalData: null as unknown as TPeer.SignalData,
       })
 
-      // Start listening for signal
-      const signalOp = until(getSignalData(peer))
-
-      // EXTRA
-      peer.on('signal', (data) => {
-        console.log('localSignal', data)
-      })
-
       // Send signal
       ws.send(
         JSON.stringify({
@@ -84,10 +81,27 @@ export const callActions = {
           to: to,
           from: meUser.id,
           body: {
-            peerSignal: yield* signalOp,
+            peerSignal: yield* until(getSignalData(peer)),
           },
         } as MakeCallRequest),
       )
+
+      // EXTRA
+      peer.on('signal', async (data) => {
+        console.log('localSignal', data)
+        await new Promise((res) => setTimeout(res, 1000))
+        const signalMsg: CallMessage = {
+          type: 'call-message',
+          to: to,
+          from: meUser.id,
+          body: {
+            type: 'signal',
+            peerSignal: data,
+          },
+        }
+
+        ws.send(JSON.stringify(signalMsg))
+      })
 
       function* processCall() {
         const res = yield* untilMessageOf<CallMessage>(
@@ -138,13 +152,14 @@ export const callActions = {
       setCallStatus('disconnecting')
       yield* sleep(2000)
       reset()
+
+      Peer.destory()
       console.log('done')
     })
   },
 
   accept() {
     const [peerExists] = Peer.get()
-    console.log({ peerExists })
     if (peerExists) {
       // do nothing
       return
@@ -155,13 +170,16 @@ export const callActions = {
     const peer = Peer.create()
     const other = OtherUser.signal()
 
-    setCallStatus('loading')
+    peer.on('stream', (stream) => {
+      setCallStream((prev) => prev.concat(stream))
+    })
+    peer.on('error', (e) => console.log('peer.on(error)', e))
 
+    setCallStatus('loading')
     function* process() {
       if (!other) {
         return
       }
-      console.log({ lastSignalData: other.lastSignalData })
 
       // start signal to init signal data
       peer.signal(other.lastSignalData)
@@ -187,6 +205,16 @@ export const callActions = {
 
       // Successfully Connected
       setCallStatus('accepted')
+
+      ws.addEventListener('message', (ev) => {
+        const [parsed, ok] = safeParse<any>(ev.data)
+        if (!ok) return
+
+        if (parsed.type !== 'call-message') return
+
+        peer.signal(parsed.body.peerSignal)
+      })
+
       yield* suspend()
     }
 
@@ -197,7 +225,20 @@ export const callActions = {
       yield* sleep(2000)
 
       reset()
-      console.log('done')
+      Peer.destory()
     })
+  },
+
+  addStream(stream: MediaStream) {
+    const [peer, ok] = Peer.get()
+    if (!ok) return
+
+    // const stream = await navigator.mediaDevices.getDisplayMedia({
+    //   video: true,
+    // })
+
+    peer.addStream(stream)
+
+    setCallStream((prev) => prev.concat(stream))
   },
 }
