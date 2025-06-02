@@ -29,7 +29,6 @@ export function* untilMessageOf<T>(
   try {
     return yield* race([operation, timeoutOp])
   } finally {
-    console.log("cancelling")
     target.removeEventListener('message', handler)
   }
 }

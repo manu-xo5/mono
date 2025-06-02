@@ -15,7 +15,7 @@ export function callWsMiddleware(ws: WebSocket) {
 
       // channel for generic message/data exchange
       case 'call-message': {
-        throw Error("todo handle call-message generic channel")
+        console.warn("call-message generic channel's handler is empty")
       }
     }
   })

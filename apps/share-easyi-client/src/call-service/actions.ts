@@ -24,50 +24,6 @@ function reset() {
   console.log('done')
 }
 
-function accept() {
-  const meUser = Auth.getUser()
-  const ws = Socket.get()
-  const peer = Peer.create()
-  const other = OtherUser.signal()
-
-  function* process() {
-    if (!other) {
-      return
-    }
-
-    // start signal to init signal data
-    peer.signal(other.lastSignalData)
-    const CALL_RESPONSE = JSON.stringify({
-      type: 'call-message',
-      from: meUser.id,
-      to: other.userId,
-      body: {
-        response: 'accepted',
-        peerSignal: yield* until(getSignalData(peer)),
-      },
-    } as CallMessage)
-
-    // send local signaldata to remote
-    ws.send(CALL_RESPONSE)
-
-    const waitConnect = peerOnce<void>(peer, 'connect')
-    const connected = yield* race([waitConnect, timeout(2000)])
-
-    if (connected === ETimeoutSymbol) {
-      return
-    }
-
-    yield* suspend()
-  }
-
-  run(function* () {
-    yield* race([process(), peerOnce(peer, 'close'), peerOnce(peer, 'end')])
-
-    reset()
-    console.log('done')
-  })
-}
-
 export const callActions = {
   handleIncoming(msg: MakeCallRequest) {
     console.log('call incoming... from', msg.from)
@@ -134,35 +90,35 @@ export const callActions = {
       )
 
       function* processCall() {
-        const res = yield* untilMessageOf<MakeCallResponse>(
+        const res = yield* untilMessageOf<CallMessage>(
           ws,
-          'make-call-response',
+          'call-message',
           10000,
         )
-
         // exit if rejected / timeout
-        if (
-          !res ||
-          res === ETimeoutSymbol ||
-          res.body.response == 'rejected' ||
-          res.body.response === 'end'
-        ) {
+        if (res === ETimeoutSymbol || res.body.response !== 'accepted') {
           // audio.play()
+          console.log('timedout')
           return
         }
-
+        const resBody = res.body as {
+          response: string
+          peerSignal: TPeer.SignalData
+        }
         // change global state
         OtherUser.setSignal({
           userId: to,
           displayName: '<unknown>',
-          lastSignalData: res.body.peerSignal,
+          lastSignalData: resBody.peerSignal,
         })
 
         // set remote description
-        peer.signal(res.body.peerSignal)
-        const connect = yield* peerOnce<void>(peer, 'connect', 10000)
+        const connectedOp = peerOnce<void>(peer, 'connect', 2000)
+        peer.signal(resBody.peerSignal)
+        const connected = yield* connectedOp
+        console.log('connect', connected)
 
-        if (connect == ETimeoutSymbol) {
+        if (connected == ETimeoutSymbol) {
           return
         }
 
@@ -185,5 +141,53 @@ export const callActions = {
     })
   },
 
-  accept,
+  accept() {
+    const [_, ok] = Peer.get()
+    if (ok) {
+      return
+    }
+
+    const meUser = Auth.getUser()
+    const ws = Socket.get()
+    const peer = Peer.create()
+    const other = OtherUser.signal()
+
+    function* process() {
+      if (!other) {
+        return
+      }
+      console.log({ lastSignalData: other.lastSignalData })
+
+      // start signal to init signal data
+      peer.signal(other.lastSignalData)
+      const CALL_RESPONSE = JSON.stringify({
+        type: 'call-message',
+        from: meUser.id,
+        to: other.userId,
+        body: {
+          response: 'accepted',
+          peerSignal: yield* until(getSignalData(peer)),
+        },
+      } as CallMessage)
+
+      // send local signaldata to remote
+      ws.send(CALL_RESPONSE)
+
+      const connected = yield* peerOnce<void>(peer, 'connect', 2000)
+      console.log('connected', connected)
+
+      if (connected === ETimeoutSymbol) {
+        return
+      }
+
+      yield* suspend()
+    }
+
+    run(function* () {
+      yield* race([process(), peerOnce(peer, 'close'), peerOnce(peer, 'end')])
+
+      reset()
+      console.log('done')
+    })
+  },
 }

@@ -10,16 +10,17 @@ export const Peer = {
       peer = undefined
     }
 
-    peer = new SimplePeer(opts)
+    peer = new SimplePeer({
+      trickle: false,
+      ...opts,
+    })
     return peer
   },
-  get() {
-    if (!peer) {
-      throw new Error("Peer.get() used before create one or Peer was destroyed")
-    }
 
-    return Peer.create()
+  get(): [typeof peer, boolean] {
+    return [peer, !!peer]
   },
+
   destory() {
     peer?.destroy()
     peer = undefined
