@@ -12,7 +12,8 @@ import { Flexbox } from './ui/flex'
 const STATUS_TO_TEXT = {
   idle: '',
   incoming: 'Ringing...',
-  loading: 'Calling...',
+  loading: 'Connecting...',
+  disconnecting: "Call Ended",
   rejected: 'Busy',
   accepted: 'On Call',
   'peer-offline': 'Offline',

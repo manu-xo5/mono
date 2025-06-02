@@ -30,6 +30,7 @@ export type CallStatus =
   | 'rejected'
   | 'accepted'
   | 'peer-offline'
+  | 'disconnecting'
   | 'failed'
 
 type OtherPeer = {

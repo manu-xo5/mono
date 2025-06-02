@@ -1,9 +1,9 @@
 import { Auth } from '@/auth'
-import { ETimeoutSymbol, timeout } from '@/effection.utils'
+import { ETimeoutSymbol } from '@/effection.utils'
 import { OtherUser } from '@/other-user'
 import { Peer } from '@/service/peer'
 import { Socket } from '@/service/web-socket'
-import type { CallMessage, MakeCallRequest, MakeCallResponse } from '@/types'
+import type { CallMessage, MakeCallRequest } from '@/types'
 import { untilMessageOf } from '@/web-socket/utils'
 import { race, run, sleep, suspend, until } from 'effection'
 import type TPeer from 'simple-peer'
@@ -123,6 +123,7 @@ export const callActions = {
         }
 
         // Successfully Connected
+        setCallStatus('accepted')
         yield* suspend()
       }
 
@@ -134,7 +135,7 @@ export const callActions = {
         processCall(),
       ])
 
-      setCallStatus('failed')
+      setCallStatus('disconnecting')
       yield* sleep(2000)
       reset()
       console.log('done')
@@ -142,8 +143,10 @@ export const callActions = {
   },
 
   accept() {
-    const [_, ok] = Peer.get()
-    if (ok) {
+    const [peerExists] = Peer.get()
+    console.log({ peerExists })
+    if (peerExists) {
+      // do nothing
       return
     }
 
@@ -151,6 +154,8 @@ export const callActions = {
     const ws = Socket.get()
     const peer = Peer.create()
     const other = OtherUser.signal()
+
+    setCallStatus('loading')
 
     function* process() {
       if (!other) {
@@ -180,11 +185,16 @@ export const callActions = {
         return
       }
 
+      // Successfully Connected
+      setCallStatus('accepted')
       yield* suspend()
     }
 
     run(function* () {
-      yield* race([process(), peerOnce(peer, 'close'), peerOnce(peer, 'end')])
+      yield* race([process(), peerOnce(peer, 'close'), peerOnce(peer, 'error')])
+
+      setCallStatus('disconnecting')
+      yield* sleep(2000)
 
       reset()
       console.log('done')
