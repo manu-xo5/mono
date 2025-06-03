@@ -83,14 +83,30 @@ export const callActions = {
         )
 
         // exit if rejected / timeout
-        if (res === ETimeoutSymbol) return false
-        if (res.body.response !== 'accepted') return false
-
+        if (res === ETimeoutSymbol) {
+          Peer.log(
+            'call ended',
+            'Timeout cause call-message.accepted not received within time',
+            ' returning...',
+          )
+          return false
+        }
+        if (res.body.response !== 'accepted') {
+          Peer.log(
+            'call ended',
+            'call-message\'res.body.response != "accepted".',
+            'returning...',
+          )
+          return false
+        }
         return true
       }
 
       function* processCall(peer: TPeer.Instance) {
+        Socket.log('[WS]: Listening for message.\n returning...')
+
         ws.addEventListener('message', (ev) => {
+          Socket.log('Event = "Signal:Received"')
           const [parsed, ok] = safeParse<any>(ev.data)
           if (!ok) return
 
@@ -100,9 +116,10 @@ export const callActions = {
 
           peer.signal(parsed.body.peerSignal)
         })
+
         // EXTRA
+        Peer.log('Listening for local signal')
         peer.on('signal', async (data) => {
-          console.log('localSignal', data)
           const signalMsg: CallMessage = {
             type: 'call-message',
             to: to,
@@ -113,17 +130,23 @@ export const callActions = {
             },
           }
 
+          Socket.log('Sending Event = Signal')
           ws.send(JSON.stringify(signalMsg))
         })
 
         // set remote description
+        console.log('waiting for Event = "Connect"')
         const connected = yield* peerOnce<void>(peer, 'connect', 4000)
-        console.log('connect', connected)
 
         if (connected == ETimeoutSymbol) {
+          Peer.log(
+            'Not Connected',
+            'Timeout cause peer didnt emit connect event',
+          )
           return
         }
 
+        Peer.log('OK CONNECTED')
         // Successfully Connected
         setCallStatus('accepted')
         yield* suspend()
@@ -131,12 +154,15 @@ export const callActions = {
 
       try {
         const accepted = yield* getResponse()
+
         if (!accepted) {
           setCallStatus('disconnecting')
           yield* sleep(2000)
           resetStores()
+          Peer.log('fail call rejected', 'yield* getResponse() = true')
           return
         }
+        Peer.log('call accepted', 'yield* getResponse() = true')
 
         const peer = Peer.create({ initiator: true })
         yield* race([
@@ -146,13 +172,15 @@ export const callActions = {
           peerOnce(peer, 'end'),
           peerOnce(peer, 'error'),
         ])
+        console.log('make() race concluded')
 
         setCallStatus('disconnecting')
         yield* sleep(2000)
         resetStores()
+        console.log('make() finished')
       } finally {
         Peer.destory()
-        console.log('done')
+        console.log('make() cleanup')
       }
     })
   },
@@ -160,7 +188,10 @@ export const callActions = {
   accept() {
     run(function* () {
       const [peerExists] = Peer.get()
-      if (peerExists) return
+      if (peerExists) {
+        console.log("[Call]: wrong call to CallApi's accept() cause peerExists")
+        return
+      }
 
       const meUser = Auth.getUser()
       const ws = Socket.get()
@@ -168,16 +199,26 @@ export const callActions = {
       const other = OtherUser.signal()
       console.log('accept')
       // call failed here
-      if (!other) return
+      if (!other) {
+        console.log(
+          "[Call] fail): wrong call to CallApi's accept() cause other doesn't exisits",
+        )
+        return
+      }
 
       peer.on('stream', (stream) => {
+        console.log('[Call] info): got remote stream')
         setCallStream((prev) => prev.concat(stream))
       })
       peer.on('error', (e) => console.log('peer.on(error)', e))
 
       peer.on('signal', (data) => {
-        console.log({ other })
-        if (!other) return
+        if (!other) {
+          console.log(
+            "[Call] info): ignoring local signal, cause other doesn't exisits cann't send to any one",
+          )
+          return
+        }
 
         const CALL_RESPONSE = JSON.stringify({
           type: 'call-message',
@@ -190,6 +231,9 @@ export const callActions = {
         } as CallMessage)
 
         // send local signaldata to remote
+        Socket.log(
+          "ignoring local signal, cause other doesn't exisits cann't send to any one",
+        )
         ws.send(CALL_RESPONSE)
       })
 
@@ -212,12 +256,15 @@ export const callActions = {
 
       try {
         yield* race([peerOnce(peer, 'close'), peerOnce(peer, 'error')])
+        console.log("accept's race concluded")
 
         setCallStatus('disconnecting')
         yield* sleep(2000)
 
         resetStores()
+        console.log("[Call]: accept finished")
       } finally {
+        console.log("[Call]: accept cleanedup")
         ws.removeEventListener('message', handleRemoteSignal)
         Peer.destory()
       }

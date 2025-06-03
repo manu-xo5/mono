@@ -1,4 +1,5 @@
 import { CallApi } from '@/call-service'
+import { CreateLogger } from '@/utils'
 
 let cachedSocket: WebSocket | null = null
 let promiseSocket: Promise<WebSocket> | null = null
@@ -49,6 +50,8 @@ export const Socket = {
 
     return cachedSocket
   },
+
+  log: CreateLogger("Socket"),
 
   destory() {
     cachedSocket?.close()

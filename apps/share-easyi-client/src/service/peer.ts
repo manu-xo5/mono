@@ -1,3 +1,4 @@
+import { CreateLogger } from '@/utils'
 import SimplePeer from 'simple-peer'
 import type TPeer from 'simple-peer'
 
@@ -39,4 +40,6 @@ export const Peer = {
     peer?.destroy()
     peer = undefined
   },
+
+  log: CreateLogger('Peer'),
 }

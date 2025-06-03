@@ -98,3 +98,26 @@ export async function stubStream() {
     return null
   }
 }
+
+export const CreateLogger = function (name: string) {
+  const colors = [
+    '#1E90FF', // DodgerBlue
+    '#32CD32', // LimeGreen
+    '#FFD700', // Gold
+    '#FF69B4', // HotPink
+    '#9370DB', // MediumPurple
+    '#00CED1', // DarkTurquoise
+    '#FFA500', // Orange
+  ]
+
+  const temp_iota = CreateLogger.iota
+  const color = colors[temp_iota]
+  CreateLogger.iota = (temp_iota + 1) % colors.length
+
+  return (message1: string, ...messages: string[]) => {
+    const PREFIX = `[${name}]: `
+    console.log(`%c ${color} %s %s`, PREFIX, message1)
+    console.log(messages.map((x) => ' '.repeat(PREFIX.length) + x).join('\n'))
+  }
+}
+CreateLogger.iota = 0
