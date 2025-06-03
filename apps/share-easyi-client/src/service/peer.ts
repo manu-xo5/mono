@@ -1,5 +1,5 @@
-import type TPeer from 'simple-peer'
 import SimplePeer from 'simple-peer'
+import type TPeer from 'simple-peer'
 
 let peer: TPeer.Instance | undefined
 
@@ -26,13 +26,15 @@ export const Peer = {
     })
     return peer
   },
-  get() {
-    if (!peer) {
-      throw new Error("Peer.get() used before create one or Peer was destroyed")
+
+  get(): [TPeer.Instance, true] | [undefined, false] {
+    if (peer) {
+      return [peer, true]
     }
 
-    return Peer.create()
+    return [undefined, false]
   },
+
   destory() {
     peer?.destroy()
     peer = undefined

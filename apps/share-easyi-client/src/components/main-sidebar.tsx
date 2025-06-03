@@ -117,8 +117,8 @@ export function Sidebar() {
       </Stack>
 
       <div class="w-full p-3">
-        <Button class="w-full " variant="secondary">
-          <Avatar src={Auth.getUser().image!} />
+        <Button class="w-full" variant="secondary">
+          <Avatar class="shrink-0" src={Auth.getUser().image!} />
           <Stack>
             <p class="text-base">{Auth.getUser().name}</p>
 

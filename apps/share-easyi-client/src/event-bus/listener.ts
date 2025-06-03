@@ -1,30 +1,8 @@
-import { Auth } from '@/auth'
+import type { MessageDeliveryEvent, MessageSent } from '@/types'
 import { messagesActions } from '@/message-service'
-import type {
-  MessageDeliveryEvent,
-  MessageReceiveEvent,
-  MessageSent,
-} from '@/types'
+import { Auth } from '@/auth'
 import { pgTimestamp } from '@/utils'
-
-export function handleNewMessage(msg: MessageReceiveEvent) {
-  const body = msg.body
-
-  messagesActions.addToStorage([
-    {
-      id: body.id,
-      type: body.type,
-      text: body.body,
-      status: 'ok',
-      from: body.from,
-      to: body.to,
-      roomId: msg.roomId,
-      updatedAt: body.updatedAt,
-    },
-  ])
-
-  messagesActions.appendMessageIds(msg.roomId, [body.id])
-}
+import { Socket } from '@/service/web-socket'
 
 export function handleMessageDelivery(msg: MessageDeliveryEvent) {
   if (msg.status == 'ok') {
@@ -33,8 +11,8 @@ export function handleMessageDelivery(msg: MessageDeliveryEvent) {
 }
 
 export function handleMessageSend({ body, roomId, toUser }: MessageSent) {
-  throw new Error("remove event bus")
   const user = Auth.getUser()
+  const ws = Socket.get()
 
   const msg = messagesActions.newMessage(roomId, {
     status: null,

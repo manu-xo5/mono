@@ -1,23 +1,14 @@
-import type { AuthSession } from '@/auth'
-import type Peer from 'simple-peer'
-import type {
-  CallMessage,
-  Event,
-  MakeCallRequest,
-  MakeCallResponse,
-} from '@/types'
-import {
-  createEffect,
-  createSignal,
-  type Accessor,
-  type Setter,
-} from 'solid-js'
+import { ETimeoutSymbol, timeout } from '@/effection.utils'
+import type { CallMessage, Event, MakeCallResponse } from '@/types'
 import { safeParse } from '@/utils'
-import { CallEvent, type CallDispatch, type CallDispatchEnd } from './consts'
-import { timeout, ETimeoutSymbol } from '@/effection.utils'
-import { until, race, run } from 'effection'
+import { race, run, until } from 'effection'
+import { createEffect, createSignal } from 'solid-js'
+import type { Accessor, Setter } from 'solid-js'
 import { CallPeer } from './peer'
+import type { AuthSession } from '@/auth'
 import { getSignalData, peerOnce } from './utils'
+import type Peer from 'simple-peer'
+import { CallEvent, type CallDispatch, type CallDispatchEnd } from './consts'
 
 type CallStore = {
   id: string
@@ -31,6 +22,7 @@ export type CallStatus =
   | 'rejected'
   | 'accepted'
   | 'peer-offline'
+  | 'disconnecting'
   | 'failed'
 
 type OtherPeer = {
@@ -45,7 +37,12 @@ export const [callStore, setCallStore] = createSignal<CallStore>({
 })
 
 export const [callStatus, setCallStatus] = createSignal<CallStatus>('idle')
+
+export const [callStream, setCallStream] = createSignal<MediaStream[]>([])
+
 createEffect(() => console.log('status', callStore().status))
+createEffect(() => console.log('streams', callStream()))
+
 export class CallApi {
   private static instance: CallApi | null = null
   private ws: WebSocket
@@ -101,10 +98,6 @@ export class CallApi {
 
   dispatch(action: CallDispatch) {
     switch (action.type) {
-      case 'make-call-request':
-        this.handleIncoming(action)
-        break
-
       case CallEvent.Accept:
         const accept = this.accept.bind(this)
         run(function* () {

@@ -1,15 +1,15 @@
-import { API_VX } from '@/api'
-import type { Message, MessageId, MessagesRecord } from './store'
-import { messageStore } from './store'
 import { unwrap } from 'solid-js/store'
+import { messageStore } from './store'
 import { messagesActions } from '.'
+import type { Message, MessageId, MessagesRecord } from './store'
+import { API_VX } from '@/api'
 
 export async function fetchRooms() {
   const storedRooms = Object.keys(messageStore.rooms)
 
   const res = await API_VX('/room/all')
   const json = await res.json()
-  const allRooms = json.ok as { roomId: string }[]
+  const allRooms = json.ok as Array<{ roomId: string }>
 
   const newRooms = allRooms.filter((room) => !storedRooms.includes(room.roomId))
 
@@ -29,7 +29,7 @@ export async function flushUnsentMessage() {
     body: JSON.stringify(messages),
   })
 
-  const messagesRes = await res.json().then((json) => json.ok as Message[])
+  const messagesRes = await res.json().then((json) => json.ok as Array<Message>)
   messagesRes.forEach((message) => {
     messagesActions.moveToPersistStorage(message.id)
   })
@@ -41,7 +41,7 @@ export async function fetchRoomMessages(
   roomId: string,
   { afterUpdatedAt }: { afterUpdatedAt?: string } = {},
 ) {
-  const filters: [string, string][] = []
+  const filters: Array<[string, string]> = []
 
   filters.push(['roomId', roomId])
   if (afterUpdatedAt) {
@@ -52,12 +52,13 @@ export async function fetchRoomMessages(
 
   const res = await API_VX('/message/byRoomId?' + qp)
 
-  if (!res.ok) return {
-    list: [],
-    record: {},
-  }
+  if (!res.ok)
+    return {
+      list: [],
+      record: {},
+    }
 
-  const newMessages = ((await res.json()).ok as any[]).map(
+  const newMessages = ((await res.json()).ok as Array<any>).map(
     (msg): Message => ({
       type: msg.type,
       text: msg.body,
@@ -83,9 +84,9 @@ export async function fetchRoomMessages(
 
 export async function syncRoomMessages(roomId: string) {
   const { messages, rooms } = messageStore
-  const lastMessageId = rooms[roomId]?.at(-1)
+  const lastMessageId = rooms[roomId].at(-1)
   const lastMessage = lastMessageId ? messages[lastMessageId] : undefined
-  const filters: [string, string][] = []
+  const filters: Array<[string, string]> = []
 
   filters.push(['roomId', roomId])
   if (lastMessage) {
@@ -104,7 +105,7 @@ export async function syncRoomMessages(roomId: string) {
   }
   const newMessages = await res
     .json()
-    .then((json) => json.ok as any[])
+    .then((json) => json.ok as Array<any>)
     .catch(() => [])
 
   const newMessageIds = newMessages.map((msg) => msg.id as string)

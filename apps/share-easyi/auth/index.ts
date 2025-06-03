@@ -18,6 +18,7 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
+      prompt: "select_account",
       clientId: Deno.env.get("GOOGLE_CLIENT_ID") ?? "",
       clientSecret: Deno.env.get("GOOGLE_CLIENT_SECRET") ?? "",
     },
