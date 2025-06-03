@@ -10,7 +10,20 @@ export const Peer = {
       peer = undefined
     }
 
-    peer = new SimplePeer(opts)
+    peer = new SimplePeer({
+      ...opts,
+      config: {
+        iceServers: [
+          { urls: 'stun:freestun.net:3478' },
+          {
+            urls: 'turn:freestun.net:3478',
+            username: 'free',
+            credential: 'free',
+          },
+        ],
+        ...opts?.config,
+      },
+    })
     return peer
   },
   get() {
