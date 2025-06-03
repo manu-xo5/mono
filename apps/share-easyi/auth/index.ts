@@ -2,13 +2,11 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db/index.ts";
 import * as schema from "../db/schema/auth.ts";
+import { ORIGIN } from "../consts.ts";
 
 export const auth = betterAuth({
   emailAndPassword: { enabled: false },
-  trustedOrigins: [
-    "http://localhost:3000",
-    "https://pinkparrot.mohitmatwaya.com",
-  ],
+  trustedOrigins: ORIGIN,
   advanced: {
     defaultCookieAttributes: {
       sameSite: "none",

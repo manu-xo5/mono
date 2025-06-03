@@ -5,6 +5,7 @@ import { createManager } from "./manager/index.ts";
 import { auth } from "./auth/index.ts";
 import { authMiddleware } from "./auth/middleware.ts";
 import { router } from "./api/index.ts";
+import { ORIGIN } from "./consts.ts";
 
 const manager = createManager();
 const app = new Hono<{
@@ -17,10 +18,7 @@ const app = new Hono<{
 app.use(
   "/api/*",
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://pinkparrot.mohitmatwaya.com",
-    ],
+    origin: ORIGIN,
     allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "PUT"],
     credentials: true,
   }),

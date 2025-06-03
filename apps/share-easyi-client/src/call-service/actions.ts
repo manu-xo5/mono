@@ -1,34 +1,26 @@
-import { race, run, sleep, suspend, until } from 'effection'
-import {
-  callStore,
-  callStream,
-  setCallStatus,
-  setCallStore,
-  setCallStream,
-} from './store'
-import { getSignalData, peerOnce } from './utils'
-import type { CallMessage, MakeCallRequest } from '@/types'
-import type TPeer from 'simple-peer'
 import { Auth } from '@/auth'
 import { ETimeoutSymbol } from '@/effection.utils'
 import { OtherUser } from '@/other-user'
 import { Peer } from '@/service/peer'
 import { Socket } from '@/service/web-socket'
-import { untilMessageOf } from '@/web-socket/utils'
+import type { CallMessage, MakeCallRequest } from '@/types'
 import { safeParse } from '@/utils'
+import { untilMessageOf } from '@/web-socket/utils'
+import { race, run, sleep, suspend } from 'effection'
+import type TPeer from 'simple-peer'
+import { callStore, setCallStatus, setCallStore, setCallStream } from './store'
+import { CallAcceptMsg, peerOnce, resetStores } from './helpers'
 
-function reset() {
-  setCallStatus('idle')
-  setCallStore({
-    id: '',
-    status: 'idle',
-  })
+function createHandleRemoteSignal(peer: TPeer.Instance) {
+  return (ev: MessageEvent) => {
+    const [parsed, ok] = safeParse<any>(ev.data)
+    if (!ok) return
 
-  setCallStore({
-    id: '',
-    status: 'idle',
-  })
-  console.log('done')
+    if (parsed.type !== 'call-message') return
+    if (peer.destroyed) return
+
+    peer.signal(parsed.body.peerSignal)
+  }
 }
 
 export const callActions = {
@@ -125,7 +117,7 @@ export const callActions = {
         })
 
         // set remote description
-        const connected = yield* peerOnce<void>(peer, 'connect', 2000)
+        const connected = yield* peerOnce<void>(peer, 'connect', 4000)
         console.log('connect', connected)
 
         if (connected == ETimeoutSymbol) {
@@ -142,7 +134,7 @@ export const callActions = {
         if (!accepted) {
           setCallStatus('disconnecting')
           yield* sleep(2000)
-          reset()
+          resetStores()
           return
         }
 
@@ -157,7 +149,7 @@ export const callActions = {
 
         setCallStatus('disconnecting')
         yield* sleep(2000)
-        reset()
+        resetStores()
       } finally {
         Peer.destory()
         console.log('done')
@@ -166,66 +158,49 @@ export const callActions = {
   },
 
   accept() {
-    const [peerExists] = Peer.get()
-    if (peerExists) {
-      // do nothing
-      return
-    }
+    run(function* () {
+      const [peerExists] = Peer.get()
+      if (peerExists) return
 
-    const meUser = Auth.getUser()
-    const ws = Socket.get()
-    const peer = Peer.create()
-    const other = OtherUser.signal()
-    console.log('accept')
-    if (!other) return
-
-    peer.on('stream', (stream) => {
-      setCallStream((prev) => prev.concat(stream))
-    })
-    peer.on('error', (e) => console.log('peer.on(error)', e))
-
-    peer.on('signal', (data) => {
-      console.log({ other })
+      const meUser = Auth.getUser()
+      const ws = Socket.get()
+      const peer = Peer.create()
+      const other = OtherUser.signal()
+      console.log('accept')
+      // call failed here
       if (!other) return
 
-      const CALL_RESPONSE = JSON.stringify({
-        type: 'call-message',
-        from: meUser.id,
-        to: other.userId,
-        body: {
-          type: 'signal',
-          peerSignal: data,
-        },
-      } as CallMessage)
+      peer.on('stream', (stream) => {
+        setCallStream((prev) => prev.concat(stream))
+      })
+      peer.on('error', (e) => console.log('peer.on(error)', e))
+
+      peer.on('signal', (data) => {
+        console.log({ other })
+        if (!other) return
+
+        const CALL_RESPONSE = JSON.stringify({
+          type: 'call-message',
+          from: meUser.id,
+          to: other.userId,
+          body: {
+            type: 'signal',
+            peerSignal: data,
+          },
+        } as CallMessage)
+
+        // send local signaldata to remote
+        ws.send(CALL_RESPONSE)
+      })
+
+      const handleRemoteSignal = createHandleRemoteSignal(peer)
+      ws.addEventListener('message', handleRemoteSignal)
 
       // send local signaldata to remote
-      ws.send(CALL_RESPONSE)
-    })
+      ws.send(JSON.stringify(CallAcceptMsg({ meUser, otherUser: other })))
 
-    ws.addEventListener('message', (ev) => {
-      const [parsed, ok] = safeParse<any>(ev.data)
-      if (!ok) return
-
-      if (parsed.type !== 'call-message') return
-
-      peer.signal(parsed.body.peerSignal)
-    })
-
-    // send local signaldata to remote
-    ws.send(
-      JSON.stringify({
-        type: 'call-message',
-        from: meUser.id,
-        to: other.userId,
-        body: {
-          response: 'accepted',
-        },
-      }),
-    )
-
-    setCallStatus('loading')
-    function* process() {
-      const connected = yield* peerOnce<void>(peer, 'connect', 2000)
+      setCallStatus('loading')
+      const connected = yield* peerOnce<void>(peer, 'connect', 4000)
       console.log('connected', connected)
 
       if (connected === ETimeoutSymbol) {
@@ -235,17 +210,17 @@ export const callActions = {
       // Successfully Connected
       setCallStatus('accepted')
 
-      yield* suspend()
-    }
+      try {
+        yield* race([peerOnce(peer, 'close'), peerOnce(peer, 'error')])
 
-    run(function* () {
-      yield* race([process(), peerOnce(peer, 'close'), peerOnce(peer, 'error')])
+        setCallStatus('disconnecting')
+        yield* sleep(2000)
 
-      setCallStatus('disconnecting')
-      yield* sleep(2000)
-
-      reset()
-      Peer.destory()
+        resetStores()
+      } finally {
+        ws.removeEventListener('message', handleRemoteSignal)
+        Peer.destory()
+      }
     })
   },
 

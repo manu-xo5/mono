@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js'
 import type TPeer from 'simple-peer'
 
-type TOther = {
+export type TOther = {
   userId: string
   displayName: string
   lastSignalData: TPeer.SignalData
