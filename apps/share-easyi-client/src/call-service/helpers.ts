@@ -3,7 +3,7 @@ import { ETimeoutSymbol, timeout } from '@/effection.utils'
 import type { TOther } from '@/other-user'
 import { race, suspend, withResolvers, type Operation } from 'effection'
 import Peer from 'simple-peer'
-import { setCallStatus, setCallStore } from './store'
+import { setCallStore } from './store'
 
 export function* peerOnce<T>(
   peer: Peer.Instance,
@@ -45,15 +45,11 @@ export function CallAcceptMsg({
 }
 
 export function resetStores() {
-  setCallStatus('idle')
   setCallStore({
     id: '',
     status: 'idle',
-  })
-
-  setCallStore({
-    id: '',
-    status: 'idle',
+    callStatus: 'idle',
+    streams: [],
   })
   console.log('done')
 }

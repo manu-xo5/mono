@@ -1,15 +1,15 @@
 import type { Event } from '@/types'
 import { safeParse } from '@/utils'
-import { callActions } from './actions'
+import { actions } from './store'
 
-export function callWsMiddleware(ws: WebSocket) {
+export function wsMiddleware(ws: WebSocket) {
   ws.addEventListener('message', (ev) => {
     const [parsedMessage, ok] = safeParse<Event>(ev.data)
     if (!ok) return
 
     switch (parsedMessage.type) {
       case 'make-call-request': {
-        callActions.handleIncoming(parsedMessage)
+        actions.handleIncoming(parsedMessage)
         break
       }
 

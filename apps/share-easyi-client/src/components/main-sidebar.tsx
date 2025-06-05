@@ -5,7 +5,6 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Stack } from './ui/stack'
 
-import { setCallStore } from '@/call-service/store'
 import { roomStore } from '@/message-service/store'
 import { cn } from '@/utils'
 import { Flexbox } from './ui/flex'
@@ -55,19 +54,6 @@ export function Sidebar() {
           }}
         >
           Sign out
-        </Button>
-
-        <Button
-          class="w-full"
-          variant="secondary"
-          onClick={async () => {
-            setCallStore({
-              id: '',
-              status: 'on-call',
-            })
-          }}
-        >
-          Call Dialog
         </Button>
 
         <ul class="divide-y border-b flex flex-col w-full">

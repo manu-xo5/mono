@@ -1,14 +1,12 @@
-import { callStream } from '@/call-service/store'
-import { callStatus, type CallStatus } from '@/call-service/store'
 import { CallApi } from '@/call-service'
+import { type CallStatus } from '@/call-service/store'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
 import { cn } from '@/utils'
-import { createEffect, For, Show, type Accessor } from 'solid-js'
+import { createEffect, Show, type Accessor } from 'solid-js'
 import { CallRipple } from './call-ripples'
 import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
-import { callActions } from '@/call-service/actions'
 
 const STATUS_TO_TEXT = {
   idle: '',
@@ -20,23 +18,6 @@ const STATUS_TO_TEXT = {
   'peer-offline': 'Offline',
   failed: 'Call Failed',
 } satisfies Record<CallStatus, string>
-
-// const stream = new MediaStream()
-// stream.addEventListener('addtrack', () => {
-//   console.log('global: track added')
-// })
-//
-// createEffect(() => {
-//   const exisiting = stream.getTracks().map((track) => track.id)
-//   const newTracks = callStream()
-//     .flatMap((s) => s.getTracks())
-//     .filter((track) => !exisiting.includes(track.id))
-//
-//   newTracks.forEach((track) => {
-//     console.log('global: track added')
-//     stream.addTrack(track)
-//   })
-// })
 
 function modal(
   node: HTMLVideoElement,
@@ -89,7 +70,9 @@ function modal(
 }
 
 export function CallDialog() {
-  const header = () => STATUS_TO_TEXT[CallApi.status()]
+  const callStore = CallApi.store
+
+  const header = () => STATUS_TO_TEXT[callStore().callStatus]
 
   return (
     <dialog
@@ -100,7 +83,7 @@ export function CallDialog() {
         <p class="text-xl xanimate-bounce animate-pulse">{header()}</p>
 
         <div class="size-20 bg-black rounded-full border relative">
-          <Show when={callStatus() === 'incoming'}>
+          <Show when={callStore().callStatus === 'incoming'}>
             <CallRipple />
           </Show>
 
@@ -112,11 +95,11 @@ export function CallDialog() {
         </div>
 
         <div class="size-20 bg-black rounded-full border relative">
-          <video use:modal={callStream} playsinline autoplay muted />
+          <video use:modal={callStore().streams} playsinline autoplay muted />
         </div>
 
         <Flexbox class="justify-center w-full mt-auto py-10">
-          <Show when={callStatus() === 'incoming'}>
+          <Show when={callStore().callStatus === 'incoming'}>
             <Button
               variant="default"
               size="icon"
@@ -129,13 +112,13 @@ export function CallDialog() {
             </Button>
           </Show>
 
-          <Show when={callStatus() === 'accepted'}>
+          <Show when={callStore().callStatus === 'accepted'}>
             <Button
               variant="destructive"
               size="icon"
               class={cn(
                 'rounded-full -scale-x-100 transition-all ease-in',
-                callStatus() === 'incoming'
+                callStore().callStatus === 'incoming'
                   ? 'rotate-0 translate-x-12'
                   : 'rotate-40 translate-x-0',
               )}
@@ -144,8 +127,7 @@ export function CallDialog() {
                   video: true,
                 })
 
-                callActions.addStream(stream)
-                // CallApi.actions.({ type: CallEvent.End })
+                CallApi.actions.addStream(stream)
               }}
             >
               <Icons.ScreenShare />
@@ -157,7 +139,7 @@ export function CallDialog() {
             size="icon"
             class={cn(
               'rounded-full -scale-x-100 transition-all ease-in',
-              callStatus() === 'incoming'
+              callStore().callStatus === 'incoming'
                 ? 'rotate-0 translate-x-12'
                 : 'rotate-40 translate-x-0',
             )}
