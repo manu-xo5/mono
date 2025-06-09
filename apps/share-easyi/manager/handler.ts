@@ -17,7 +17,7 @@ type TextMsgEvent = {
 
 export type MakeCallRequestEvent = {
   id: string;
-  type: "make-call-request";
+  type: "call-request";
   to: string;
   from: string;
 };
@@ -225,7 +225,7 @@ export function messageHandler(m: Manager, userId: string) {
         handleFileTransferReq(msg);
         break;
 
-      case "make-call-request":
+      case "call-request":
         handleCallRequest(m, userId, msg);
         break;
 

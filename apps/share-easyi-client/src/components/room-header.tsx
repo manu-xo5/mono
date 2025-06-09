@@ -4,8 +4,11 @@ import { Show } from 'solid-js'
 import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
 import { CallApi } from '@/call-service'
+import { useCallApi } from '@/call-service/useCallApi'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
+  const { call } = useCallApi();
+
   return (
     <Flexbox class="w-full h-16 px-6 gap-3 border-b">
       <span class="border-white/20 border bg-background rounded-full overflow-hidden size-10 inline-block">
@@ -34,7 +37,7 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
             const otherUser = props.otherUser
             if (!otherUser) return
 
-            CallApi.actions.make({ to: otherUser.id })
+            call(otherUser.id)
           }}
         >
           <Icons.PhoneCall />

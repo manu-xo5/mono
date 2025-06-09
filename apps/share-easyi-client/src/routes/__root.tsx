@@ -4,7 +4,6 @@ import { createRootRoute, Outlet } from '@tanstack/solid-router'
 
 export const Route = createRootRoute({
   component: RootComponent,
-  errorComponent: ServerDown,
 })
 
 function RootComponent() {

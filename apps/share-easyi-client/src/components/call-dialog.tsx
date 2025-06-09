@@ -7,6 +7,7 @@ import { createEffect, Show, type Accessor } from 'solid-js'
 import { CallRipple } from './call-ripples'
 import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
+import { useCallApi } from '@/call-service/useCallApi'
 
 const STATUS_TO_TEXT = {
   idle: '',
@@ -70,20 +71,20 @@ function modal(
 }
 
 export function CallDialog() {
-  const callStore = CallApi.store
+  const { callStatus } = useCallApi()
 
-  const header = () => STATUS_TO_TEXT[callStore().callStatus]
+  const header = () => STATUS_TO_TEXT[callStatus()]
 
   return (
     <dialog
-      open={CallApi.store().status === 'on-call'}
+      open={callStatus() !== 'idle'}
       class="absolute left-1/2 top-1/2 -translate-1/2 z-10 bg-secondary text-secondary-foreground rounded-xl h-96 w-72 border shadow-xl"
     >
       <Stack class="items-center p-4 gap-6 h-full">
         <p class="text-xl xanimate-bounce animate-pulse">{header()}</p>
 
         <div class="size-20 bg-black rounded-full border relative">
-          <Show when={callStore().callStatus === 'incoming'}>
+          <Show when={callStatus() === 'incoming'}>
             <CallRipple />
           </Show>
 
@@ -94,31 +95,32 @@ export function CallDialog() {
           />
         </div>
 
-        <div class="size-20 bg-black rounded-full border relative">
+        {/*<div class="size-20 bg-black rounded-full border relative">
           <video use:modal={callStore().streams} playsinline autoplay muted />
         </div>
+        */}
 
         <Flexbox class="justify-center w-full mt-auto py-10">
-          <Show when={callStore().callStatus === 'incoming'}>
+          <Show when={callStatus() === 'incoming'}>
             <Button
               variant="default"
               size="icon"
               class="rounded-full -translate-x-12"
               onClick={() => {
-                CallApi.actions.accept()
+                throw Error('todo not implemented')
               }}
             >
               <Icons.Phone />
             </Button>
           </Show>
 
-          <Show when={callStore().callStatus === 'accepted'}>
+          <Show when={callStatus() === 'accepted'}>
             <Button
               variant="destructive"
               size="icon"
               class={cn(
                 'rounded-full -scale-x-100 transition-all ease-in',
-                callStore().callStatus === 'incoming'
+                callStatus() === 'incoming'
                   ? 'rotate-0 translate-x-12'
                   : 'rotate-40 translate-x-0',
               )}
@@ -139,7 +141,7 @@ export function CallDialog() {
             size="icon"
             class={cn(
               'rounded-full -scale-x-100 transition-all ease-in',
-              callStore().callStatus === 'incoming'
+              callStatus() === 'incoming'
                 ? 'rotate-0 translate-x-12'
                 : 'rotate-40 translate-x-0',
             )}
