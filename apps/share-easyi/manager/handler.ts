@@ -23,7 +23,7 @@ export type MakeCallRequestEvent = {
 };
 
 export type MakeCallResponseEvent = {
-  type: "make-call-response";
+  type: "call-response";
   to: string;
   from: string;
   body: {
@@ -39,6 +39,13 @@ export type CallMessage = {
   body: Record<string, unknown>;
 };
 
+export type CallSignal = {
+  type: "call-signal";
+  from: string;
+  to: string;
+  payload: unknown;
+};
+
 type GenericEvent = {
   id: string;
   type: "file" | "call";
@@ -50,7 +57,8 @@ type EventType =
   | MakeCallResponseEvent
   | TextMsgEvent
   | GenericEvent
-  | CallMessage;
+  | CallMessage
+  | CallSignal;
 
 function listenPong(ws: WebSocket) {
   const op = action<MessageEvent>((k) => {
@@ -192,10 +200,10 @@ function handleCallResponse(
   socket.send(JSON.stringify(event));
 }
 
-function handleCallMessage(
+function forwardCallMessage(
   m: Manager,
   _userId: string,
-  event: MakeCallResponseEvent,
+  event: MakeCallResponseEvent | CallMessage | CallSignal,
 ) {
   const socket = m.clients.get(event.to);
   //  or offline
@@ -229,11 +237,15 @@ export function messageHandler(m: Manager, userId: string) {
         handleCallRequest(m, userId, msg);
         break;
 
-      case "make-call-response":
+      case "call-response":
         handleCallResponse(m, userId, msg);
         break;
+      case "call-signal":
+        forwardCallMessage(m, userId, msg);
+        break;
+
       case "call-message":
-        handleCallMessage(m, userId, msg);
+        forwardCallMessage(m, userId, msg);
         break;
 
       default:

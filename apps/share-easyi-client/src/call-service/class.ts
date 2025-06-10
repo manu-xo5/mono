@@ -5,7 +5,12 @@ import type { TOther } from '@/other-user'
 import { safeParse } from '@/utils'
 import { race, run, sleep } from 'effection'
 import Peer from 'simple-peer'
-import { CallRequestDTO, CallSignalDTO, type TCallResponse } from './dto'
+import {
+  CallRequestDTO,
+  CallResponseDTO,
+  CallSignalDTO,
+  type TCallResponse,
+} from './dto'
 import type { CallStatus } from './store'
 import type TPeer from 'simple-peer'
 
@@ -25,6 +30,15 @@ export class CallApi {
     this.ws.addEventListener('message', this.handleMessage)
   }
 
+  private endCall() {
+    if (this.peer) {
+      this.peer.destroy()
+      this.peer = null
+    }
+    this.otherUser = null
+    this.status.notify('idle')
+  }
+
   private handleMessage = (event: MessageEvent) => {
     const [data, ok] = safeParse<any>(event.data)
 
@@ -34,11 +48,24 @@ export class CallApi {
     }
 
     switch (data.type) {
+      case 'call-request': {
+        if (this.status.getValue() !== 'idle') {
+          throw new Error('todo handle multiple call responses')
+        }
+
+        this.status.notify('incoming')
+        this.otherUser = {
+          userId: data.from,
+          displayName: data.payload.displayName,
+        }
+        break
+      }
+
       case 'call-signal': {
         if (!this.peer) return
 
-        if (data.payload.from !== this.otherUser?.userId) return
-        if (data.payload.to !== this.me.id) return
+        if (data.from !== this.otherUser?.userId) return
+        if (data.to !== this.me.id) return
 
         this.peer.signal(data.payload.signal)
         break
@@ -101,10 +128,10 @@ export class CallApi {
     return true
   }
 
-  private *requestPeer() {
+  private *requestPeer({ initiator }: { initiator: boolean }) {
     this.status.notify('loading')
 
-    this.initPeer({ initiator: true })
+    this.initPeer({ initiator })
     if (!this.peer) return null
 
     const data = yield* peerOnce(this.peer, 'connect', 5000)
@@ -120,28 +147,52 @@ export class CallApi {
     return this.peer
   }
 
-  async call(otherUserId: string) {
-    if (this.status.getValue() !== 'idle') return
+  call(otherUserId: string) {
+    const self = this
+    return run(function* () {
+      if (self.status.getValue() !== 'idle') return
 
-    const requestCall = this.requestCall.bind(this)
-    const requestWebRtc = this.requestPeer.bind(this)
+      try {
+        self.otherUser = { userId: otherUserId, displayName: '<unknown>' }
 
-    try {
-      this.otherUser = { userId: otherUserId, displayName: '<unknown>' }
-
-      await run(function* () {
-        const ok = yield* requestCall(otherUserId)
+        const ok = yield* self.requestCall(otherUserId)
         if (!ok) return
 
-        const peer = yield* requestWebRtc()
+        const peer = yield* self.requestPeer({ initiator: true })
+        if (!peer) return
+
+        yield* race([peerOnce(peer, 'error'), peerOnce(peer, 'close')])
+      } finally {
+        self.endCall()
+      }
+    })
+  }
+
+  async acceptCall() {
+    if (!this.otherUser) return
+    if (this.status.getValue() !== 'incoming') return
+
+    const requestPeer = this.requestPeer.bind(this)
+
+    try {
+      this.ws.send(
+        JSON.stringify(
+          CallResponseDTO({
+            from: this.me.id,
+            to: this.otherUser.userId,
+            response: 'accepted',
+          }),
+        ),
+      )
+
+      await run(function* () {
+        const peer = yield* requestPeer({ initiator: false })
         if (!peer) return
 
         yield* race([peerOnce(peer, 'error'), peerOnce(peer, 'close')])
       })
     } finally {
-      this.peer?.destroy()
-      this.otherUser = null
-      this.status.notify('idle')
+      this.endCall()
     }
   }
 }

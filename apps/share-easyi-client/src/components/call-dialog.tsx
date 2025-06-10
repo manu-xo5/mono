@@ -71,7 +71,7 @@ function modal(
 }
 
 export function CallDialog() {
-  const { callStatus } = useCallApi()
+  const { callStatus, acceptCall } = useCallApi()
 
   const header = () => STATUS_TO_TEXT[callStatus()]
 
@@ -106,9 +106,7 @@ export function CallDialog() {
               variant="default"
               size="icon"
               class="rounded-full -translate-x-12"
-              onClick={() => {
-                throw Error('todo not implemented')
-              }}
+              onClick={acceptCall}
             >
               <Icons.Phone />
             </Button>

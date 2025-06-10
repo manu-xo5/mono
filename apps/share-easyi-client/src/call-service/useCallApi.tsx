@@ -29,5 +29,6 @@ export function useCallApi() {
   return {
     callStatus,
     call: callApi.call.bind(callApi),
+    acceptCall: callApi.acceptCall.bind(callApi),
   }
 }

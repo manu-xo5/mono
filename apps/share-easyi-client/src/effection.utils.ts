@@ -26,41 +26,39 @@ export function* peerOnce<T>(
     if (timeoutMs != null) {
       return yield* race([operation, timeout(timeoutMs)])
     } else {
-      return yield* operation;
+      return yield* operation
     }
   } finally {
     peer.off(eventName, handler)
   }
 }
 
-export function* wsMsgOnce<T>(
-  ws: WebSocket,
-  type: string,
-  timeoutMs?: number,
-) {
+export function* wsMsgOnce<T>(ws: WebSocket, type: string, timeoutMs?: number) {
   const { operation, resolve } = withResolvers<T>()
 
   const handler = (tar: MessageEvent) => {
     const [data, ok] = safeParse(tar.data)
+    console.log('wsMsgOnce', data)
     if (!ok) {
       console.error('Failed to parse message:', tar.data)
       return
     }
-    if ("type" in data && data.type !== type) {
+    if (!('type' in data) || data.type !== type) {
       console.error('Failed to parse message:', tar.data)
       return
     }
+
     resolve(data as T)
   }
 
-  ws.addEventListener("message", handler)
+  ws.addEventListener('message', handler)
   try {
     if (timeoutMs != null) {
       return yield* race([operation, timeout(timeoutMs)])
     } else {
-      return yield* operation;
+      return yield* operation
     }
   } finally {
-    ws.removeEventListener("message", handler)
+    ws.removeEventListener('message', handler)
   }
 }

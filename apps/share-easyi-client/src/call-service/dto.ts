@@ -1,10 +1,21 @@
 import type TPeer from 'simple-peer'
 
-export function CallRequestDTO({ from, to }: { from: string; to: string }) {
+export function CallRequestDTO({
+  from,
+  to,
+  displayName = '<unknown>',
+}: {
+  from: string
+  to: string
+  displayName?: string
+}) {
   return {
     type: 'call-request',
     from,
     to,
+    payload: {
+      displayName,
+    },
   }
 }
 
@@ -19,9 +30,9 @@ export function CallSignalDTO({
 }) {
   return {
     type: 'call-signal',
+    from,
+    to,
     payload: {
-      from,
-      to,
       signal,
     },
   }
@@ -34,7 +45,7 @@ export function CallResponseDTO({
 }: {
   from: string
   to: string
-  response: TPeer.SignalData
+  response: 'accepted' | 'rejected'
 }) {
   return {
     type: 'call-response',
