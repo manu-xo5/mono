@@ -106,20 +106,21 @@ export class CallApi {
     const response = yield* wsMsgOnce<TCallResponse>(
       this.ws,
       'call-response',
-      5000,
+      CALL_RESPONSE_TIMEOUT,
     )
     if (response === ETimeoutSymbol) {
-      this.status.notify('rejected')
-      yield* sleep(5000)
-      this.status.notify('idle')
+      yield* this.connectionTimeout()
       return false
     }
 
     if (response.from !== otherUserId) {
       console.error('Call response from unexpected user:', response.from)
-      this.status.notify('rejected')
-      yield* sleep(5000)
-      this.status.notify('idle')
+      yield* this.connectionTimeout()
+      return false
+    }
+
+    if (response.response === 'rejected') {
+      yield* this.connectionTimeout()
       return false
     }
 
@@ -132,11 +133,9 @@ export class CallApi {
     this.initPeer({ initiator })
     if (!this.peer) return null
 
-    const data = yield* peerOnce(this.peer, 'connect', 5000)
+    const data = yield* peerOnce(this.peer, 'connect', CALL_RESPONSE_TIMEOUT)
     if (data === ETimeoutSymbol) {
-      this.status.notify('rejected')
-      yield* sleep(5000)
-      this.status.notify('idle')
+      yield* this.connectionTimeout()
       return null
     }
 
@@ -145,13 +144,37 @@ export class CallApi {
     return this.peer
   }
 
-  endCall() {
+  private cleanupCall() {
+    this.status.notify('idle')
+
     if (this.peer) {
-      this.peer.destroy()
       this.peer = null
     }
     this.otherUser = null
+  }
+
+  private *connectionTimeout() {
+    this.status.notify('rejected')
+    yield* sleep(2000)
     this.status.notify('idle')
+  }
+
+  endCall() {
+    if (this.peer) {
+      this.peer?.destroy()
+    } else {
+      this.ws.send(
+        JSON.stringify(
+          CallResponseDTO({
+            from: this.me.id,
+            to: this.otherUser?.userId || '',
+            response: 'rejected',
+          }),
+        ),
+      )
+
+      this.cleanupCall();
+    }
   }
 
   call(otherUserId: string) {
@@ -170,36 +193,35 @@ export class CallApi {
 
         yield* race([peerOnce(peer, 'error'), peerOnce(peer, 'close')])
       } finally {
-        self.endCall()
+        self.cleanupCall()
       }
     })
   }
 
-  async acceptCall() {
-    if (!this.otherUser) return
-    if (this.status.getValue() !== 'incoming') return
+  acceptCall() {
+    const self = this
+    run(function* () {
+      if (!self.otherUser) return
+      if (self.status.getValue() !== 'incoming') return
 
-    const requestPeer = this.requestPeer.bind(this)
+      try {
+        self.ws.send(
+          JSON.stringify(
+            CallResponseDTO({
+              from: self.me.id,
+              to: self.otherUser.userId,
+              response: 'accepted',
+            }),
+          ),
+        )
 
-    try {
-      this.ws.send(
-        JSON.stringify(
-          CallResponseDTO({
-            from: this.me.id,
-            to: this.otherUser.userId,
-            response: 'accepted',
-          }),
-        ),
-      )
-
-      await run(function* () {
-        const peer = yield* requestPeer({ initiator: false })
+        const peer = yield* self.requestPeer({ initiator: false })
         if (!peer) return
 
         yield* race([peerOnce(peer, 'error'), peerOnce(peer, 'close')])
-      })
-    } finally {
-      this.endCall()
-    }
+      } finally {
+        self.cleanupCall()
+      }
+    })
   }
 }
