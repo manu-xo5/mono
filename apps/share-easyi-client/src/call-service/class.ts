@@ -14,6 +14,8 @@ import {
 import type { CallStatus } from './store'
 import type TPeer from 'simple-peer'
 
+const CALL_RESPONSE_TIMEOUT = 5000
+
 export class CallApi {
   private ws: WebSocket
   private me: AuthSession['user']
@@ -28,15 +30,6 @@ export class CallApi {
     this.me = me
 
     this.ws.addEventListener('message', this.handleMessage)
-  }
-
-  private endCall() {
-    if (this.peer) {
-      this.peer.destroy()
-      this.peer = null
-    }
-    this.otherUser = null
-    this.status.notify('idle')
   }
 
   private handleMessage = (event: MessageEvent) => {
@@ -58,6 +51,11 @@ export class CallApi {
           userId: data.from,
           displayName: data.payload.displayName,
         }
+        setTimeout(() => {
+          if (this.status.getValue() !== 'incoming') return
+
+          this.endCall()
+        }, CALL_RESPONSE_TIMEOUT)
         break
       }
 
@@ -96,7 +94,7 @@ export class CallApi {
     })
   }
 
-  *requestCall(otherUserId: string) {
+  private *requestCall(otherUserId: string) {
     if (this.status.getValue() !== 'idle') return false
 
     this.status.notify('loading')
@@ -145,6 +143,15 @@ export class CallApi {
     this.status.notify('accepted')
 
     return this.peer
+  }
+
+  endCall() {
+    if (this.peer) {
+      this.peer.destroy()
+      this.peer = null
+    }
+    this.otherUser = null
+    this.status.notify('idle')
   }
 
   call(otherUserId: string) {

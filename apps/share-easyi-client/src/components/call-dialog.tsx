@@ -71,7 +71,7 @@ function modal(
 }
 
 export function CallDialog() {
-  const { callStatus, acceptCall } = useCallApi()
+  const { callStatus, acceptCall, endCall } = useCallApi()
 
   const header = () => STATUS_TO_TEXT[callStatus()]
 
@@ -143,10 +143,7 @@ export function CallDialog() {
                 ? 'rotate-0 translate-x-12'
                 : 'rotate-40 translate-x-0',
             )}
-            onClick={() => {
-              throw Error('todo not implemented')
-              // CallApi.actions.({ type: CallEvent.End })
-            }}
+            onClick={endCall}
           >
             <Icons.PhoneMissed />
           </Button>

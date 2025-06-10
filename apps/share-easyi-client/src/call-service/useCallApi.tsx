@@ -30,5 +30,6 @@ export function useCallApi() {
     callStatus,
     call: callApi.call.bind(callApi),
     acceptCall: callApi.acceptCall.bind(callApi),
+    endCall: callApi.endCall.bind(callApi),
   }
 }
