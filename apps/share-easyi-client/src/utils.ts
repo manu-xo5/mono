@@ -1,14 +1,14 @@
-import type { ClassValue } from 'clsx'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import type { ClassValue } from 'clsx'
 
 export function cn(...inputs: Array<ClassValue>) {
   return twMerge(clsx(inputs))
 }
 
 type PeerListener<Event> = {
-  on: (event: Event, listener: (...args: any[]) => void) => void
-  off: (event: Event, listener: (...args: any[]) => void) => void
+  on: (event: Event, listener: (...args: Array<any>) => void) => void
+  off: (event: Event, listener: (...args: Array<any>) => void) => void
 }
 export async function waitEvent<
   Event extends string,
@@ -114,7 +114,7 @@ export const CreateLogger = function (name: string) {
   const color = colors[temp_iota]
   CreateLogger.iota = (temp_iota + 1) % colors.length
 
-  return (message1: string, ...messages: string[]) => {
+  return (message1: string, ...messages: Array<string>) => {
     const PREFIX = `[${name}]: `
     console.log(`%c ${color} %s %s`, PREFIX, message1)
     console.log(messages.map((x) => ' '.repeat(PREFIX.length) + x).join('\n'))

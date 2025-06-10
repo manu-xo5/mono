@@ -1,7 +1,7 @@
+import { Outlet, createFileRoute, redirect } from '@tanstack/solid-router'
 import { Auth } from '@/auth'
 import { PageLoader } from '@/components/page-loader'
 import { Socket } from '@/service/web-socket'
-import { createFileRoute, Outlet, redirect } from '@tanstack/solid-router'
 import { CallDialog } from '@/components/call-dialog'
 import { CallApi } from '@/call-service/class'
 import { CallApiProvider } from '@/call-service/useCallApi'

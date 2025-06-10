@@ -1,15 +1,15 @@
-import { Auth } from '@/auth'
 import { useNavigate, useParams, useRouter } from '@tanstack/solid-router'
 import { For } from 'solid-js'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Stack } from './ui/stack'
 
-import { roomStore } from '@/message-service/store'
-import { cn } from '@/utils'
 import { Flexbox } from './ui/flex'
 import { Avatar } from './ui/avatar'
 import { Icons } from './icons'
+import { cn } from '@/utils'
+import { roomStore } from '@/message-service/store'
+import { Auth } from '@/auth'
 
 export function Sidebar() {
   const navigate = useNavigate({ from: '/home' })

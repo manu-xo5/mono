@@ -1,6 +1,7 @@
-import { race, sleep, withResolvers, type Operation } from 'effection'
-import type TPeer from 'simple-peer'
+import {  race, sleep, withResolvers } from 'effection'
 import { safeParse } from './utils'
+import type {Operation} from 'effection';
+import type TPeer from 'simple-peer'
 
 export const ETimeoutSymbol = Symbol('EffectionTimeout')
 

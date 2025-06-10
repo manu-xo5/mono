@@ -1,6 +1,6 @@
+import { actions } from './store'
 import type { Event } from '@/types'
 import { safeParse } from '@/utils'
-import { actions } from './store'
 
 export function wsMiddleware(ws: WebSocket) {
   ws.addEventListener('message', (ev) => {

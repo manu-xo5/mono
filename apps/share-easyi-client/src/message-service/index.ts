@@ -1,5 +1,5 @@
-import type { Event } from '@/types'
 import * as messagesActions from './actions'
+import type { Event } from '@/types'
 import type { MessageStoreApi } from './store'
 
 // maybe use zod

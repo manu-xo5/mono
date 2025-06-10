@@ -1,12 +1,13 @@
-import { CallApi } from '@/call-service'
-import { type CallStatus } from '@/call-service/store'
-import { Button } from '@/components/ui/button'
-import { Stack } from '@/components/ui/stack'
-import { cn } from '@/utils'
-import { createEffect, Show, type Accessor } from 'solid-js'
+import { Show, createEffect } from 'solid-js'
 import { CallRipple } from './call-ripples'
 import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
+import type { Accessor } from 'solid-js'
+import type { CallStatus } from '@/call-service/store'
+import { CallApi } from '@/call-service'
+import { Button } from '@/components/ui/button'
+import { Stack } from '@/components/ui/stack'
+import { cn } from '@/utils'
 import { useCallApi } from '@/call-service/useCallApi'
 
 const STATUS_TO_TEXT = {
@@ -95,7 +96,7 @@ export function CallDialog() {
           />
         </div>
 
-        {/*<div class="size-20 bg-black rounded-full border relative">
+        {/* <div class="size-20 bg-black rounded-full border relative">
           <video use:modal={callStore().streams} playsinline autoplay muted />
         </div>
         */}

@@ -1,9 +1,11 @@
-import type { AuthSession } from '@/auth'
-import { ETimeoutSymbol, timeout } from '@/effection.utils'
-import type { TOther } from '@/other-user'
-import { race, suspend, withResolvers, type Operation } from 'effection'
-import Peer from 'simple-peer'
+import {  race, suspend, withResolvers } from 'effection'
 import { setCallStore } from './store'
+import type {Operation} from 'effection';
+import type Peer from 'simple-peer'
+import type { ETimeoutSymbol} from '@/effection.utils';
+import type { TOther } from '@/other-user'
+import type { AuthSession } from '@/auth'
+import { timeout } from '@/effection.utils'
 
 export function* peerOnce<T>(
   peer: Peer.Instance,

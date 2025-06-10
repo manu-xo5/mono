@@ -1,11 +1,11 @@
-import { appendDistinct } from '@/list.utils'
-import { safeParse } from '@/utils'
 import { fetchRoomMessages } from './api'
 import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
-import { type MessageStore, type RoomId } from './store'
+import type {MessageStore, RoomId} from './store';
+import { safeParse } from '@/utils'
+import { appendDistinct } from '@/list.utils'
 
 let syncPromise: Promise<MessageStore> | null = null
-const updateQueue: MessageStore[] = []
+const updateQueue: Array<MessageStore> = []
 
 export function isSyncing() {
   return !!syncPromise
@@ -35,7 +35,7 @@ async function write(state: Partial<MessageStore>) {
   localStorage.setItem(LOCAL_STORAGE_NAME, JSON.stringify(newState))
 }
 
-async function sync(roomIds: RoomId[]): Promise<MessageStore> {
+async function sync(roomIds: Array<RoomId>): Promise<MessageStore> {
   if (syncPromise) return syncPromise
 
   const { messages, rooms } = read()
@@ -44,10 +44,10 @@ async function sync(roomIds: RoomId[]): Promise<MessageStore> {
   syncPromise = promise
 
   for (const roomId of roomIds) {
-    const lastMessageId = rooms[roomId]?.at(-1) ?? ''
+    const lastMessageId = rooms[roomId].at(-1) ?? ''
 
     const updatedMessages = await fetchRoomMessages(roomId, {
-      afterUpdatedAt: messages[lastMessageId]?.updatedAt,
+      afterUpdatedAt: messages[lastMessageId].updatedAt,
     })
 
     Object.assign(messages, updatedMessages.record)

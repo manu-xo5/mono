@@ -1,6 +1,6 @@
-import { createContext, type JSX, useContext } from 'solid-js'
-import { CallApi } from './class'
-import { createSignal } from 'solid-js'
+import { createContext, createSignal, useContext } from 'solid-js'
+import type { JSX } from 'solid-js'
+import type { CallApi } from './class'
 
 const context = createContext<CallApi | undefined>()
 

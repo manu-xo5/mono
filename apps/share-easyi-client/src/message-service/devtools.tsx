@@ -1,12 +1,12 @@
-import { cn } from '@/utils'
-import { createSignal, For, Match, Show, Switch } from 'solid-js'
+import { For, Match, Show, Switch, createSignal } from 'solid-js'
 import { messageStore, roomStore } from './store'
+import { cn } from '@/utils'
 
 type Json =
   | string
   | number
   | Record<string, unknown>
-  | (string | number | Record<string, unknown>)[]
+  | Array<string | number | Record<string, unknown>>
 
 function JsonView(props: {
   data: Json

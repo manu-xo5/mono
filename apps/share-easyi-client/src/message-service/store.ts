@@ -1,7 +1,8 @@
-import { type Setter } from 'solid-js'
-import { createStore, unwrap, type SetStoreFunction } from 'solid-js/store'
+import {  createStore, unwrap } from 'solid-js/store'
 import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
 import { messageSync } from './sync'
+import type {SetStoreFunction} from 'solid-js/store';
+import type {Setter} from 'solid-js';
 
 export type RoomId = string
 export type MessageId = string
@@ -20,7 +21,7 @@ export type MessagesRecord = Record<MessageId, Message>
 
 export type MessageStore = {
   rooms: {
-    [roomId: RoomId]: MessageId[]
+    [roomId: RoomId]: Array<MessageId>
   }
   messages: MessagesRecord
   optimisticMessages: MessagesRecord
@@ -79,7 +80,7 @@ export const messageStore__ = {
 export type MessageStoreApi = typeof messageStore
 export const useMessageStore = messageStore
 
-export function getMessages(messageIdList: string[]) {
+export function getMessages(messageIdList: Array<string>) {
   const { optimisticMessages, messages } = messageStore
 
   return messageIdList

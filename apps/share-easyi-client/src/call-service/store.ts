@@ -1,15 +1,15 @@
+import { race, run, sleep, suspend } from 'effection'
+import { createEffect, createSignal } from 'solid-js'
+import { CallAcceptMsg, peerOnce, resetStores } from './helpers'
+import type { CallMessage, MakeCallRequest } from '@/types'
+import type TPeer from 'simple-peer'
 import { Auth } from '@/auth'
 import { ETimeoutSymbol } from '@/effection.utils'
 import { OtherUser } from '@/other-user'
 import { Peer } from '@/service/peer'
 import { Socket } from '@/service/web-socket'
-import type { CallMessage, MakeCallRequest } from '@/types'
 import { safeParse } from '@/utils'
 import { untilMessageOf } from '@/web-socket/utils'
-import { race, run, sleep, suspend } from 'effection'
-import type TPeer from 'simple-peer'
-import { createEffect, createSignal } from 'solid-js'
-import { CallAcceptMsg, peerOnce, resetStores } from './helpers'
 
 export type CallStatus =
   | 'idle'
@@ -25,7 +25,7 @@ type CallStore = {
   id: string
   status: 'idle' | 'on-call'
   callStatus: CallStatus
-  streams: MediaStream[]
+  streams: Array<MediaStream>
 }
 
 export const [callStore, setCallStore] = createSignal<CallStore>({

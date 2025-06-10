@@ -1,5 +1,5 @@
-import { Auth } from '@/auth'
 import { createFileRoute } from '@tanstack/solid-router'
+import { Auth } from '@/auth'
 
 export const Route = createFileRoute('/_app/home/')({
   component: RouteComponent,

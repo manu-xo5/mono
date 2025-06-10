@@ -1,4 +1,4 @@
-export function appendDistinct<T>(arr: T[], values: T[], start?: number) {
+export function appendDistinct<T>(arr: Array<T>, values: Array<T>, start?: number) {
   const uniqueIds = values.filter((msgId) => !arr.includes(msgId))
 
   if (start != null) {

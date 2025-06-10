@@ -1,18 +1,14 @@
-import type { AuthSession } from '@/auth'
-import { ETimeoutSymbol, peerOnce, wsMsgOnce } from '@/effection.utils'
-import { Observable } from '@/lib/observable'
-import type { TOther } from '@/other-user'
-import { safeParse } from '@/utils'
 import { race, run, sleep } from 'effection'
 import Peer from 'simple-peer'
-import {
-  CallRequestDTO,
-  CallResponseDTO,
-  CallSignalDTO,
-  type TCallResponse,
-} from './dto'
+import { CallRequestDTO, CallResponseDTO, CallSignalDTO } from './dto'
+import type { TCallResponse } from './dto'
+import type { TOther } from '@/other-user'
+import type { AuthSession } from '@/auth'
 import type { CallStatus } from './store'
 import type TPeer from 'simple-peer'
+import { safeParse } from '@/utils'
+import { Observable } from '@/lib/observable'
+import { ETimeoutSymbol, peerOnce, wsMsgOnce } from '@/effection.utils'
 
 const CALL_RESPONSE_TIMEOUT = 5000
 
@@ -21,7 +17,6 @@ export class CallApi {
   private me: AuthSession['user']
   private peer: Peer.Instance | null = null
   private otherUser: TOther | null = null
-  // events = createNanoEvents<TEvents>()
 
   status = new Observable<CallStatus>('idle')
 
@@ -161,7 +156,7 @@ export class CallApi {
 
   endCall() {
     if (this.peer) {
-      this.peer?.destroy()
+      this.peer.destroy()
     } else {
       this.ws.send(
         JSON.stringify(
@@ -173,7 +168,7 @@ export class CallApi {
         ),
       )
 
-      this.cleanupCall();
+      this.cleanupCall()
     }
   }
 

@@ -1,5 +1,5 @@
 import { wsMiddleware } from './middleware'
-import { callStore, actions } from './store'
+import { actions, callStore } from './store'
 
 export const CallApi = {
   store: callStore,

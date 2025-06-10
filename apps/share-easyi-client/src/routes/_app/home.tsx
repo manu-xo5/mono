@@ -1,14 +1,15 @@
+import { Outlet, createFileRoute } from '@tanstack/solid-router'
+import type {
+  roomStore} from '@/message-service/store';
 import { Sidebar } from '@/components/main-sidebar'
 import { PageContainer } from '@/components/page-container'
 import { messagesActions } from '@/message-service'
 import { fetchRooms, flushUnsentMessage } from '@/message-service/api'
 import {
-  roomStore,
   setMessageStore,
   setRoomStore,
 } from '@/message-service/store'
 import { messageSync } from '@/message-service/sync'
-import { createFileRoute, Outlet } from '@tanstack/solid-router'
 
 export const Route = createFileRoute('/_app/home')({
   component: LayoutComponent,

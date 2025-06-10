@@ -1,4 +1,4 @@
-import { createSignal, For, onCleanup } from 'solid-js'
+import { For, createSignal, onCleanup } from 'solid-js'
 
 export function CallRipple() {
   const [rippleSize, setRippleSize] = createSignal(0)

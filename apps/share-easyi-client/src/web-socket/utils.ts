@@ -1,6 +1,8 @@
-import { ETimeoutSymbol, timeout } from '@/effection.utils'
+import {  race, suspend, withResolvers } from 'effection'
+import type {Operation} from 'effection';
+import type { ETimeoutSymbol} from '@/effection.utils';
+import { timeout } from '@/effection.utils'
 import { safeParse } from '@/utils'
-import { race, suspend, withResolvers, type Operation } from 'effection'
 
 export function* untilMessageOf<T>(
   target: WebSocket,

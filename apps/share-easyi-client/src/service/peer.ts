@@ -1,6 +1,6 @@
-import { CreateLogger } from '@/utils'
 import SimplePeer from 'simple-peer'
 import type TPeer from 'simple-peer'
+import { CreateLogger } from '@/utils'
 
 let peer: TPeer.Instance | undefined
 

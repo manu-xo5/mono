@@ -1,8 +1,8 @@
-import { Auth } from '@/auth'
-import { cn } from '@/lib/utils'
-import type { Message } from '@/message-service/store'
 import { For } from 'solid-js'
 import { Icons } from './icons'
+import type { Message } from '@/message-service/store'
+import { Auth } from '@/auth'
+import { cn } from '@/lib/utils'
 
 function SimpleMessageIndicator(props: { message: Message }) {
   return (
@@ -21,7 +21,7 @@ function SimpleMessageIndicator(props: { message: Message }) {
 export function MessageList(props: {
   ref?: HTMLUListElement
   class?: string
-  messages: Message[]
+  messages: Array<Message>
 }) {
   const user = Auth.getUser()
   const isMyMessage = (msg: Message) => user.id === msg.from

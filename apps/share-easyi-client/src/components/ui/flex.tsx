@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils'
 import type { JSX } from 'solid-js'
+import { cn } from '@/lib/utils'
 
 type Props = {
   class?: string
