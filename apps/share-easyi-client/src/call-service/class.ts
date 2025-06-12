@@ -1,4 +1,4 @@
-import { race, run, sleep } from 'effection'
+import { race, run, sleep, until } from 'effection'
 import Peer from 'simple-peer'
 import { CallRequestDTO, CallResponseDTO, CallSignalDTO } from './dto'
 import type { TCallResponse } from './dto'
@@ -12,6 +12,12 @@ import { ETimeoutSymbol, peerOnce, wsMsgOnce } from '@/effection.utils'
 
 const CALL_RESPONSE_TIMEOUT = 5000
 
+export type TCallApiError =
+  | 'no-mic-device'
+  | 'permission-denied'
+  | 'unknown-error'
+  | ''
+
 export class CallApi {
   private ws: WebSocket
   private me: AuthSession['user']
@@ -19,6 +25,7 @@ export class CallApi {
   private otherUser: TOther | null = null
 
   status = new Observable<CallStatus>('idle')
+  errors = new Observable<TCallApiError>('')
 
   constructor(ws: WebSocket, me: AuthSession['user']) {
     this.ws = ws
@@ -139,6 +146,33 @@ export class CallApi {
     return this.peer
   }
 
+  private *requestMic() {
+    try {
+      const stream = yield* until(
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false }),
+      )
+      const audioTracks = stream.getAudioTracks()
+      if (audioTracks.length === 0) {
+        this.errors.notify('no-mic-device')
+        return null
+      }
+    } catch (error) {
+      console.log(error)
+
+      if (!(error instanceof DOMException)) {
+        this.errors.notify('unknown-error')
+      } else if (error.name === 'NotFoundError') {
+        this.errors.notify('no-mic-device')
+      } else if (error.name === 'NotAllowedError') {
+        this.errors.notify('permission-denied')
+      } else {
+        console.error('Unknown error while requesting mic:', error)
+      }
+
+      return null
+    }
+  }
+
   private cleanupCall() {
     this.status.notify('idle')
 
@@ -176,9 +210,13 @@ export class CallApi {
     const self = this
     return run(function* () {
       if (self.status.getValue() !== 'idle') return
+      self.errors.notify('')
 
       try {
         self.otherUser = { userId: otherUserId, displayName: '<unknown>' }
+
+        const micTracks = yield* self.requestMic()
+        if (micTracks == null) return
 
         const ok = yield* self.requestCall(otherUserId)
         if (!ok) return

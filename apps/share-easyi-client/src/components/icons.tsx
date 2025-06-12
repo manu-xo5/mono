@@ -6,6 +6,7 @@ import CircleX from 'lucide-solid/icons/circle-x'
 import Clock7 from 'lucide-solid/icons/clock-7'
 import Copy from 'lucide-solid/icons/copy'
 import ScreenShare from 'lucide-solid/icons/screen-share'
+import MicOff from 'lucide-solid/icons/mic-off'
 import type { LucideProps } from 'lucide-solid'
 
 import type { JSX } from 'solid-js'
@@ -19,4 +20,5 @@ export const Icons = {
   Clock7,
   Copy,
   ScreenShare,
+  MicOff,
 } satisfies Record<string, (props: LucideProps) => JSX.Element>

@@ -25,6 +25,9 @@ async function beforeLoad() {
   if (!socketOk) {
     throw redirect({
       to: '/server-down',
+      mask: {
+        to: '/',
+      },
     })
   }
 

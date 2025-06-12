@@ -1,14 +1,9 @@
 import { Show } from 'solid-js'
-import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
+import { CallButton } from './call-button'
 import type { AuthUser } from '@/message-service/store'
-import { Button } from '@/components/ui/button'
-import { CallApi } from '@/call-service'
-import { useCallApi } from '@/call-service/useCallApi'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
-  const { call } = useCallApi();
-
   return (
     <Flexbox class="w-full h-16 px-6 gap-3 border-b">
       <span class="border-white/20 border bg-background rounded-full overflow-hidden size-10 inline-block">
@@ -30,18 +25,7 @@ export function RoomHeader(props: { otherUser: AuthUser | null }) {
       <p class="relative top-[-1px]">{props.otherUser?.name ?? 'Unknown'}</p>
 
       <div class="ml-auto">
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={async () => {
-            const otherUser = props.otherUser
-            if (!otherUser) return
-
-            call(otherUser.id)
-          }}
-        >
-          <Icons.PhoneCall />
-        </Button>
+        <CallButton otherUserId={props.otherUser?.id} />
       </div>
     </Flexbox>
   )
