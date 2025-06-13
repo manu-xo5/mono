@@ -17,12 +17,12 @@ function DialogRoot(props: ComponentProps<'dialog'>) {
 
 function DialogContent(props: { icon?: JSX.Element; children: JSX.Element }) {
   return (
-    <Flexbox class="items-start bg-secondary text-secondary-foreground rounded-lg h-auto w-[calc(var(--spacing)*128)] border shadow-[0px_3px_8px_0px] shadow-secondary p-6 gap-6 select-none">
+    <Flexbox class="items-start bg-secondary text-secondary-foreground rounded-lg h-auto w-[calc(var(--spacing)*128)] border shadow-[0px_3px_8px_0px] shadow-secondary p-6 select-none">
       <Show when={props.icon}>
-        <div class="shrink-0">{props.icon}</div>
+        <div class="shrink-0 mr-6">{props.icon}</div>
       </Show>
 
-      <Stack class="">{props.children}</Stack>
+      <Stack>{props.children}</Stack>
     </Flexbox>
   )
 }
@@ -32,7 +32,7 @@ function DialogTitle(props: { children: JSX.Element }) {
 }
 
 function DialogBody(props: { children: JSX.Element }) {
-  return <p class="text-sm text-muted-foreground">{props.children}</p>
+  return <p class="text-sm text-muted-foreground mt-1">{props.children}</p>
 }
 
 function DialogFooter(props: { class?: string; children: JSX.Element }) {

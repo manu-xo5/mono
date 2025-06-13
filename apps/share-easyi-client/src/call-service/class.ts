@@ -1,4 +1,4 @@
-import { race, run, sleep, until } from 'effection'
+import { race, run, sleep, until, type Operation } from 'effection'
 import Peer from 'simple-peer'
 import { CallRequestDTO, CallResponseDTO, CallSignalDTO } from './dto'
 import type { TCallResponse } from './dto'
@@ -146,7 +146,7 @@ export class CallApi {
     return this.peer
   }
 
-  private *requestMic() {
+  private *requestMic(): Operation<Array<MediaStreamTrack> | null> {
     try {
       const stream = yield* until(
         navigator.mediaDevices.getUserMedia({ audio: true, video: false }),
@@ -156,6 +156,8 @@ export class CallApi {
         this.errors.notify('no-mic-device')
         return null
       }
+
+      return audioTracks
     } catch (error) {
       console.log(error)
 

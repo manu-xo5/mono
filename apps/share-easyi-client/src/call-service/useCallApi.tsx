@@ -1,14 +1,16 @@
+import { run } from 'effection'
 import {
   Match,
-  Show,
   Switch,
   createContext,
   createSignal,
   useContext,
 } from 'solid-js'
-import { UnknownMicErrorDialog } from './presentation/unknown-mic-error-dialog'
-import type { JSX } from 'solid-js'
+import { NoMicPermissionDialog } from './components/no-mic-permission-dialog'
+import { UnknownMicErrorDialog } from './components/unknown-mic-error-dialog'
+import { NoMicDeviceDialog } from './components/no-mic-device-dialog'
 import type { CallApi, TCallApiError } from './class'
+import type { JSX } from 'solid-js'
 
 const context = createContext<CallApi | undefined>()
 
@@ -25,6 +27,14 @@ export function CallApiProvider(props: {
       {props.children}
 
       <Switch>
+        <Match when={error() === 'no-mic-device'}>
+          <NoMicDeviceDialog />
+        </Match>
+
+        <Match when={error() === 'permission-denied'}>
+          <NoMicPermissionDialog />
+        </Match>
+
         <Match when={error() !== ''}>
           <UnknownMicErrorDialog />
         </Match>
@@ -43,7 +53,6 @@ export function useCallApi() {
   const [callError, setCallError] = createSignal<TCallApiError>('')
 
   callApi.status.subscribe((status) => setCallStatus(status))
-
   callApi.errors.subscribe((error) => setCallError(error))
 
   return {
