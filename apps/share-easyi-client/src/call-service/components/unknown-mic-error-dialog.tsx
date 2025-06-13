@@ -1,14 +1,14 @@
 import { useCallApi } from '../useCallApi'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/shared/components/dialog'
-import { LogoHead } from '@/shared/components/logo-head'
+import { LogoHeadError } from '@/shared/components/logo-head-error'
 
 export function UnknownMicErrorDialog() {
   const { resetError } = useCallApi()
 
   return (
     <Dialog.Root open>
-      <Dialog.Content icon={<LogoHead />}>
+      <Dialog.Content icon={<LogoHeadError />}>
         <Dialog.Title>Unknown Microphone Error</Dialog.Title>
 
         <Dialog.Body>
