@@ -1,4 +1,4 @@
-import { cn } from '@/utils'
+import { cn } from '@/utils/utils'
 
 type Props = {
   class?: string

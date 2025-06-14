@@ -1,8 +1,8 @@
 import { fetchRoomMessages } from './api'
 import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
-import type {MessageStore, RoomId} from './store';
-import { safeParse } from '@/utils'
-import { appendDistinct } from '@/list.utils'
+import type { MessageStore, RoomId } from './store'
+import { safeParse } from '@/utils/utils'
+import { appendDistinct } from '@/utils/list.utils'
 
 let syncPromise: Promise<MessageStore> | null = null
 const updateQueue: Array<MessageStore> = []
@@ -12,9 +12,9 @@ export function isSyncing() {
 }
 
 const read = (): MessageStore => {
-  const [data, ok] =
-    safeParse(localStorage.getItem(LOCAL_STORAGE_NAME) ?? 'null') ??
-    INITIAL_VALUE
+  const [data, ok] = safeParse(
+    localStorage.getItem(LOCAL_STORAGE_NAME) ?? 'null',
+  )
 
   if (!ok) return INITIAL_VALUE
 

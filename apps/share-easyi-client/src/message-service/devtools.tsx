@@ -1,6 +1,6 @@
 import { For, Match, Show, Switch, createSignal } from 'solid-js'
 import { messageStore, roomStore } from './store'
-import { cn } from '@/utils'
+import { cn } from '@/utils/utils'
 
 type Json =
   | string

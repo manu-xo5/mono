@@ -2,7 +2,7 @@ import { For } from 'solid-js'
 import { Icons } from './icons'
 import type { Message } from '@/message-service/store'
 import { Auth } from '@/auth'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/utils'
 
 function SimpleMessageIndicator(props: { message: Message }) {
   return (

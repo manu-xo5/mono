@@ -1,4 +1,3 @@
-import { run } from 'effection'
 import {
   Match,
   Switch,
@@ -9,7 +8,8 @@ import {
 import { NoMicPermissionDialog } from './components/no-mic-permission-dialog'
 import { UnknownMicErrorDialog } from './components/unknown-mic-error-dialog'
 import { NoMicDeviceDialog } from './components/no-mic-device-dialog'
-import type { CallApi, TCallApiError } from './class'
+import type { CallApi } from './call-api'
+import type { TCallApiError } from './types'
 import type { JSX } from 'solid-js'
 
 const context = createContext<CallApi | undefined>()

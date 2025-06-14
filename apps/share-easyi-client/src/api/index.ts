@@ -1,4 +1,4 @@
-import { SERVER_BASE } from '@/constants'
+import { SERVER_BASE } from '@/utils/constants'
 
 export class ApiError extends Error {
   constructor(message: string) {

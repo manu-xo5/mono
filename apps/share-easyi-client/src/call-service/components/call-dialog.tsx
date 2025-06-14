@@ -3,11 +3,10 @@ import { CallRipple } from './call-ripples'
 import { Icons } from './icons'
 import { Flexbox } from './ui/flex'
 import type { Accessor } from 'solid-js'
-import type { CallStatus } from '@/call-service/store'
-import { CallApi } from '@/call-service'
+import type { CallStatus } from '@/call-service/types'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
-import { cn } from '@/utils'
+import { cn } from '@/utils/utils'
 import { useCallApi } from '@/call-service/useCallApi'
 
 const STATUS_TO_TEXT = {
@@ -21,6 +20,7 @@ const STATUS_TO_TEXT = {
   failed: 'Call Failed',
 } satisfies Record<CallStatus, string>
 
+// @ts-expect-error asdf
 function modal(
   node: HTMLVideoElement,
   _accessor: () => Accessor<Array<MediaStream>>,
@@ -123,12 +123,8 @@ export function CallDialog() {
                   ? 'rotate-0 translate-x-12'
                   : 'rotate-40 translate-x-0',
               )}
-              onClick={async () => {
-                const stream = await navigator.mediaDevices.getDisplayMedia({
-                  video: true,
-                })
-
-                CallApi.actions.addStream(stream)
+              onClick={() => {
+                throw new Error('not implemented')
               }}
             >
               <Icons.ScreenShare />

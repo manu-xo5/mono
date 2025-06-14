@@ -5,7 +5,6 @@ import { MessageList } from '@/components/message-list'
 import { RoomHeader } from '@/components/room-header'
 import { Button } from '@/components/ui/button'
 import { Stack } from '@/components/ui/stack'
-import { EEmit } from '@/event-bus/emitter'
 import { getMessages, messageStore, roomStore } from '@/message-service/store'
 
 export const Route = createFileRoute('/_app/home/$roomId/')({
@@ -27,13 +26,12 @@ function RouteComponent() {
       .roomId.split('-')
       .find((id) => id != userId)!
 
+  void otherUserId()
+
   const otherUserData = () => {
     const room = roomStore[params().roomId]
 
-    if (room) {
-      return room.user1 === userId ? room.user2Data : room.user1Data
-    }
-    return null
+    return room.user1 === userId ? room.user2Data : room.user1Data
   }
 
   createEffect(() => {
@@ -77,11 +75,13 @@ function RouteComponent() {
               if (!value) return
 
               setMessageInput('')
-              EEmit('message:send', {
-                body: value,
-                toUser: otherUserId(),
-                roomId: params().roomId,
-              })
+              throw new Error('not implemented')
+
+              // EEmit('message:send', {
+              //   body: value,
+              //   toUser: otherUserId(),
+              //   roomId: params().roomId,
+              // })
 
               scrollToBottom()
             }}
@@ -94,12 +94,13 @@ function RouteComponent() {
                 const value = messageInput()
                 if (!value) return
                 setMessageInput('')
+                throw new Error('not implemented')
 
-                EEmit('message:send', {
-                  body: value,
-                  toUser: otherUserId(),
-                  roomId: params().roomId,
-                })
+                // EEmit('message:send', {
+                //   body: value,
+                //   toUser: otherUserId(),
+                //   roomId: params().roomId,
+                // })
 
                 scrollToBottom()
               }}

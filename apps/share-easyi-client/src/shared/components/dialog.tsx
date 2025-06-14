@@ -2,7 +2,7 @@ import { Show } from 'solid-js'
 import type { ComponentProps, JSX } from 'solid-js'
 import { Stack } from '@/components/ui/stack'
 import { Flexbox } from '@/components/ui/flex'
-import { cn } from '@/utils'
+import { cn } from '@/utils/utils'
 
 function DialogRoot(props: ComponentProps<'dialog'>) {
   return (

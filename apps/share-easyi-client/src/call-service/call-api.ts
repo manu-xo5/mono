@@ -1,22 +1,16 @@
-import { race, run, sleep, until, type Operation } from 'effection'
+import { race, run, sleep, until } from 'effection'
 import Peer from 'simple-peer'
 import { CallRequestDTO, CallResponseDTO, CallSignalDTO } from './dto'
+import type { Operation } from 'effection'
 import type { TCallResponse } from './dto'
-import type { TOther } from '@/other-user'
+import type { CallStatus, TCallApiError, TOther } from './types'
 import type { AuthSession } from '@/auth'
-import type { CallStatus } from './store'
 import type TPeer from 'simple-peer'
-import { safeParse } from '@/utils'
-import { Observable } from '@/lib/observable'
-import { ETimeoutSymbol, peerOnce, wsMsgOnce } from '@/effection.utils'
+import { safeParse } from '@/utils/utils'
+import { Observable } from '@/shared/observable'
+import { ETimeoutSymbol, peerOnce, wsMsgOnce } from '@/utils/effection.utils'
 
 const CALL_RESPONSE_TIMEOUT = 5000
-
-export type TCallApiError =
-  | 'no-mic-device'
-  | 'permission-denied'
-  | 'unknown-error'
-  | ''
 
 export class CallApi {
   private ws: WebSocket

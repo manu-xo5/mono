@@ -6,37 +6,6 @@ export function cn(...inputs: Array<ClassValue>) {
   return twMerge(clsx(inputs))
 }
 
-type PeerListener<Event> = {
-  on: (event: Event, listener: (...args: Array<any>) => void) => void
-  off: (event: Event, listener: (...args: Array<any>) => void) => void
-}
-export async function waitEvent<
-  Event extends string,
-  Target extends PeerListener<Event>,
->(target: Target, event: Event, { signal }: { signal?: AbortSignal } = {}) {
-  const { promise, resolve, reject } = Promise.withResolvers<void>()
-
-  function cleanup() {
-    signal?.removeEventListener('abort', handleAbort)
-    target.off(event, handleEvent)
-  }
-
-  function handleEvent() {
-    cleanup()
-    resolve()
-  }
-
-  function handleAbort() {
-    cleanup()
-    reject(new Error('Listener Aborted'))
-  }
-
-  signal?.addEventListener('abort', handleAbort)
-  target.on(event, handleEvent)
-
-  return promise
-}
-
 export function createRoomId(user1Id: string, user2Id: string) {
   return [user1Id, user2Id].sort().join('-')
 }
@@ -121,3 +90,20 @@ export const CreateLogger = function (name: string) {
   }
 }
 CreateLogger.iota = 0
+
+export function fromSeconds(duration: number) {
+  const seconds = duration % 60
+  const mins = Math.floor(duration / 60)
+  const hours = Math.floor(duration / 3600)
+
+  const iter =
+    hours !== 0
+      ? Iterator.from([hours, mins, seconds])
+      : Iterator.from([mins, seconds])
+
+  return iter
+    .map((x) => String(x))
+    .map((x) => x.padStart(2, '0'))
+    .toArray()
+    .join(':')
+}

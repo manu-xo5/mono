@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal } from 'solid-js'
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/auth'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/utils'
 import { PageContainer } from '@/components/page-container'
 
 export const Route = createFileRoute('/_auth/login/')({

@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/solid'
-import { SERVER_BASE } from '@/constants'
+import { SERVER_BASE } from '@/utils/constants'
 
 export const authClient = createAuthClient({
   baseURL: SERVER_BASE,

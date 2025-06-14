@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'solid-js'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/utils'
 
 function Input(props: ComponentProps<'input'>) {
   return (
