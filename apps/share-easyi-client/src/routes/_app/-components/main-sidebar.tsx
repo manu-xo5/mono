@@ -1,12 +1,13 @@
 import { useNavigate, useParams, useRouter } from '@tanstack/solid-router'
 import { For } from 'solid-js'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Stack } from './ui/stack'
-
-import { Flexbox } from './ui/flex'
-import { Avatar } from './ui/avatar'
-import { Icons } from './icons'
+import {
+  Avatar,
+  Button,
+  Flexbox,
+  Icons,
+  Input,
+  Stack,
+} from '@/shared/components'
 import { cn } from '@/utils/utils'
 import { roomStore } from '@/message-service/store'
 import { Auth } from '@/auth'

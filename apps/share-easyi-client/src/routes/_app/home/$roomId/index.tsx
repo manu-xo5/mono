@@ -1,10 +1,9 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { createEffect, createSignal } from 'solid-js'
+import { RoomHeader } from './-components/room-header'
 import { Auth } from '@/auth'
-import { MessageList } from '@/components/message-list'
-import { RoomHeader } from '@/components/room-header'
-import { Button } from '@/components/ui/button'
-import { Stack } from '@/components/ui/stack'
+import { MessageList } from '@/message-service/components/message-list'
+import { Button, Stack } from '@/shared/components'
 import { getMessages, messageStore, roomStore } from '@/message-service/store'
 
 export const Route = createFileRoute('/_app/home/$roomId/')({

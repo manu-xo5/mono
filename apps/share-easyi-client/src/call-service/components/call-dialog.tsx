@@ -1,13 +1,10 @@
 import { Show, createEffect } from 'solid-js'
 import { CallRipple } from './call-ripples'
-import { Icons } from './icons'
-import { Flexbox } from './ui/flex'
-import type { Accessor } from 'solid-js'
 import type { CallStatus } from '@/call-service/types'
-import { Button } from '@/components/ui/button'
-import { Stack } from '@/components/ui/stack'
-import { cn } from '@/utils/utils'
+import type { Accessor } from 'solid-js'
 import { useCallApi } from '@/call-service/useCallApi'
+import { Button, Flexbox, Icons, Stack } from '@/shared/components'
+import { cn } from '@/utils/utils'
 
 const STATUS_TO_TEXT = {
   idle: '',

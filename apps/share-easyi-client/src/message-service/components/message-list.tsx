@@ -1,6 +1,6 @@
 import { For } from 'solid-js'
-import { Icons } from './icons'
 import type { Message } from '@/message-service/store'
+import { Icons } from '@/shared/components'
 import { Auth } from '@/auth'
 import { cn } from '@/utils/utils'
 
@@ -11,7 +11,7 @@ function SimpleMessageIndicator(props: { message: Message }) {
         <Icons.Clock7 size={12} />
       ) : (
         { ok: <Icons.Check size={12} />, fail: <Icons.CircleX /> }[
-          props.message.status
+        props.message.status
         ]
       )}
     </span>

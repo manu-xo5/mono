@@ -8,6 +8,7 @@ import {
 import { NoMicPermissionDialog } from './components/no-mic-permission-dialog'
 import { UnknownMicErrorDialog } from './components/unknown-mic-error-dialog'
 import { NoMicDeviceDialog } from './components/no-mic-device-dialog'
+import { CallDialog } from './components/call-dialog'
 import type { CallApi } from './call-api'
 import type { TCallApiError } from './types'
 import type { JSX } from 'solid-js'
@@ -25,6 +26,8 @@ export function CallApiProvider(props: {
   return (
     <context.Provider value={props.callApi}>
       {props.children}
+
+      <CallDialog />
 
       <Switch>
         <Match when={error() === 'no-mic-device'}>

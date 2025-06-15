@@ -1,8 +1,7 @@
 import { Outlet, createFileRoute, redirect } from '@tanstack/solid-router'
 import { Auth } from '@/auth'
-import { PageLoader } from '@/components/page-loader'
 import { Socket } from '@/web-socket-service'
-import { CallDialog } from '@/components/call-dialog'
+import { PageLoader } from '@/shared/components'
 import { CallApi } from '@/call-service'
 import { CallApiProvider } from '@/call-service/useCallApi'
 import { TanstackQueryProvider } from '@/tanstack-query/provider'
@@ -46,7 +45,6 @@ function RouteComponent() {
     <TanstackQueryProvider>
       <CallApiProvider callApi={routerCtx().callApi}>
         <Outlet />
-        <CallDialog />
       </CallApiProvider>
     </TanstackQueryProvider>
   )

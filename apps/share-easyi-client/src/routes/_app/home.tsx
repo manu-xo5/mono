@@ -1,14 +1,10 @@
 import { Outlet, createFileRoute } from '@tanstack/solid-router'
-import type {
-  roomStore} from '@/message-service/store';
-import { Sidebar } from '@/components/main-sidebar'
-import { PageContainer } from '@/components/page-container'
+import { Sidebar } from './-components/main-sidebar'
+import type { roomStore } from '@/message-service/store'
+import { PageContainer } from '@/shared/components'
 import { messagesActions } from '@/message-service'
 import { fetchRooms, flushUnsentMessage } from '@/message-service/api'
-import {
-  setMessageStore,
-  setRoomStore,
-} from '@/message-service/store'
+import { setMessageStore, setRoomStore } from '@/message-service/store'
 import { messageSync } from '@/message-service/sync'
 
 export const Route = createFileRoute('/_app/home')({

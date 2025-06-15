@@ -1,7 +1,5 @@
 import { useCallApi } from '../useCallApi'
-import { Button } from '@/components/ui/button'
-import { Dialog } from '@/shared/components/dialog'
-import { LogoHeadError } from '@/shared/components/logo-head-error'
+import { Button, Dialog, LogoHeadError } from '@/shared/components'
 
 export function NoMicPermissionDialog() {
   const { resetError } = useCallApi()

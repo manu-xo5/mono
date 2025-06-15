@@ -1,7 +1,7 @@
 import { Show } from 'solid-js'
-import { Flexbox } from './ui/flex'
-import { CallButton } from '../call-service/components/call-button'
 import type { AuthUser } from '@/message-service/store'
+import { CallButton } from '@/call-service/components/call-button'
+import { Flexbox } from '@/shared/components/flex'
 
 export function RoomHeader(props: { otherUser: AuthUser | null }) {
   return (

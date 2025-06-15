@@ -34,41 +34,38 @@ export function safeParse<T = {}>(value: string) {
 
 export async function stubStream() {
   const video = document.createElement('video')
-  video.muted = true // mute to allow autoplay without user interaction
+  video.muted = true
   video.playsInline = true
   video.style.display = 'none'
   video.src = '/vod1.mp4'
-  video.load()
 
   try {
+    video.load()
     await new Promise((res) => {
       video.onloadedmetadata = () => res(0)
     })
-    console.log('onloadedmetadata ')
     await video.play()
-    console.log('play ')
-    let localStream: MediaStream | null = null
 
-    // 1. Capture stream from the source video element
-    if ('captureStream' in video && typeof video.captureStream === 'function') {
-      localStream = video.captureStream()
-    } else if (
-      'mozCaptureStream' in video &&
-      typeof video.mozCaptureStream === 'function'
-    ) {
-      localStream = video.mozCaptureStream() // Firefox
-    } else {
+    const captureStream: MediaStream | null =
+      'captureStream' in video && typeof video.captureStream === 'function'
+        ? video.captureStream()
+        : 'mozCaptureStream' in video &&
+          typeof video.mozCaptureStream === 'function'
+          ? video.mozCaptureStream
+          : null
+
+    if (!captureStream) {
       console.error('captureStream API not supported.')
     }
-
-    return localStream
+    // 1. Capture stream from the source video element
+    return captureStream
   } catch (err) {
     console.error(err)
     return null
   }
 }
 
-export const CreateLogger = function (name: string) {
+export const CreateLogger = function(name: string) {
   const colors = [
     '#1E90FF', // DodgerBlue
     '#32CD32', // LimeGreen

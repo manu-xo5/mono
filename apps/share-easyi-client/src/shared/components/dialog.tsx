@@ -1,7 +1,6 @@
 import { Show } from 'solid-js'
 import type { ComponentProps, JSX } from 'solid-js'
-import { Stack } from '@/components/ui/stack'
-import { Flexbox } from '@/components/ui/flex'
+import { Flexbox, Stack } from '@/shared/components'
 import { cn } from '@/utils/utils'
 
 function DialogRoot(props: ComponentProps<'dialog'>) {
@@ -36,11 +35,7 @@ function DialogBody(props: { children: JSX.Element }) {
 }
 
 function DialogFooter(props: { class?: string; children: JSX.Element }) {
-  return (
-    <div class={cn('w-full mt-4', props.class)}>
-      {props.children}
-    </div>
-  )
+  return <div class={cn('w-full mt-4', props.class)}>{props.children}</div>
 }
 
 export const Dialog = {
