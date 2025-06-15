@@ -1,10 +1,16 @@
+import { Auth } from '@/auth'
+import { MessageList } from '@/message-service/components/message-list'
+import {
+  getMessages,
+  messageStore,
+  roomStore,
+  type AuthUser,
+  type Room,
+} from '@/message-service/store'
+import { Button, Stack } from '@/shared/components'
 import { createFileRoute } from '@tanstack/solid-router'
 import { createEffect, createSignal } from 'solid-js'
 import { RoomHeader } from './-components/room-header'
-import { Auth } from '@/auth'
-import { MessageList } from '@/message-service/components/message-list'
-import { Button, Stack } from '@/shared/components'
-import { getMessages, messageStore, roomStore } from '@/message-service/store'
 
 export const Route = createFileRoute('/_app/home/$roomId/')({
   component: RouteComponent,
@@ -28,7 +34,8 @@ function RouteComponent() {
   void otherUserId()
 
   const otherUserData = () => {
-    const room = roomStore[params().roomId]
+    const room = roomStore[params().roomId] as Room | undefined
+    if (!room) return null
 
     return room.user1 === userId ? room.user2Data : room.user1Data
   }

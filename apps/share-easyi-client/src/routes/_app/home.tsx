@@ -16,9 +16,8 @@ export const Route = createFileRoute('/_app/home')({
     ;(async () => {
       setMessageStore(messageSync.read())
 
-      messageSync.sync
-
       const roomsRes = await fetchRooms()
+      console.log(roomsRes)
       const allRooms = roomsRes.all.map((room) => room.roomId)
       setRoomStore(
         roomsRes.all.reduce(
@@ -32,7 +31,7 @@ export const Route = createFileRoute('/_app/home')({
       const messageStore = await messageSync.sync(allRooms)
       setMessageStore(messageStore)
 
-      flushUnsentMessage()
+      // flushUnsentMessage()
     })()
   },
 })

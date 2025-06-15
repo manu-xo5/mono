@@ -1,10 +1,18 @@
-import {  createStore, unwrap } from 'solid-js/store'
+import { createStore, unwrap } from 'solid-js/store'
 import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
 import { messageSync } from './sync'
-import type {SetStoreFunction} from 'solid-js/store';
-import type {Setter} from 'solid-js';
+import type { SetStoreFunction } from 'solid-js/store'
+import type { Setter } from 'solid-js'
 
 export type RoomId = string
+export type Room = {
+  roomId: string
+  user1: string
+  user2: string
+  user1Data: AuthUser
+  user2Data: AuthUser
+}
+
 export type MessageId = string
 export type Message = {
   id: MessageId
@@ -48,18 +56,7 @@ const setMessageStore: SetStoreFunction<MessageStore> = (...x) => {
   messageSync.write(store)
 }
 
-const [roomStore, setRoomStore] = createStore<
-  Record<
-    RoomId,
-    {
-      roomId: string
-      user1: string
-      user2: string
-      user1Data: AuthUser
-      user2Data: AuthUser
-    }
-  >
->({})
+const [roomStore, setRoomStore] = createStore<Record<RoomId, Room>>({})
 
 export {
   messageStore,

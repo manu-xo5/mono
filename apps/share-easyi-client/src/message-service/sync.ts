@@ -1,6 +1,6 @@
 import { fetchRoomMessages } from './api'
 import { INITIAL_VALUE, LOCAL_STORAGE_NAME } from './constants'
-import type { MessageStore, RoomId } from './store'
+import type { Message, MessageStore, RoomId } from './store'
 import { safeParse } from '@/utils/utils'
 import { appendDistinct } from '@/utils/list.utils'
 
@@ -21,7 +21,7 @@ const read = (): MessageStore => {
   return data as MessageStore
 }
 
-async function write(state: Partial<MessageStore>) {
+function write(state: Partial<MessageStore>) {
   const newState = {
     ...read(),
     ...state,
@@ -45,9 +45,12 @@ async function sync(roomIds: Array<RoomId>): Promise<MessageStore> {
 
   for (const roomId of roomIds) {
     const lastMessageId = rooms[roomId].at(-1) ?? ''
+    const lastMessage = messages[lastMessageId] as Message | undefined
 
     const updatedMessages = await fetchRoomMessages(roomId, {
-      afterUpdatedAt: messages[lastMessageId].updatedAt,
+      afterUpdatedAt: lastMessage
+        ? messages[lastMessageId].updatedAt
+        : undefined,
     })
 
     Object.assign(messages, updatedMessages.record)
