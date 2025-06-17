@@ -1,21 +1,28 @@
+import type { TRestApi } from '@/api'
 import type { TConversationId } from './domain/conversation'
 import type { TMessage, TMessageId } from './domain/message'
 import { Observable } from '@/shared/observable'
 
 type TSendMessage = (message: TMessage) => Promise<void>
-const sendMessage: TSendMessage = (message: TMessage) => {
+// const sendMessage: TSendMessage = (message: TMessage) => {
+// ws.send(
+//   JSON.stringify({
+//     id: msg.id,
+//     type: msg.type,
+//     body: {
+//       to: toUser,
+//       from: user.id,
+//       text: msg.text,
+//     },
+//   }),
+// )
+// }
 
-  // ws.send(
-  //   JSON.stringify({
-  //     id: msg.id,
-  //     type: msg.type,
-  //     body: {
-  //       to: toUser,
-  //       from: user.id,
-  //       text: msg.text,
-  //     },
-  //   }),
-  // )
+export async function fetchRooms(restApi: TRestApi) {
+  const res = await restApi('/room/all')
+  const json = await res.json()
+
+  return json.ok as Array<{ roomId: string }>
 }
 
 export class ConversationApi {
@@ -27,13 +34,18 @@ export class ConversationApi {
     public sendMessage: TSendMessage,
   ) {}
 
-  private writeTextMessage(message: TMessage) {
+  private async writeTextMessage(message: TMessage) {
     if (message.status !== 'pending') return
     if (message.type !== 'text') return
 
     this.messages[message.id] = message
     this.messagesIds.notify(this.messagesIds.getValue().concat(message.id))
-    this.sendMessage(message)
+    const res = this.sendMessage(message)
+    if ('error' in res) {
+      throw new Error(`Message::SendFailed`)
+    }
+
+    return Promise.resolve(void 0)
   }
 
   private sync() {

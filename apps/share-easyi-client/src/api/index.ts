@@ -7,7 +7,7 @@ export class ApiError extends Error {
   }
 }
 
-export type RestApi = typeof API_VX;
+export type TRestApi = typeof API_VX;
 
 export const API_VX = async (url: RequestInfo, init?: RequestInit) => {
   const res = await window.fetch(SERVER_BASE + '/api/vx' + url, {
