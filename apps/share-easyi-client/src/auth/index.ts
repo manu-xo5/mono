@@ -6,6 +6,7 @@ export const authClient = createAuthClient({
 })
 
 export type AuthSession = (typeof authClient.$Infer)['Session']
+export type AuthUser = (typeof authClient.$Infer)['Session']['user']
 export const Auth = {
   init,
   getSession,
